@@ -46,8 +46,7 @@ defmodule StackLab.Workspace.MixProject do
   defp deps do
     [
       {:blitz, "~> 0.2.0", runtime: false},
-      {:weld, "~> 0.4.1", runtime: false},
-      {:libgraph, "== 0.16.1-mg.2", hex: :multigraph, app: false, override: true},
+      {:weld, "~> 0.5.0", runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
