@@ -1,11 +1,13 @@
 defmodule StackLab.Examples.SingleNodeRoundtrip do
   @moduledoc false
 
+  alias StackLab.CitadelSpineHarness
+
   def scenario do
-    %{
-      name: :single_node_roundtrip,
-      compose: StackLab.LabCore.compose_file(:single),
-      runbook: StackLab.LabCore.runbook(:up_single)
-    }
+    CitadelSpineHarness.same_node_scenario()
+  end
+
+  def exercise(case_name) when case_name in [:acceptance, :duplicate, :scope_rejection] do
+    CitadelSpineHarness.exercise_same_node(case_name)
   end
 end

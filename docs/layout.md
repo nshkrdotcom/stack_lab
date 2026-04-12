@@ -8,8 +8,14 @@ The workspace is organized as:
   - compose, fault-injection, and OTLP configs
 - `support/lab_core/`
   - shared harness helpers
+- `support/citadel_spine_harness/`
+  - harness-only sibling assembly for `citadel -> jido_integration`
 - `examples/`
   - first-class proving projects
+  - `single_node_roundtrip`
+  - `multi_node_roundtrip`
+  - `restart_authority_drill`
+  - `pressure_failover_drill`
 - `packaging/`
   - weld verification support
 

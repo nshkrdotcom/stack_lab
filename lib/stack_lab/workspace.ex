@@ -5,6 +5,7 @@ defmodule StackLab.Workspace do
 
   @package_paths [
     "support/lab_core",
+    "support/citadel_spine_harness",
     "examples/single_node_roundtrip",
     "examples/multi_node_roundtrip",
     "examples/restart_authority_drill",

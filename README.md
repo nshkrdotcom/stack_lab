@@ -18,6 +18,17 @@ StackLab is the proving harness monorepo for the current platform buildout.
 It exists to make single-node boot, multi-node boot, fault injection, restart
 drills, and end-to-end examples repeatable from one workspace root.
 
+The current assembled lower-stack proof is the Citadel plus Spine durable
+submission seam:
+
+- `examples/single_node_roundtrip`
+- `examples/multi_node_roundtrip`
+- `examples/restart_authority_drill`
+- `examples/pressure_failover_drill`
+
+Those examples exercise real `citadel` and real `jido_integration` code
+through the harness-only `support/citadel_spine_harness` package.
+
 ## Scope
 
 - local harness tooling
@@ -49,6 +60,7 @@ just fault net-cut
 - [docs/runbooks/up_single.md](./docs/runbooks/up_single.md)
 - [docs/runbooks/up_multi.md](./docs/runbooks/up_multi.md)
 - [docs/runbooks/faults.md](./docs/runbooks/faults.md)
+- [support/citadel_spine_harness/README.md](./support/citadel_spine_harness/README.md)
 
 ## License
 

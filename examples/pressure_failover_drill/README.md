@@ -1,3 +1,8 @@
 # Pressure Failover Drill
 
-Pressure and failover drill for `stack_lab`.
+Transport and duplicate-delivery drill for the assembled lower seam.
+
+Covered cases:
+
+- recovery after transport interruption
+- duplicate delivery converging to one durable Spine acceptance

@@ -1,11 +1,13 @@
 defmodule StackLab.Examples.MultiNodeRoundtrip do
   @moduledoc false
 
+  alias StackLab.CitadelSpineHarness
+
   def scenario do
-    %{
-      name: :multi_node_roundtrip,
-      compose: StackLab.LabCore.compose_file(:multi),
-      runbook: StackLab.LabCore.runbook(:up_multi)
-    }
+    CitadelSpineHarness.multi_node_scenario()
+  end
+
+  def exercise(case_name) when case_name in [:acceptance, :scope_rejection] do
+    CitadelSpineHarness.exercise_multi_node(case_name)
   end
 end
