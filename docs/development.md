@@ -1,10 +1,24 @@
 # Development
 
-The starter development flow is intentionally small:
+The workspace uses:
 
-1. install the toolchain from `.tool-versions`
-2. fetch dependencies with `mix deps.get`
-3. run `mix test`
+- Elixir `~> 1.19`
+- `blitz` for workspace orchestration
+- `weld` for deterministic projection verification
+- `just` as the operator entrypoint for harness commands
 
-As the repository grows, this document should become the single place for local
-boot commands, fault-injection helpers, and example runbooks.
+Standard flow:
+
+```bash
+mix deps.get
+mix ci
+```
+
+Workspace commands:
+
+```bash
+mix monorepo.test
+mix monorepo.credo --strict
+mix monorepo.docs
+mix weld.verify
+```

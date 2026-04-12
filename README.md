@@ -13,29 +13,32 @@
 
 # StackLab
 
-StackLab is a starter harness for local distributed development around the nshkr infrastructure stack.
+StackLab is the proving harness monorepo for the current platform buildout.
 
-The repository is intentionally simple for now. It exists to hold the first repeatable shape for single-node boot, multi-node boot, fault injection, and end-to-end proving examples while the broader process is still being defined.
+It exists to make single-node boot, multi-node boot, fault injection, restart
+drills, and end-to-end examples repeatable from one workspace root.
 
 ## Scope
 
-- local stack boot
-- multi-node development flows
-- fault injection and recovery drills
-- end-to-end proving examples
-- operator-oriented smoke paths
-
-## Status
-
-Early starter repository. The exact workflow, example inventory, and service graph are still being nailed down.
+- local harness tooling
+- distributed-development runbooks
+- fault injection scripts
+- support packages and example projects
+- end-to-end smoke and drill paths
 
 ## Development
 
-The project targets Elixir `~> 1.19` and Erlang/OTP `28`. The pinned toolchain lives in [`.tool-versions`](./.tool-versions).
-
 ```bash
 mix deps.get
-mix test
+mix ci
+```
+
+## Runbook
+
+```bash
+just up-single
+just up-multi
+just fault net-cut
 ```
 
 ## Documentation
@@ -43,8 +46,12 @@ mix test
 - [docs/overview.md](./docs/overview.md)
 - [docs/development.md](./docs/development.md)
 - [docs/layout.md](./docs/layout.md)
-- [CHANGELOG.md](./CHANGELOG.md)
+- [docs/runbooks/up_single.md](./docs/runbooks/up_single.md)
+- [docs/runbooks/up_multi.md](./docs/runbooks/up_multi.md)
+- [docs/runbooks/faults.md](./docs/runbooks/faults.md)
 
 ## License
 
-MIT. See [LICENSE](./LICENSE).
+MIT.
+
+Copyright (c) 2026 nshkrdotcom.

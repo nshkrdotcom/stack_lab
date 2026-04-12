@@ -1,13 +1,13 @@
 # Overview
 
-StackLab is the initial proving ground for local distributed development across
-the nshkr stack.
+`stack_lab` is the proving harness for the current stack.
 
-The repository is expected to hold:
+It exists to make these seams executable:
 
-- repeatable local boot for single-node and multi-node shapes
-- fault injection and recovery drills
-- end-to-end examples that cross major stack seams
-- operator-facing smoke paths
+- single-node boot
+- multi-node boot
+- restart-authority drills
+- governed-run and operator-surface examples
+- session-lineage and failover drills
 
-The exact composition is intentionally still flexible.
+This repo is a harness workspace, not a shipping product surface.
