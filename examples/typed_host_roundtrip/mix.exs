@@ -1,16 +1,16 @@
-defmodule StackLab.SingleNodeRoundtrip.MixProject do
+defmodule StackLab.TypedHostRoundtrip.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :stack_lab_single_node_roundtrip,
+      app: :stack_lab_typed_host_roundtrip,
       version: "0.1.0",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: docs(),
-      name: "StackLab Single Node Roundtrip",
-      description: "Single-node proving example for StackLab"
+      name: "StackLab Typed Host Roundtrip",
+      description: "Typed host proving example for AppKit and Jido.Domain"
     ]
   end
 

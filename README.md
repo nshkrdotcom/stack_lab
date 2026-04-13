@@ -22,12 +22,16 @@ The current assembled lower-stack proof is the Citadel plus Spine durable
 submission seam:
 
 - `examples/single_node_roundtrip`
+- `examples/semantic_host_roundtrip`
+- `examples/typed_host_roundtrip`
 - `examples/multi_node_roundtrip`
 - `examples/restart_authority_drill`
 - `examples/pressure_failover_drill`
 
 Those examples exercise real `citadel` and real `jido_integration` code
-through the harness-only `support/citadel_spine_harness` package.
+through the harness-only `support/citadel_spine_harness` package. The typed
+and semantic host proofs also assemble real `app_kit`, `outer_brain`,
+and `jido_domain` above the same lower seam.
 
 ## Scope
 

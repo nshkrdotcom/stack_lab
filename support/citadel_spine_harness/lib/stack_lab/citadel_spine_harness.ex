@@ -4,7 +4,15 @@ defmodule StackLab.CitadelSpineHarness do
   Jido Integration proofs.
   """
 
-  alias StackLab.CitadelSpineHarness.{MultiNode, PressureFailover, RestartAuthority, SameNode}
+  alias StackLab.CitadelSpineHarness.{
+    MultiNode,
+    PressureFailover,
+    RestartAuthority,
+    SameNode,
+    SemanticHost,
+    TypedHost
+  }
+
   alias StackLab.LabCore
 
   @stack_lab_root Path.expand("../../../..", __DIR__)
@@ -105,5 +113,49 @@ defmodule StackLab.CitadelSpineHarness do
   def exercise_pressure_failover(case_name)
       when case_name in [:transport_interruption, :duplicate_delivery] do
     PressureFailover.run_case(case_name)
+  end
+
+  @spec typed_host_scenario() :: map()
+  def typed_host_scenario do
+    %{
+      name: :typed_host_roundtrip,
+      compose: LabCore.compose_file(:single),
+      runbook: LabCore.runbook(:up_single),
+      repo_roots: repo_roots(),
+      cases: %{
+        command_acceptance: %{kind: :command_acceptance},
+        command_duplicate: %{kind: :command_duplicate},
+        command_scope_rejection: %{kind: :command_scope_rejection}
+      }
+    }
+  end
+
+  @spec exercise_typed_host(:command_acceptance | :command_duplicate | :command_scope_rejection) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_typed_host(case_name)
+      when case_name in [:command_acceptance, :command_duplicate, :command_scope_rejection] do
+    TypedHost.run_case(case_name)
+  end
+
+  @spec semantic_host_scenario() :: map()
+  def semantic_host_scenario do
+    %{
+      name: :semantic_host_roundtrip,
+      compose: LabCore.compose_file(:single),
+      runbook: LabCore.runbook(:up_single),
+      repo_roots: repo_roots(),
+      cases: %{
+        turn_acceptance: %{kind: :turn_acceptance},
+        turn_replay: %{kind: :turn_replay},
+        turn_scope_rejection: %{kind: :turn_scope_rejection}
+      }
+    }
+  end
+
+  @spec exercise_semantic_host(:turn_acceptance | :turn_replay | :turn_scope_rejection) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_semantic_host(case_name)
+      when case_name in [:turn_acceptance, :turn_replay, :turn_scope_rejection] do
+    SemanticHost.run_case(case_name)
   end
 end

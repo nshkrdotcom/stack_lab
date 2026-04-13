@@ -1,6 +1,7 @@
 %{
   "abacus": {:hex, :abacus, "2.2.0", "2a7a1e4d35a72d481153f5bba7790a2d30a5cedf463e5be344d6769c9b5d0cba", [:mix], [], "hexpm", "dc89ccbd711986fd10a8e2f11f532b332f8a975c6c5967e4ec6b47b4ba92ff60"},
   "abnf_parsec": {:hex, :abnf_parsec, "2.1.0", "c4e88d5d089f1698297c0daced12be1fb404e6e577ecf261313ebba5477941f9", [:mix], [{:nimble_parsec, "~> 1.4", [hex: :nimble_parsec, repo: "hexpm", optional: false]}], "hexpm", "e0ed6290c7cc7e5020c006d1003520390c9bdd20f7c3f776bd49bfe3c5cd362a"},
+  "aitrace": {:hex, :aitrace, "0.1.0", "adb22dca0e46f339fb1ccd63b30d380e499efedba7dc19b0a30948df59a1a5d1", [:mix], [{:jason, "~> 1.4", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm", "b55247d262844ca3f0384ff4e137baf41f6db78f7112ff6c8c2d6bfa7a4ff967"},
   "boundary": {:hex, :boundary, "0.10.4", "5fec5d2736c12f9bfe1720c3a2bd8c48c3547c24d6002ebf8e087570afd5bd2f", [:mix], [], "hexpm", "8baf6f23987afdb1483033ed0bde75c9c703613c22ed58d5f23bf948f203247c"},
   "bunt": {:hex, :bunt, "1.0.0", "081c2c665f086849e6d57900292b3a161727ab40431219529f13c4ddcf3e7a44", [:mix], [], "hexpm", "dc5f86aa08a5f6fa6b8096f0735c4e76d54ae5c9fa2c143e5a1fc7c1cd9bb6b5"},
   "certifi": {:hex, :certifi, "2.15.0", "0e6e882fcdaaa0a5a9f2b3db55b1394dba07e8d6d9bcad08318fb604c6839712", [:rebar3], [], "hexpm", "b147ed22ce71d72eafdad94f055165c1c182f61a2ff49df28bcc71d1d5b94a60"},

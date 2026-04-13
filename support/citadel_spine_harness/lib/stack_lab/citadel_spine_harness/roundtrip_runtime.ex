@@ -6,6 +6,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
   alias Citadel.BackoffPolicy
   alias Citadel.BoundaryIntent
   alias Citadel.ExecutionGovernanceCompiler
+  alias Citadel.HostIngress.InvocationPayload
   alias Citadel.InvocationBridge
   alias Citadel.InvocationRequest.V2, as: InvocationRequestV2
   alias Citadel.JidoIntegrationBridge.InvocationDownstream
@@ -30,8 +31,8 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
 
   @logical_workspace_ref "workspace://stack_lab/root"
 
-  @spec start_runtime_env(atom()) :: map()
-  def start_runtime_env(case_name) do
+  @spec start_runtime_env(atom(), keyword()) :: map()
+  def start_runtime_env(case_name, opts \\ []) do
     kernel_snapshot_name = unique_name(:kernel_snapshot)
     session_directory_name = unique_name(:session_directory)
     service_catalog_name = unique_name(:service_catalog)
@@ -101,16 +102,21 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
 
     session_id = "stack-lab-session-#{case_name}"
 
-    request =
-      invocation_request(
-        session_id,
-        "request-single-node",
-        "invoke-single-node",
-        "step-single-node"
-      )
-
     Code.ensure_loaded!(InvocationDownstream)
     bridge = InvocationBridge.new!(downstream: InvocationDownstream)
+
+    invocation_handler =
+      Keyword.get_lazy(opts, :invocation_handler, fn ->
+        request =
+          invocation_request(
+            session_id,
+            "request-single-node",
+            "invoke-single-node",
+            "step-single-node"
+          )
+
+        invocation_handler(request, bridge)
+      end)
 
     {:ok, session_server_pid} =
       SessionServer.start_link(
@@ -124,7 +130,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
         invocation_supervisor: invocation_supervisor_name,
         projection_supervisor: projection_supervisor_name,
         local_supervisor: local_supervisor_name,
-        invocation_handler: invocation_handler(request, bridge)
+        invocation_handler: invocation_handler
       )
 
     Process.unlink(session_server_pid)
@@ -277,6 +283,25 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
 
   defp invocation_handler(request, bridge) do
     fn _payload, attempt_entry ->
+      case InvocationBridge.submit_invocation(bridge, request, attempt_entry) do
+        {:accepted, acceptance, _bridge} -> {:accepted, acceptance}
+        {:rejected, rejection, _bridge} -> {:rejected, rejection}
+        {:error, reason, _bridge} -> {:error, reason}
+      end
+    end
+  end
+
+  @spec host_ingress_invocation_handler(Citadel.InvocationBridge.t(), pid() | nil) ::
+          (map(), ActionOutboxEntry.t() ->
+             {:accepted, term()} | {:rejected, term()} | {:error, term()})
+  def host_ingress_invocation_handler(bridge, listener \\ nil) do
+    fn payload, attempt_entry ->
+      request = InvocationPayload.decode!(payload)
+
+      if is_pid(listener) do
+        send(listener, {:invocation_request, request, attempt_entry})
+      end
+
       case InvocationBridge.submit_invocation(bridge, request, attempt_entry) do
         {:accepted, acceptance, _bridge} -> {:accepted, acceptance}
         {:rejected, rejection, _bridge} -> {:rejected, rejection}

@@ -5,6 +5,8 @@ defmodule StackLab.Build.WorkspaceContract do
     "support/lab_core",
     "support/citadel_spine_harness",
     "examples/single_node_roundtrip",
+    "examples/semantic_host_roundtrip",
+    "examples/typed_host_roundtrip",
     "examples/multi_node_roundtrip",
     "examples/restart_authority_drill",
     "examples/governed_run_roundtrip",
