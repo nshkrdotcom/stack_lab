@@ -1,0 +1,18 @@
+# stack_lab_lab_core v0.1.0 - Table of Contents
+
+Support package projected from the StackLab workspace
+
+## Pages
+
+- [README](readme.md)
+- [Development](development.md)
+- [Layout](layout.md)
+- [Overview](overview.md)
+- [Faults](faults.md)
+- [Up Multi](up_multi.md)
+- [Up Single](up_single.md)
+
+## Modules
+
+- [StackLab.LabCore](StackLab.LabCore.md): Shared helpers for StackLab support packages and examples.
+

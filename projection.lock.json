@@ -1,0 +1,248 @@
+{
+  "projection": {
+    "build_path": "/tmp/weld-rollout-20260413/stack_lab/dist/hex/stack_lab_lab_core",
+    "copied_files": [
+      ".formatter.exs",
+      "/tmp/weld-rollout-20260413/stack_lab/dist/hex/stack_lab_lab_core/components/support/lab_core/lib/stack_lab/lab_core.ex",
+      "CHANGELOG.md",
+      "LICENSE",
+      "README.md",
+      "config/config.exs",
+      "config/dev.exs",
+      "config/prod.exs",
+      "config/test.exs",
+      "docs/development.md",
+      "docs/layout.md",
+      "docs/overview.md",
+      "docs/runbooks/faults.md",
+      "docs/runbooks/up_multi.md",
+      "docs/runbooks/up_single.md",
+      "test/support_projection_test.exs",
+      "test/test_helper.exs"
+    ],
+    "package_files": [
+      ".formatter.exs",
+      "CHANGELOG.md",
+      "LICENSE",
+      "README.md",
+      "components/support/lab_core",
+      "config",
+      "docs/development.md",
+      "docs/layout.md",
+      "docs/overview.md",
+      "docs/runbooks/faults.md",
+      "docs/runbooks/up_multi.md",
+      "docs/runbooks/up_single.md",
+      "mix.exs",
+      "projection.lock.json"
+    ],
+    "git_revision": "cbc6e5d919859a9520c7db67971f1aca25609f68",
+    "tree_digest": "42fdcfeaad58b79b4f44f8952a33824fdd4c214461b273c21e1d95e7a28f4627"
+  },
+  "manifest": {
+    "path": "/tmp/weld-rollout-20260413/stack_lab/build_support/weld.exs",
+    "digest": "f9cb12663bcab4b49884f5d73257b8f9c0163546291103d9f2013a190418a4ff"
+  },
+  "artifact": {
+    "id": "stack_lab_support",
+    "package": {
+      "name": "stack_lab_lab_core",
+      "version": "0.1.0",
+      "otp_app": "stack_lab_lab_core"
+    }
+  },
+  "workspace": {
+    "root": "/tmp/weld-rollout-20260413/stack_lab",
+    "discovery": {
+      "source": "manifest",
+      "project_ids": [
+        ".",
+        "examples/governed_run_roundtrip",
+        "examples/multi_node_roundtrip",
+        "examples/pressure_failover_drill",
+        "examples/restart_authority_drill",
+        "examples/semantic_host_roundtrip",
+        "examples/session_lineage_drill",
+        "examples/single_node_roundtrip",
+        "examples/typed_host_roundtrip",
+        "support/citadel_spine_harness",
+        "support/lab_core"
+      ],
+      "adapter": null,
+      "globs": [
+        ".",
+        "examples/*",
+        "support/*"
+      ],
+      "root_project?": true
+    },
+    "project_count": 11
+  },
+  "graph": {
+    "edges": [
+      {
+        "kind": "runtime",
+        "app": "stack_lab_lab_core",
+        "to": "support/lab_core",
+        "requirement": null,
+        "from": "examples/governed_run_roundtrip"
+      },
+      {
+        "kind": "compile",
+        "app": "stack_lab_citadel_spine_harness",
+        "to": "support/citadel_spine_harness",
+        "requirement": null,
+        "from": "examples/multi_node_roundtrip"
+      },
+      {
+        "kind": "runtime",
+        "app": "stack_lab_lab_core",
+        "to": "support/lab_core",
+        "requirement": null,
+        "from": "examples/multi_node_roundtrip"
+      },
+      {
+        "kind": "runtime",
+        "app": "stack_lab_citadel_spine_harness",
+        "to": "support/citadel_spine_harness",
+        "requirement": null,
+        "from": "examples/pressure_failover_drill"
+      },
+      {
+        "kind": "runtime",
+        "app": "stack_lab_lab_core",
+        "to": "support/lab_core",
+        "requirement": null,
+        "from": "examples/pressure_failover_drill"
+      },
+      {
+        "kind": "runtime",
+        "app": "stack_lab_citadel_spine_harness",
+        "to": "support/citadel_spine_harness",
+        "requirement": null,
+        "from": "examples/restart_authority_drill"
+      },
+      {
+        "kind": "runtime",
+        "app": "stack_lab_lab_core",
+        "to": "support/lab_core",
+        "requirement": null,
+        "from": "examples/restart_authority_drill"
+      },
+      {
+        "kind": "compile",
+        "app": "stack_lab_citadel_spine_harness",
+        "to": "support/citadel_spine_harness",
+        "requirement": null,
+        "from": "examples/semantic_host_roundtrip"
+      },
+      {
+        "kind": "runtime",
+        "app": "stack_lab_lab_core",
+        "to": "support/lab_core",
+        "requirement": null,
+        "from": "examples/semantic_host_roundtrip"
+      },
+      {
+        "kind": "runtime",
+        "app": "stack_lab_lab_core",
+        "to": "support/lab_core",
+        "requirement": null,
+        "from": "examples/session_lineage_drill"
+      },
+      {
+        "kind": "compile",
+        "app": "stack_lab_citadel_spine_harness",
+        "to": "support/citadel_spine_harness",
+        "requirement": null,
+        "from": "examples/single_node_roundtrip"
+      },
+      {
+        "kind": "runtime",
+        "app": "stack_lab_lab_core",
+        "to": "support/lab_core",
+        "requirement": null,
+        "from": "examples/single_node_roundtrip"
+      },
+      {
+        "kind": "compile",
+        "app": "stack_lab_citadel_spine_harness",
+        "to": "support/citadel_spine_harness",
+        "requirement": null,
+        "from": "examples/typed_host_roundtrip"
+      },
+      {
+        "kind": "runtime",
+        "app": "stack_lab_lab_core",
+        "to": "support/lab_core",
+        "requirement": null,
+        "from": "examples/typed_host_roundtrip"
+      },
+      {
+        "kind": "runtime",
+        "app": "stack_lab_lab_core",
+        "to": "support/lab_core",
+        "requirement": null,
+        "from": "support/citadel_spine_harness"
+      }
+    ],
+    "digest": "fd5426b99784228b99796946d9e9e1f584f40ab53d9cd8c65806d51f0ac260fa",
+    "excluded_projects": [
+      ".",
+      "examples/governed_run_roundtrip",
+      "examples/multi_node_roundtrip",
+      "examples/pressure_failover_drill",
+      "examples/restart_authority_drill",
+      "examples/semantic_host_roundtrip",
+      "examples/session_lineage_drill",
+      "examples/single_node_roundtrip",
+      "examples/typed_host_roundtrip",
+      "support/citadel_spine_harness"
+    ],
+    "selected_projects": [
+      "support/lab_core"
+    ],
+    "violations": []
+  },
+  "verification": [
+    {
+      "env": "dev",
+      "status": "ok",
+      "task": "deps.get"
+    },
+    {
+      "env": "dev",
+      "status": "ok",
+      "task": "deps.compile"
+    },
+    {
+      "env": "dev",
+      "status": "ok",
+      "task": "compile --warnings-as-errors --no-compile-deps"
+    },
+    {
+      "env": "test",
+      "status": "ok",
+      "task": "test",
+      "failure_count": 0,
+      "test_count": 1
+    },
+    {
+      "env": "dev",
+      "status": "ok",
+      "task": "docs --warnings-as-errors"
+    },
+    {
+      "env": "dev",
+      "reason": "artifact_opted_out",
+      "status": "skipped",
+      "task": "hex.build"
+    },
+    {
+      "env": "dev",
+      "reason": "hex_build_disabled",
+      "status": "skipped",
+      "task": "hex.publish --dry-run --yes"
+    }
+  ]
+}

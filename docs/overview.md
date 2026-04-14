@@ -1,0 +1,13 @@
+# Overview
+
+`stack_lab` is the proving harness for the current stack.
+
+It exists to make these seams executable:
+
+- single-node boot
+- multi-node boot
+- restart-authority drills
+- governed-run and operator-surface examples
+- session-lineage and failover drills
+
+This repo is a harness workspace, not a shipping product surface.
