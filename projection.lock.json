@@ -1,9 +1,9 @@
 {
   "projection": {
-    "build_path": "/tmp/weld-rollout-20260413/stack_lab/dist/hex/stack_lab_lab_core",
+    "build_path": "/home/home/p/g/n/stack_lab/dist/hex/stack_lab_lab_core",
     "copied_files": [
       ".formatter.exs",
-      "/tmp/weld-rollout-20260413/stack_lab/dist/hex/stack_lab_lab_core/components/support/lab_core/lib/stack_lab/lab_core.ex",
+      "/home/home/p/g/n/stack_lab/dist/hex/stack_lab_lab_core/components/support/lab_core/lib/stack_lab/lab_core.ex",
       "CHANGELOG.md",
       "LICENSE",
       "README.md",
@@ -36,12 +36,12 @@
       "mix.exs",
       "projection.lock.json"
     ],
-    "git_revision": "cbc6e5d919859a9520c7db67971f1aca25609f68",
-    "tree_digest": "42fdcfeaad58b79b4f44f8952a33824fdd4c214461b273c21e1d95e7a28f4627"
+    "git_revision": "5b8c645637aa7fd926cca43b8aefb1661fa68f39",
+    "tree_digest": "a46deae4440d7e4f767f6f41bcdb94a2f6b43a4489e6e4ec0bb291888932b5d3"
   },
   "manifest": {
-    "path": "/tmp/weld-rollout-20260413/stack_lab/build_support/weld.exs",
-    "digest": "f9cb12663bcab4b49884f5d73257b8f9c0163546291103d9f2013a190418a4ff"
+    "path": "/home/home/p/g/n/stack_lab/build_support/weld.exs",
+    "digest": "28295791f67ce8a30c83a47e481cede5d3bba279b6f6190ef293933c2b0595ed"
   },
   "artifact": {
     "id": "stack_lab_support",
@@ -52,7 +52,7 @@
     }
   },
   "workspace": {
-    "root": "/tmp/weld-rollout-20260413/stack_lab",
+    "root": "/home/home/p/g/n/stack_lab",
     "discovery": {
       "source": "manifest",
       "project_ids": [
