@@ -22,3 +22,15 @@ mix monorepo.credo --strict
 mix monorepo.docs
 mix weld.verify
 ```
+
+Prepared bundle and projection tracking flow:
+
+```bash
+mix release.prepare
+mix release.track
+mix release.archive
+```
+
+`mix release.track` updates the orphan-backed `projection/stack_lab_lab_core`
+branch so downstream repos can pin a real generated-source ref before any
+formal release boundary exists.
