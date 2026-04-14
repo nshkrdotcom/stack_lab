@@ -2,7 +2,7 @@
 
 Canonical assembled proof for the semantic northbound path:
 
-`AppKit -> OuterBrain -> Jido.Domain -> Citadel -> Jido.Integration`
+`AppKit -> OuterBrain -> Citadel.DomainSurface -> Citadel -> Jido.Integration`
 
 This package stays harness-only. It exists to prove the real path above the
 owner repos without moving truth into `stack_lab`.

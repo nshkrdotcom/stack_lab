@@ -3,11 +3,11 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
 
   alias AppKit.ChatSurface
   alias AppKit.ScopeObjects
+  alias Citadel.DomainSurface.Adapters.CitadelAdapter
   alias Citadel.InvocationBridge
   alias Citadel.JidoIntegrationBridge
   alias Citadel.JidoIntegrationBridge.InvocationDownstream
   alias Citadel.Runtime.SessionDirectory
-  alias Jido.Domain.Adapters.CitadelAdapter
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
   alias Jido.Integration.V2.StoreLocal
   alias Jido.Integration.V2.StoreLocal.Server, as: StoreLocalServer
@@ -354,8 +354,8 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
       scope,
       "compile the workspace",
       idempotency_key: idempotency_key,
-      domain_module: Jido.Domain.Examples.ProvingGround,
-      route_sources: [Jido.Domain.Examples.ProvingGround.Routes.CompileWorkspace],
+      domain_module: Citadel.DomainSurface.Examples.ProvingGround,
+      route_sources: [Citadel.DomainSurface.Examples.ProvingGround.Routes.CompileWorkspace],
       kernel_runtime: {CitadelAdapter, runtime_opts},
       workspace_root: "/workspace/main",
       trace_id: Keyword.get(opts, :trace_id, "trace/#{idempotency_key}")

@@ -23,8 +23,14 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
   defp deps do
     [
       {:stack_lab_lab_core, path: "../lab_core"},
-      {:citadel, path: "../../../citadel/dist/hex/citadel"},
-      {:jido_domain, path: "../../../jido_domain"},
+      {:citadel_authority_contract, path: "../../../citadel/core/authority_contract"},
+      {:citadel_core, path: "../../../citadel/core/citadel_core"},
+      {:citadel_runtime, path: "../../../citadel/core/citadel_runtime"},
+      {:citadel_host_ingress_bridge, path: "../../../citadel/bridges/host_ingress_bridge"},
+      {:citadel_invocation_bridge, path: "../../../citadel/bridges/invocation_bridge"},
+      {:citadel_jido_integration_bridge,
+       path: "../../../citadel/bridges/jido_integration_bridge"},
+      {:citadel_domain_surface, path: "../../../citadel/surfaces/citadel_domain_surface"},
       {:app_kit_chat_surface, path: "../../../app_kit/core/chat_surface"},
       {:app_kit_domain_surface, path: "../../../app_kit/core/domain_surface"},
       {:app_kit_scope_objects, path: "../../../app_kit/core/scope_objects"},

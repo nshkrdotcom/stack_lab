@@ -10,7 +10,7 @@ defmodule StackLab.TypedHostRoundtrip.MixProject do
       deps: deps(),
       docs: docs(),
       name: "StackLab Typed Host Roundtrip",
-      description: "Typed host proving example for AppKit and Jido.Domain"
+      description: "Typed host proving example for AppKit and Citadel.DomainSurface"
     ]
   end
 

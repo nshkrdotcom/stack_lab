@@ -2,7 +2,7 @@
 
 Real typed-host assembled proof for:
 
-`AppKit -> Jido.Domain -> Citadel -> Jido.Integration`
+`AppKit -> Citadel.DomainSurface -> Citadel -> Jido.Integration`
 
 Covered cases:
 
@@ -11,5 +11,5 @@ Covered cases:
 - lower-scope rejection read back through Citadel after typed submission
 
 This example boots a real local Citadel runtime, routes a real `AppKit`
-command through `Jido.Domain`, and proves that the resulting Citadel outbox
+command through `Citadel.DomainSurface`, and proves that the resulting Citadel outbox
 entry reaches durable Spine acceptance or durable rejection handling.

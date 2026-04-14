@@ -31,7 +31,7 @@ submission seam:
 Those examples exercise real `citadel` and real `jido_integration` code
 through the harness-only `support/citadel_spine_harness` package. The typed
 and semantic host proofs also assemble real `app_kit`, `outer_brain`,
-and `jido_domain` above the same lower seam.
+and `citadel_domain_surface` above the same lower seam.
 
 ## Scope
 

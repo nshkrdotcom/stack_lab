@@ -3,11 +3,11 @@ defmodule StackLab.CitadelSpineHarness.TypedHost do
 
   alias AppKit.DomainSurface
   alias AppKit.ScopeObjects
+  alias Citadel.DomainSurface.Adapters.CitadelAdapter
   alias Citadel.InvocationBridge
   alias Citadel.JidoIntegrationBridge
   alias Citadel.JidoIntegrationBridge.InvocationDownstream
   alias Citadel.Runtime.SessionDirectory
-  alias Jido.Domain.Adapters.CitadelAdapter
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
   alias Jido.Integration.V2.StoreLocal
   alias Jido.Integration.V2.StoreLocal.Server, as: StoreLocalServer
@@ -348,7 +348,7 @@ defmodule StackLab.CitadelSpineHarness.TypedHost do
       scope,
       :compile_workspace,
       %{workspace_id: "workspace/main"},
-      domain_module: Jido.Domain.Examples.ProvingGround,
+      domain_module: Citadel.DomainSurface.Examples.ProvingGround,
       kernel_runtime: {CitadelAdapter, runtime_opts},
       idempotency_key: idempotency_key,
       context:
