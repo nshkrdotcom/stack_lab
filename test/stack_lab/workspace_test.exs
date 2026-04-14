@@ -20,15 +20,26 @@ defmodule StackLab.WorkspaceTest do
     assert "examples/pressure_failover_drill" in package_paths
   end
 
-  test "uses the released Weld 0.7.0 line directly" do
-    assert {:weld, "~> 0.7.0", runtime: false} in MixProject.project()[:deps]
+  test "uses the released Weld 0.7.1 line directly" do
+    assert {:weld, "~> 0.7.1", runtime: false} in MixProject.project()[:deps]
   end
 
-  test "exposes the release aliases for projection tracking" do
+  test "uses Weld task autodiscovery instead of local release aliases" do
     aliases = MixProject.project()[:aliases]
 
-    assert Keyword.fetch!(aliases, :"release.prepare") == ["weld.release.prepare"]
-    assert Keyword.fetch!(aliases, :"release.track") == ["weld.release.track"]
-    assert Keyword.fetch!(aliases, :"release.archive") == ["weld.release.archive"]
+    for alias_name <- [
+          :"weld.inspect",
+          :"weld.graph",
+          :"weld.project",
+          :"weld.verify",
+          :"weld.release.prepare",
+          :"weld.release.track",
+          :"weld.release.archive",
+          :"release.prepare",
+          :"release.track",
+          :"release.archive"
+        ] do
+      refute Keyword.has_key?(aliases, alias_name)
+    end
   end
 end

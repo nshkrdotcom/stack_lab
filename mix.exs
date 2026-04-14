@@ -46,7 +46,7 @@ defmodule StackLab.Workspace.MixProject do
   defp deps do
     [
       {:blitz, "~> 0.2.0", runtime: false},
-      {:weld, "~> 0.7.0", runtime: false},
+      {:weld, "~> 0.7.1", runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
@@ -64,22 +64,6 @@ defmodule StackLab.Workspace.MixProject do
     ]
 
     [
-      "weld.inspect": ["weld.inspect build_support/weld.exs --artifact stack_lab_support"],
-      "weld.graph": ["weld.graph build_support/weld.exs --artifact stack_lab_support"],
-      "weld.project": ["weld.project build_support/weld.exs --artifact stack_lab_support"],
-      "weld.verify": ["weld.verify build_support/weld.exs --artifact stack_lab_support"],
-      "weld.release.prepare": [
-        "weld.release.prepare build_support/weld.exs --artifact stack_lab_support"
-      ],
-      "weld.release.track": [
-        "weld.release.track build_support/weld.exs --artifact stack_lab_support"
-      ],
-      "weld.release.archive": [
-        "weld.release.archive build_support/weld.exs --artifact stack_lab_support"
-      ],
-      "release.prepare": ["weld.release.prepare"],
-      "release.track": ["weld.release.track"],
-      "release.archive": ["weld.release.archive"],
       ci: [
         "deps.get",
         "monorepo.deps.get",
