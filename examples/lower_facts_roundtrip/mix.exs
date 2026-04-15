@@ -1,16 +1,16 @@
-defmodule StackLab.SemanticHostRoundtrip.MixProject do
+defmodule StackLab.LowerFactsRoundtrip.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :stack_lab_semantic_host_roundtrip,
+      app: :stack_lab_lower_facts_roundtrip,
       version: "0.1.0",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: docs(),
-      name: "StackLab Semantic Host Roundtrip",
-      description: "Semantic host proving example above the lower seam"
+      name: "StackLab Lower Facts Roundtrip",
+      description: "Substrate-facing lower-facts proving example for StackLab"
     ]
   end
 
@@ -23,8 +23,7 @@ defmodule StackLab.SemanticHostRoundtrip.MixProject do
   defp deps do
     [
       {:stack_lab_lab_core, path: "../../support/lab_core"},
-      {:stack_lab_citadel_spine_harness,
-       path: "../../support/citadel_spine_harness", runtime: false},
+      {:stack_lab_citadel_spine_harness, path: "../../support/citadel_spine_harness"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
     ]

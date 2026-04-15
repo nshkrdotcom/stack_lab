@@ -13,6 +13,9 @@ defmodule StackLab.WorkspaceTest do
     assert "support/lab_core" in package_paths
     assert "support/citadel_spine_harness" in package_paths
     assert "examples/single_node_roundtrip" in package_paths
+    assert "examples/lower_facts_roundtrip" in package_paths
+    assert "examples/semantic_host_roundtrip" in package_paths
+    assert "examples/typed_host_roundtrip" in package_paths
     assert "examples/multi_node_roundtrip" in package_paths
     assert "examples/restart_authority_drill" in package_paths
     assert "examples/governed_run_roundtrip" in package_paths

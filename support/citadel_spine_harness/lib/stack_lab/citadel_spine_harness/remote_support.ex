@@ -49,17 +49,33 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
     :ok
   end
 
-  @spec ensure_distribution_started!() :: :ok
-  def ensure_distribution_started! do
+  @spec ensure_distribution_started() :: :ok | {:error, term()}
+  def ensure_distribution_started do
     if Node.alive?() do
       :ok
     else
       case Node.start(unique_name(:stack_lab_local), :shortnames) do
         {:ok, _pid} -> :ok
         {:error, {:already_started, _pid}} -> :ok
-        {:error, reason} -> raise "unable to start local distributed node: #{inspect(reason)}"
+        {:error, reason} -> {:error, reason}
       end
     end
+  end
+
+  @spec ensure_distribution_started!() :: :ok
+  def ensure_distribution_started! do
+    case ensure_distribution_started() do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        raise distribution_start_error_message(reason)
+    end
+  end
+
+  @spec distribution_start_error_message(term()) :: String.t()
+  def distribution_start_error_message(reason) do
+    "unable to start local distributed node: #{inspect(reason)}"
   end
 
   @spec remote_call!(node(), module(), atom(), [term()]) :: term()

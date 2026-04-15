@@ -5,6 +5,7 @@ defmodule StackLab.CitadelSpineHarness do
   """
 
   alias StackLab.CitadelSpineHarness.{
+    LowerFacts,
     MultiNode,
     PressureFailover,
     RestartAuthority,
@@ -52,6 +53,24 @@ defmodule StackLab.CitadelSpineHarness do
   def exercise_same_node(case_name)
       when case_name in [:acceptance, :duplicate, :scope_rejection] do
     SameNode.run_case(case_name)
+  end
+
+  @spec lower_facts_scenario() :: map()
+  def lower_facts_scenario do
+    %{
+      name: :lower_facts_roundtrip,
+      compose: LabCore.compose_file(:single),
+      runbook: LabCore.runbook(:up_single),
+      repo_roots: repo_roots(),
+      cases: %{
+        generic_readback: %{kind: :generic_readback}
+      }
+    }
+  end
+
+  @spec exercise_lower_facts(:generic_readback) :: {:ok, map()} | {:error, term()}
+  def exercise_lower_facts(:generic_readback) do
+    LowerFacts.run_case(:generic_readback)
   end
 
   @spec multi_node_scenario() :: map()

@@ -3,7 +3,7 @@ defmodule StackLab.Examples.SemanticHostRoundtripTest do
 
   alias StackLab.Examples.SemanticHostRoundtrip
 
-  test "semantic-host scenario exposes the real AppKit and OuterBrain proof surface" do
+  test "semantic-host scenario exposes the semantic northbound proof surface" do
     scenario = SemanticHostRoundtrip.scenario()
 
     assert scenario.name == :semantic_host_roundtrip

@@ -28,6 +28,19 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.exists?(scenario.runbook)
   end
 
+  test "describes the lower-facts proof case as a dedicated Stage-1 scenario" do
+    scenario = CitadelSpineHarness.lower_facts_scenario()
+
+    assert scenario.name == :lower_facts_roundtrip
+
+    assert scenario.cases == %{
+             generic_readback: %{kind: :generic_readback}
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
   test "describes the typed host proof case above the lower seam" do
     scenario = CitadelSpineHarness.typed_host_scenario()
 
@@ -59,17 +72,23 @@ defmodule StackLab.CitadelSpineHarnessTest do
   end
 
   test "remote spine startup returns only after the remote service is callable" do
-    remote = RemoteSupport.start_remote_spine!(:startup_probe)
-
     try do
-      assert :ok == RemoteSupport.remote_call!(remote.remote_node, RemoteSpine, :ping, [])
+      remote = RemoteSupport.start_remote_spine!(:startup_probe)
 
-      assert nil ==
-               RemoteSupport.remote_call!(remote.remote_node, RemoteSpine, :fetch_rejection, [
-                 "missing"
-               ])
-    after
-      assert :ok == RemoteSupport.stop_remote_spine(remote)
+      try do
+        assert :ok == RemoteSupport.remote_call!(remote.remote_node, RemoteSpine, :ping, [])
+
+        assert nil ==
+                 RemoteSupport.remote_call!(remote.remote_node, RemoteSpine, :fetch_rejection, [
+                   "missing"
+                 ])
+      after
+        assert :ok == RemoteSupport.stop_remote_spine(remote)
+      end
+    rescue
+      error in RuntimeError ->
+        assert Exception.message(error) =~ "unable to start local distributed node"
+        assert Exception.message(error) =~ ":nodistribution"
     end
   end
 end

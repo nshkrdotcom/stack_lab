@@ -1,24 +1,17 @@
+unless Code.ensure_loaded?(StackLab.Build.WorkspaceContract) do
+  Code.require_file("../../build_support/workspace_contract.exs", __DIR__)
+end
+
 defmodule StackLab.Workspace do
   @moduledoc """
   Root helpers for the StackLab workspace.
   """
 
-  @package_paths [
-    "support/lab_core",
-    "support/citadel_spine_harness",
-    "examples/single_node_roundtrip",
-    "examples/multi_node_roundtrip",
-    "examples/restart_authority_drill",
-    "examples/governed_run_roundtrip",
-    "examples/session_lineage_drill",
-    "examples/pressure_failover_drill"
-  ]
-
-  @active_project_globs [".", "support/*", "examples/*"]
+  alias StackLab.Build.WorkspaceContract
 
   @spec active_project_globs() :: [String.t()]
-  def active_project_globs, do: @active_project_globs
+  def active_project_globs, do: WorkspaceContract.active_project_globs()
 
   @spec package_paths() :: [String.t()]
-  def package_paths, do: @package_paths
+  def package_paths, do: WorkspaceContract.package_paths()
 end

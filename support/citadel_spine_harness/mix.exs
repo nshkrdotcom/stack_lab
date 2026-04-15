@@ -36,6 +36,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:app_kit_scope_objects, path: "../../../app_kit/core/scope_objects"},
       {:jido_integration_v2_contracts,
        path: "../../../jido_integration/core/contracts", override: true},
+      {:jido_integration_v2, path: "../../../jido_integration/core/platform"},
       {:jido_integration_v2_brain_ingress, path: "../../../jido_integration/core/brain_ingress"},
       {:jido_integration_v2_store_local, path: "../../../jido_integration/core/store_local"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

@@ -1,7 +1,16 @@
 defmodule StackLab.Examples.PressureFailoverDrillTest do
   use ExUnit.Case, async: false
 
+  alias StackLab.CitadelSpineHarness.RemoteSupport
   alias StackLab.Examples.PressureFailoverDrill
+
+  @distribution_skip (case RemoteSupport.ensure_distribution_started() do
+                        :ok ->
+                          false
+
+                        {:error, reason} ->
+                          RemoteSupport.distribution_start_error_message(reason)
+                      end)
 
   test "pressure and failover drill points at the multi-node harness and fault runbook" do
     scenario = PressureFailoverDrill.scenario()
@@ -11,6 +20,7 @@ defmodule StackLab.Examples.PressureFailoverDrillTest do
     assert File.exists?(scenario.runbook)
   end
 
+  @tag skip: @distribution_skip
   test "transport interruption leaves work pending until replay reaches a healthy Spine node" do
     assert {:ok, result} = PressureFailoverDrill.exercise(:transport_interruption)
 
@@ -22,6 +32,7 @@ defmodule StackLab.Examples.PressureFailoverDrillTest do
     assert result.transport.submission_key == result.spine.submission_key
   end
 
+  @tag skip: @distribution_skip
   test "duplicate delivery produces a duplicate Spine acceptance without breaking Citadel truth" do
     assert {:ok, result} = PressureFailoverDrill.exercise(:duplicate_delivery)
 

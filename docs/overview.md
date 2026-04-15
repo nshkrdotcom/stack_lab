@@ -5,6 +5,7 @@
 It exists to make these seams executable:
 
 - single-node boot
+- substrate-facing lower-facts readback
 - multi-node boot
 - restart-authority drills
 - governed-run and operator-surface examples

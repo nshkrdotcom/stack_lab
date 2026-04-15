@@ -1,7 +1,16 @@
 defmodule StackLab.Examples.RestartAuthorityDrillTest do
   use ExUnit.Case, async: false
 
+  alias StackLab.CitadelSpineHarness.RemoteSupport
   alias StackLab.Examples.RestartAuthorityDrill
+
+  @distribution_skip (case RemoteSupport.ensure_distribution_started() do
+                        :ok ->
+                          false
+
+                        {:error, reason} ->
+                          RemoteSupport.distribution_start_error_message(reason)
+                      end)
 
   test "restart-authority drill points at the fault runbook" do
     scenario = RestartAuthorityDrill.scenario()
@@ -11,6 +20,7 @@ defmodule StackLab.Examples.RestartAuthorityDrillTest do
     assert File.exists?(scenario.runbook)
   end
 
+  @tag skip: @distribution_skip
   test "delayed acceptance still converges to durable submission truth" do
     assert {:ok, result} = RestartAuthorityDrill.exercise(:delayed_acceptance)
 
@@ -21,6 +31,7 @@ defmodule StackLab.Examples.RestartAuthorityDrillTest do
     assert result.transport.submission_key == result.spine.submission_key
   end
 
+  @tag skip: @distribution_skip
   test "node restart recovery replays pending work into a replacement Spine node" do
     assert {:ok, result} = RestartAuthorityDrill.exercise(:node_restart_recovery)
 

@@ -1,7 +1,16 @@
 defmodule StackLab.Examples.MultiNodeRoundtripTest do
   use ExUnit.Case, async: false
 
+  alias StackLab.CitadelSpineHarness.RemoteSupport
   alias StackLab.Examples.MultiNodeRoundtrip
+
+  @distribution_skip (case RemoteSupport.ensure_distribution_started() do
+                        :ok ->
+                          false
+
+                        {:error, reason} ->
+                          RemoteSupport.distribution_start_error_message(reason)
+                      end)
 
   test "multi-node scenario points at the multi-node harness files" do
     scenario = MultiNodeRoundtrip.scenario()
@@ -11,6 +20,7 @@ defmodule StackLab.Examples.MultiNodeRoundtripTest do
     assert File.exists?(scenario.runbook)
   end
 
+  @tag skip: @distribution_skip
   test "remote acceptance case drives Citadel into durable Spine acceptance across nodes" do
     assert {:ok, result} = MultiNodeRoundtrip.exercise(:acceptance)
 
@@ -25,6 +35,7 @@ defmodule StackLab.Examples.MultiNodeRoundtripTest do
     assert result.remote.remote_node != Node.self()
   end
 
+  @tag skip: @distribution_skip
   test "remote scope rejection returns a typed Spine rejection and supersedes the Citadel entry" do
     assert {:ok, result} = MultiNodeRoundtrip.exercise(:scope_rejection)
 
