@@ -5,6 +5,7 @@ defmodule StackLab.Build.WeldContract do
 
   @proof_projects [
     "examples/single_node_roundtrip",
+    "examples/outer_brain_restart_durability",
     "examples/multi_node_roundtrip",
     "examples/restart_authority_drill",
     "examples/governed_run_roundtrip",

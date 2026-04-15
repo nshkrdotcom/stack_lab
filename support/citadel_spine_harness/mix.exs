@@ -23,6 +23,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
   defp deps do
     [
       {:stack_lab_lab_core, path: "../lab_core"},
+      {:ecto_sql, "~> 3.13"},
       {:citadel_authority_contract, path: "../../../citadel/core/authority_contract"},
       {:citadel_core, path: "../../../citadel/core/citadel_core"},
       {:citadel_runtime, path: "../../../citadel/core/citadel_runtime"},
@@ -39,6 +40,11 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:jido_integration_v2, path: "../../../jido_integration/core/platform"},
       {:jido_integration_v2_brain_ingress, path: "../../../jido_integration/core/brain_ingress"},
       {:jido_integration_v2_store_local, path: "../../../jido_integration/core/store_local"},
+      {:outer_brain_journal, path: "../../../outer_brain/core/outer_brain_journal"},
+      {:outer_brain_persistence, path: "../../../outer_brain/core/outer_brain_persistence"},
+      {:outer_brain_restart_authority,
+       path: "../../../outer_brain/core/outer_brain_restart_authority"},
+      {:outer_brain_runtime, path: "../../../outer_brain/core/outer_brain_runtime"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
     ]

@@ -11,6 +11,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.dir?(roots.stack_lab)
     assert File.dir?(roots.citadel)
     assert File.dir?(roots.jido_integration)
+    assert File.dir?(roots.outer_brain)
   end
 
   test "describes the same-node proof cases as acceptance, rejection, and duplicate" do
@@ -65,6 +66,20 @@ defmodule StackLab.CitadelSpineHarnessTest do
              turn_acceptance: %{kind: :turn_acceptance},
              turn_replay: %{kind: :turn_replay},
              turn_scope_rejection: %{kind: :turn_scope_rejection}
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
+  test "describes the outer-brain durability proof case as a Stage-1 durable restart scenario" do
+    scenario = CitadelSpineHarness.outer_brain_durability_scenario()
+
+    assert scenario.name == :outer_brain_restart_durability
+
+    assert scenario.cases == %{
+             pending_recovery_after_restart: %{kind: :pending_recovery_after_restart},
+             final_reply_after_restart: %{kind: :final_reply_after_restart}
            }
 
     assert File.exists?(scenario.compose)

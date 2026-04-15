@@ -13,6 +13,7 @@ The workspace is organized as:
 - `examples/`
   - first-class proving projects
   - `single_node_roundtrip`
+  - `outer_brain_restart_durability`
   - `multi_node_roundtrip`
   - `restart_authority_drill`
   - `pressure_failover_drill`

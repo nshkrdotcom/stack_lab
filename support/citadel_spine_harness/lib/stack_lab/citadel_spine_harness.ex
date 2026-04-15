@@ -7,6 +7,7 @@ defmodule StackLab.CitadelSpineHarness do
   alias StackLab.CitadelSpineHarness.{
     LowerFacts,
     MultiNode,
+    OuterBrainDurability,
     PressureFailover,
     RestartAuthority,
     SameNode,
@@ -21,7 +22,8 @@ defmodule StackLab.CitadelSpineHarness do
   @type repo_roots :: %{
           required(:stack_lab) => String.t(),
           required(:citadel) => String.t(),
-          required(:jido_integration) => String.t()
+          required(:jido_integration) => String.t(),
+          required(:outer_brain) => String.t()
         }
 
   @spec repo_roots() :: repo_roots()
@@ -29,7 +31,8 @@ defmodule StackLab.CitadelSpineHarness do
     %{
       stack_lab: @stack_lab_root,
       citadel: Path.expand("../citadel", @stack_lab_root),
-      jido_integration: Path.expand("../jido_integration", @stack_lab_root)
+      jido_integration: Path.expand("../jido_integration", @stack_lab_root),
+      outer_brain: Path.expand("../outer_brain", @stack_lab_root)
     }
   end
 
@@ -71,6 +74,29 @@ defmodule StackLab.CitadelSpineHarness do
   @spec exercise_lower_facts(:generic_readback) :: {:ok, map()} | {:error, term()}
   def exercise_lower_facts(:generic_readback) do
     LowerFacts.run_case(:generic_readback)
+  end
+
+  @spec outer_brain_durability_scenario() :: map()
+  def outer_brain_durability_scenario do
+    %{
+      name: :outer_brain_restart_durability,
+      compose: LabCore.compose_file(:single),
+      runbook: LabCore.runbook(:up_single),
+      repo_roots: repo_roots(),
+      cases: %{
+        pending_recovery_after_restart: %{kind: :pending_recovery_after_restart},
+        final_reply_after_restart: %{kind: :final_reply_after_restart}
+      }
+    }
+  end
+
+  @spec exercise_outer_brain_durability(
+          :pending_recovery_after_restart
+          | :final_reply_after_restart
+        ) :: {:ok, map()} | {:error, term()}
+  def exercise_outer_brain_durability(case_name)
+      when case_name in [:pending_recovery_after_restart, :final_reply_after_restart] do
+    OuterBrainDurability.run_case(case_name)
   end
 
   @spec multi_node_scenario() :: map()

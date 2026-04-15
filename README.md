@@ -23,6 +23,7 @@ submission seam:
 
 - `examples/single_node_roundtrip`
 - `examples/lower_facts_roundtrip`
+- `examples/outer_brain_restart_durability`
 - `examples/semantic_host_roundtrip`
 - `examples/typed_host_roundtrip`
 - `examples/multi_node_roundtrip`
@@ -32,8 +33,11 @@ submission seam:
 Those examples exercise real `citadel` and real `jido_integration` code
 through the harness-only `support/citadel_spine_harness` package. The typed
 host proof also assembles real `app_kit` and `citadel_domain_surface` above
-the same lower seam. The semantic host proof is adapter-shaped today and does
-not yet claim a real `outer_brain` durability runtime inside `stack_lab`.
+the same lower seam. The dedicated OuterBrain restart-durability proof uses
+real `outer_brain` persistence, runtime, and restart-authority packages
+against backing Postgres. The semantic host proof remains adapter-shaped today
+and does not claim that its own path runs through a real `outer_brain`
+semantic-runtime surface inside `stack_lab`.
 
 ## Scope
 
