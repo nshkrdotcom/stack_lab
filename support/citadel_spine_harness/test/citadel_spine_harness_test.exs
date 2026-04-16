@@ -11,6 +11,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.dir?(roots.stack_lab)
     assert File.dir?(roots.citadel)
     assert File.dir?(roots.jido_integration)
+    assert File.dir?(roots.mezzanine)
     assert File.dir?(roots.outer_brain)
   end
 
@@ -35,7 +36,9 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert scenario.name == :lower_facts_roundtrip
 
     assert scenario.cases == %{
-             generic_readback: %{kind: :generic_readback}
+             generic_readback: %{kind: :generic_readback},
+             authorized_mezzanine_readback: %{kind: :authorized_mezzanine_readback},
+             unauthorized_mezzanine_readback: %{kind: :unauthorized_mezzanine_readback}
            }
 
     assert File.exists?(scenario.compose)

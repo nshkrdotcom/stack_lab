@@ -35,6 +35,9 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:app_kit_chat_surface, path: "../../../app_kit/core/chat_surface"},
       {:app_kit_domain_surface, path: "../../../app_kit/core/domain_surface"},
       {:app_kit_scope_objects, path: "../../../app_kit/core/scope_objects"},
+      {:mezzanine_ops_model, path: "../../../mezzanine/core/ops_model", runtime: false},
+      {:mezzanine_integration_bridge,
+       path: "../../../mezzanine/bridges/integration_bridge", runtime: false},
       {:jido_integration_v2_contracts,
        path: "../../../jido_integration/core/contracts", override: true},
       {:jido_integration_v2, path: "../../../jido_integration/core/platform"},
@@ -46,6 +49,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
        path: "../../../outer_brain/core/outer_brain_restart_authority"},
       {:outer_brain_runtime, path: "../../../outer_brain/core/outer_brain_runtime"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
     ]
   end

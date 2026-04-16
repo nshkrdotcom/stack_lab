@@ -23,6 +23,7 @@ defmodule StackLab.CitadelSpineHarness do
           required(:stack_lab) => String.t(),
           required(:citadel) => String.t(),
           required(:jido_integration) => String.t(),
+          required(:mezzanine) => String.t(),
           required(:outer_brain) => String.t()
         }
 
@@ -32,6 +33,7 @@ defmodule StackLab.CitadelSpineHarness do
       stack_lab: @stack_lab_root,
       citadel: Path.expand("../citadel", @stack_lab_root),
       jido_integration: Path.expand("../jido_integration", @stack_lab_root),
+      mezzanine: Path.expand("../mezzanine", @stack_lab_root),
       outer_brain: Path.expand("../outer_brain", @stack_lab_root)
     }
   end
@@ -66,14 +68,25 @@ defmodule StackLab.CitadelSpineHarness do
       runbook: LabCore.runbook(:up_single),
       repo_roots: repo_roots(),
       cases: %{
-        generic_readback: %{kind: :generic_readback}
+        generic_readback: %{kind: :generic_readback},
+        authorized_mezzanine_readback: %{kind: :authorized_mezzanine_readback},
+        unauthorized_mezzanine_readback: %{kind: :unauthorized_mezzanine_readback}
       }
     }
   end
 
-  @spec exercise_lower_facts(:generic_readback) :: {:ok, map()} | {:error, term()}
-  def exercise_lower_facts(:generic_readback) do
-    LowerFacts.run_case(:generic_readback)
+  @spec exercise_lower_facts(
+          :generic_readback
+          | :authorized_mezzanine_readback
+          | :unauthorized_mezzanine_readback
+        ) :: {:ok, map()} | {:error, term()}
+  def exercise_lower_facts(case_name)
+      when case_name in [
+             :generic_readback,
+             :authorized_mezzanine_readback,
+             :unauthorized_mezzanine_readback
+           ] do
+    LowerFacts.run_case(case_name)
   end
 
   @spec outer_brain_durability_scenario() :: map()

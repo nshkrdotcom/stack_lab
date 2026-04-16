@@ -1,5 +1,8 @@
 import Config
 
+config :mezzanine_audit_engine,
+  ash_domains: [Mezzanine.Audit]
+
 config :jido_integration_v2_store_local,
   storage_dir:
     Path.join(

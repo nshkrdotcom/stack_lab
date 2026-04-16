@@ -20,6 +20,9 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   alias Jido.Integration.V2.StoreLocal.TestSupport, as: StoreLocalTestSupport
   alias Jido.Integration.V2.SubmissionAcceptance
   alias Jido.Integration.V2.SubmissionIdentity
+  alias Mezzanine.Audit.ExecutionLineage
+  alias Mezzanine.IntegrationBridge
+  alias MezzanineOpsModel.Intent.ReadIntent
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
 
   @control_plane_keys [
@@ -43,8 +46,17 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   @store_local_keys [:storage_dir]
   @logical_workspace_ref "workspace://tenant-lower-facts/root"
 
-  @spec run_case(:generic_readback) :: {:ok, map()}
-  def run_case(:generic_readback) do
+  @spec run_case(
+          :generic_readback
+          | :authorized_mezzanine_readback
+          | :unauthorized_mezzanine_readback
+        ) :: {:ok, map()}
+  def run_case(case_name)
+      when case_name in [
+             :generic_readback,
+             :authorized_mezzanine_readback,
+             :unauthorized_mezzanine_readback
+           ] do
     with_store_local_case(fn ->
       token = Integer.to_string(System.unique_integer([:positive]))
       invocation = brain_invocation_fixture(token)
@@ -81,31 +93,132 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
       {:ok, fetched_artifact} = LowerFacts.fetch_artifact(artifact.artifact_id)
       run_artifacts = LowerFacts.run_artifacts(run.run_id)
 
+      case case_name do
+        :generic_readback ->
+          {:ok,
+           %{
+             case: :generic_readback,
+             receipt: %{
+               submission_key: fetched_receipt.submission_key,
+               submission_receipt_ref: fetched_receipt.submission_receipt_ref,
+               status: fetched_receipt.status
+             },
+             run: %{
+               run_id: fetched_run.run_id,
+               capability_id: fetched_run.capability_id,
+               status: fetched_run.status
+             },
+             attempt: %{
+               listed_attempt_id: listed_attempt.attempt_id,
+               fetched_attempt_id: fetched_attempt.attempt_id,
+               status: fetched_attempt.status
+             },
+             events: Enum.map(fetched_events, & &1.type),
+             artifact: %{
+               artifact_id: fetched_artifact.artifact_id,
+               run_artifact_ids: Enum.map(run_artifacts, & &1.artifact_id)
+             }
+           }}
+
+        :authorized_mezzanine_readback ->
+          authorized_mezzanine_readback_result(token, fetched_run, attempt, artifact)
+
+        :unauthorized_mezzanine_readback ->
+          unauthorized_mezzanine_readback_result(token, fetched_run, attempt, artifact)
+      end
+    end)
+  end
+
+  defp authorized_mezzanine_readback_result(
+         token,
+         %Run{} = run,
+         %Attempt{} = attempt,
+         %ArtifactRef{} = artifact
+       ) do
+    lineage = execution_lineage_fixture(token, run, attempt, artifact)
+
+    intent =
+      ReadIntent.new!(%{
+        intent_id: "lower-facts-mezzanine-read-#{token}",
+        read_type: :lower_fact,
+        subject: %{
+          actor_id: "actor-lower-facts",
+          installation_id: lineage.installation_id,
+          execution_id: lineage.execution_id
+        },
+        query: %{operation: :fetch_run}
+      })
+
+    assert_lineage_lookup =
+      fn execution_id ->
+        if execution_id == lineage.execution_id do
+          {:ok, lineage}
+        else
+          {:error, :not_found}
+        end
+      end
+
+    with {:ok, result} <-
+           IntegrationBridge.dispatch_read(intent,
+             lower_facts: LowerFacts,
+             fetch_lineage: assert_lineage_lookup
+           ) do
       {:ok,
        %{
-         case: :generic_readback,
-         receipt: %{
-           submission_key: fetched_receipt.submission_key,
-           submission_receipt_ref: fetched_receipt.submission_receipt_ref,
-           status: fetched_receipt.status
-         },
+         case: :authorized_mezzanine_readback,
+         operation: result.operation,
+         source: result.source,
+         freshness: result.freshness,
+         operator_actionable?: result.operator_actionable?,
+         lineage: result.lineage,
          run: %{
-           run_id: fetched_run.run_id,
-           capability_id: fetched_run.capability_id,
-           status: fetched_run.status
-         },
-         attempt: %{
-           listed_attempt_id: listed_attempt.attempt_id,
-           fetched_attempt_id: fetched_attempt.attempt_id,
-           status: fetched_attempt.status
-         },
-         events: Enum.map(fetched_events, & &1.type),
-         artifact: %{
-           artifact_id: fetched_artifact.artifact_id,
-           run_artifact_ids: Enum.map(run_artifacts, & &1.artifact_id)
+           run_id: result.result.run_id,
+           capability_id: result.result.capability_id,
+           status: result.result.status
          }
        }}
-    end)
+    end
+  end
+
+  defp unauthorized_mezzanine_readback_result(
+         token,
+         %Run{} = run,
+         %Attempt{} = attempt,
+         %ArtifactRef{} = artifact
+       ) do
+    lineage = execution_lineage_fixture(token, run, attempt, artifact)
+
+    intent =
+      ReadIntent.new!(%{
+        intent_id: "lower-facts-mezzanine-read-denied-#{token}",
+        read_type: :lower_fact,
+        subject: %{
+          actor_id: "actor-lower-facts",
+          installation_id: "inst-other",
+          execution_id: lineage.execution_id
+        },
+        query: %{operation: :fetch_run}
+      })
+
+    fetch_lineage = fn
+      execution_id when execution_id == lineage.execution_id -> {:ok, lineage}
+      _execution_id -> {:error, :not_found}
+    end
+
+    case IntegrationBridge.dispatch_read(intent,
+           lower_facts: LowerFacts,
+           fetch_lineage: fetch_lineage
+         ) do
+      {:error, :unauthorized_lower_read} ->
+        {:ok,
+         %{
+           case: :unauthorized_mezzanine_readback,
+           error: :unauthorized_lower_read
+         }}
+
+      other ->
+        {:error, {:unexpected_mezzanine_read_result, other}}
+    end
   end
 
   defmodule Resolver do
@@ -391,6 +504,24 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
         surface: "lower_facts",
         producer: "stack_lab"
       }
+    })
+  end
+
+  defp execution_lineage_fixture(
+         token,
+         %Run{} = run,
+         %Attempt{} = attempt,
+         %ArtifactRef{} = artifact
+       ) do
+    ExecutionLineage.new!(%{
+      trace_id: "trace-#{token}",
+      installation_id: "inst-lower-facts",
+      subject_id: "subject-#{token}",
+      execution_id: "execution-#{token}",
+      ji_submission_key: "submission-key-#{token}",
+      lower_run_id: run.run_id,
+      lower_attempt_id: attempt.attempt_id,
+      artifact_refs: [artifact.artifact_id]
     })
   end
 end
