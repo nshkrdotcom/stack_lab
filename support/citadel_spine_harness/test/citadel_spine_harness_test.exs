@@ -108,7 +108,8 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert scenario.name == :governed_run_roundtrip
 
     assert scenario.cases == %{
-             expense_capture_acceptance: %{kind: :expense_capture_acceptance}
+             expense_capture_acceptance: %{kind: :expense_capture_acceptance},
+             multi_pack_installation_routing: %{kind: :multi_pack_installation_routing}
            }
 
     assert File.exists?(scenario.compose)

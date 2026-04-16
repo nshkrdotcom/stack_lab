@@ -19,36 +19,57 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
 
   alias StackLab.CitadelSpineHarness.MezzanineSubstrate
 
-  @binding_config %{
-    "execution_bindings" => %{
-      "expense_capture" => %{
-        "placement_ref" => "local_runner",
-        "execution_params" => %{"timeout_ms" => 300_000},
-        "connector_bindings" => %{
-          "expense_system" => %{"connector_key" => "expenses_api"}
-        }
-      }
-    }
-  }
-
-  @spec run_case(:expense_capture_acceptance) :: {:ok, map()}
+  @spec run_case(:expense_capture_acceptance | :multi_pack_installation_routing) ::
+          {:ok, map()}
   def run_case(:expense_capture_acceptance) do
     MezzanineSubstrate.with_store(:expense_capture_acceptance, fn _repo_config ->
-      compiled_pack = compile_pack!()
+      compiled_pack =
+        compile_pack!(
+          pack_slug: :expense_approval,
+          version: "1.0.0",
+          subject_kind: :expense_request,
+          recipe_ref: :expense_capture,
+          projection_name: :active_expenses,
+          terminal_state: :paid
+        )
+
       registration = activate_registration!(compiled_pack)
-      installation = install_pack!(registration)
+
+      installation =
+        install_pack!(
+          registration,
+          tenant_id: "tenant-expense",
+          environment: "stage2",
+          binding_config: binding_config_for("expense_capture", "expense_system")
+        )
 
       {:ok, compiled_from_registry} =
         Registry.get_compiled_pack(installation.id, installation.compiled_pack_revision)
 
-      {:ok, subject} = ingest_subject(installation.id)
-      {:ok, execution} = dispatch_execution(subject, installation)
+      {:ok, subject} =
+        ingest_subject(
+          installation.id,
+          "expense:request:stack-lab",
+          "expense_request",
+          %{"amount_cents" => 12_500, "merchant" => "Atlas Travel"},
+          "trace-subject-expense-request",
+          "cause-subject-expense-request"
+        )
+
+      {:ok, execution} =
+        dispatch_execution(
+          subject,
+          installation,
+          "expense_capture",
+          "finance.expense.capture"
+        )
+
       accepted_now = ~U[2026-04-16 13:00:00.000000Z]
 
       {:ok, %{classification: :accepted, execution: accepted_execution}} =
         Dispatcher.dispatch_next(
           submit_fun: fn claimed ->
-            validate_claim!(claimed, installation, subject.id)
+            validate_claim!(claimed, installation, subject.id, "expense_capture")
             {:accepted, acceptance_payload(claimed)}
           end,
           actor_ref: %{kind: :dispatcher},
@@ -95,37 +116,178 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
     end)
   end
 
-  defp compile_pack! do
+  def run_case(:multi_pack_installation_routing) do
+    MezzanineSubstrate.with_store(:multi_pack_installation_routing, fn _repo_config ->
+      tenant_id = "tenant-multi-pack"
+      environment = "stage3"
+      shared_source_ref = "shared:external:event-42"
+
+      expense_pack =
+        compile_pack!(
+          pack_slug: :expense_approval,
+          version: "1.0.0",
+          subject_kind: :expense_request,
+          recipe_ref: :expense_capture,
+          projection_name: :active_expenses,
+          terminal_state: :paid
+        )
+
+      invoice_pack =
+        compile_pack!(
+          pack_slug: :invoice_ops,
+          version: "1.0.0",
+          subject_kind: :invoice_request,
+          recipe_ref: :invoice_capture,
+          projection_name: :active_invoices,
+          terminal_state: :settled
+        )
+
+      expense_installation =
+        expense_pack
+        |> activate_registration!()
+        |> install_pack!(
+          tenant_id: tenant_id,
+          environment: environment,
+          binding_config: binding_config_for("expense_capture", "expense_system")
+        )
+
+      invoice_installation =
+        invoice_pack
+        |> activate_registration!()
+        |> install_pack!(
+          tenant_id: tenant_id,
+          environment: environment,
+          binding_config: binding_config_for("invoice_capture", "invoice_system")
+        )
+
+      {:ok, expense_compiled} =
+        Registry.get_compiled_pack(
+          expense_installation.id,
+          expense_installation.compiled_pack_revision
+        )
+
+      {:ok, invoice_compiled} =
+        Registry.get_compiled_pack(
+          invoice_installation.id,
+          invoice_installation.compiled_pack_revision
+        )
+
+      {:ok, expense_subject} =
+        ingest_subject(
+          expense_installation.id,
+          shared_source_ref,
+          "expense_request",
+          %{"amount_cents" => 12_500, "merchant" => "Atlas Travel"},
+          "trace-subject-expense-shared",
+          "cause-subject-expense-shared"
+        )
+
+      {:ok, invoice_subject} =
+        ingest_subject(
+          invoice_installation.id,
+          shared_source_ref,
+          "invoice_request",
+          %{"invoice_number" => "INV-42", "amount_cents" => 42_000},
+          "trace-subject-invoice-shared",
+          "cause-subject-invoice-shared"
+        )
+
+      {:ok, _expense_execution} =
+        dispatch_execution(
+          expense_subject,
+          expense_installation,
+          "expense_capture",
+          "finance.expense.capture"
+        )
+
+      {:ok, expense_dispatch} =
+        accept_next_dispatch!(
+          expense_installation,
+          expense_subject.id,
+          "expense_capture",
+          "expense"
+        )
+
+      {:ok, _invoice_execution} =
+        dispatch_execution(
+          invoice_subject,
+          invoice_installation,
+          "invoice_capture",
+          "finance.invoice.capture"
+        )
+
+      {:ok, invoice_dispatch} =
+        accept_next_dispatch!(
+          invoice_installation,
+          invoice_subject.id,
+          "invoice_capture",
+          "invoice"
+        )
+
+      {:ok,
+       %{
+         case: :multi_pack_installation_routing,
+         routing: %{
+           tenant_id: tenant_id,
+           environment: environment,
+           shared_source_ref: shared_source_ref
+         },
+         installations: %{
+           expense:
+             installation_summary(expense_installation, expense_compiled, "expense_request"),
+           invoice:
+             installation_summary(invoice_installation, invoice_compiled, "invoice_request")
+         },
+         subjects: %{
+           expense: subject_summary(expense_subject),
+           invoice: subject_summary(invoice_subject)
+         },
+         dispatches: %{
+           expense: expense_dispatch,
+           invoice: invoice_dispatch
+         }
+       }}
+    end)
+  end
+
+  defp compile_pack!(opts) when is_list(opts) do
+    pack_slug = Keyword.fetch!(opts, :pack_slug)
+    version = Keyword.fetch!(opts, :version)
+    subject_kind = Keyword.fetch!(opts, :subject_kind)
+    recipe_ref = Keyword.fetch!(opts, :recipe_ref)
+    projection_name = Keyword.fetch!(opts, :projection_name)
+    terminal_state = Keyword.fetch!(opts, :terminal_state)
+
     manifest = %Manifest{
-      pack_slug: :expense_approval,
-      version: "1.0.0",
+      pack_slug: pack_slug,
+      version: version,
       subject_kind_specs: [
-        %SubjectKindSpec{name: :expense_request}
+        %SubjectKindSpec{name: subject_kind}
       ],
       lifecycle_specs: [
         %LifecycleSpec{
-          subject_kind: :expense_request,
+          subject_kind: subject_kind,
           initial_state: :submitted,
-          terminal_states: [:paid],
+          terminal_states: [terminal_state],
           transitions: [
             %{
               from: :submitted,
               to: :processing,
-              trigger: {:execution_requested, :expense_capture}
+              trigger: {:execution_requested, recipe_ref}
             },
-            %{from: :processing, to: :paid, trigger: {:execution_completed, :expense_capture}}
+            %{from: :processing, to: terminal_state, trigger: {:execution_completed, recipe_ref}}
           ]
         }
       ],
       execution_recipe_specs: [
         %ExecutionRecipeSpec{
-          recipe_ref: :expense_capture,
+          recipe_ref: recipe_ref,
           runtime_class: :session,
           placement_ref: :local_runner
         }
       ],
       projection_specs: [
-        %ProjectionSpec{name: :active_expenses, subject_kinds: [:expense_request]}
+        %ProjectionSpec{name: projection_name, subject_kinds: [subject_kind]}
       ]
     }
 
@@ -145,48 +307,85 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
     end
   end
 
-  defp install_pack!(registration) do
+  defp install_pack!(registration, opts) when is_list(opts) do
+    tenant_id = Keyword.fetch!(opts, :tenant_id)
+    environment = Keyword.fetch!(opts, :environment)
+    binding_config = Keyword.fetch!(opts, :binding_config)
+
     {:ok, installation} =
       MezzanineConfigRegistry.create_installation(%{
-        tenant_id: "tenant-expense",
-        environment: "stage2",
+        tenant_id: tenant_id,
+        environment: environment,
         pack_registration_id: registration.id
       })
 
     {:ok, installation} = MezzanineConfigRegistry.activate_installation(installation)
-    {:ok, installation} = MezzanineConfigRegistry.update_bindings(installation, @binding_config)
+    {:ok, installation} = MezzanineConfigRegistry.update_bindings(installation, binding_config)
     installation
   end
 
-  defp ingest_subject(installation_id) do
+  defp ingest_subject(
+         installation_id,
+         source_ref,
+         subject_kind,
+         payload,
+         trace_id,
+         causation_id
+       ) do
     SubjectRecord.ingest(%{
       installation_id: installation_id,
-      source_ref: "expense:request:stack-lab",
-      subject_kind: "expense_request",
+      source_ref: source_ref,
+      subject_kind: subject_kind,
       lifecycle_state: "submitted",
-      payload: %{"amount_cents" => 12_500, "merchant" => "Atlas Travel"},
-      trace_id: "trace-subject-expense-request",
-      causation_id: "cause-subject-expense-request",
+      payload: payload,
+      trace_id: trace_id,
+      causation_id: causation_id,
       actor_ref: %{kind: :intake}
     })
   end
 
-  defp dispatch_execution(subject, installation) do
+  defp dispatch_execution(subject, installation, recipe_ref, capability) do
     ExecutionRecord.dispatch(%{
       installation_id: installation.id,
       subject_id: subject.id,
-      recipe_ref: "expense_capture",
+      recipe_ref: recipe_ref,
       compiled_pack_revision: installation.compiled_pack_revision,
-      binding_snapshot: binding_snapshot_for(installation),
-      dispatch_envelope: %{"capability" => "finance.expense.capture"},
-      submission_dedupe_key: "#{installation.id}:expense_capture",
-      trace_id: "trace-expense-capture",
-      causation_id: "cause-expense-capture",
+      binding_snapshot: binding_snapshot_for(installation, recipe_ref),
+      dispatch_envelope: %{"capability" => capability},
+      submission_dedupe_key: "#{installation.id}:#{recipe_ref}",
+      trace_id: "trace-#{recipe_ref}-#{subject.id}",
+      causation_id: "cause-#{recipe_ref}-#{subject.id}",
       actor_ref: %{kind: :scheduler}
     })
   end
 
-  defp validate_claim!(claimed, installation, subject_id) do
+  defp accept_next_dispatch!(installation, subject_id, recipe_ref, label) do
+    accepted_now = ~U[2026-04-16 13:30:00.000000Z]
+
+    with {:ok, %{classification: :accepted, execution: accepted_execution}} <-
+           Dispatcher.dispatch_next(
+             submit_fun: fn claimed ->
+               validate_claim!(claimed, installation, subject_id, recipe_ref)
+               {:accepted, acceptance_payload(claimed)}
+             end,
+             actor_ref: %{kind: :dispatcher},
+             now: accepted_now
+           ) do
+      outbox = fetch_outbox!(accepted_execution.id)
+
+      {:ok,
+       %{
+         label: label,
+         installation_id: installation.id,
+         recipe_ref: accepted_execution.recipe_ref,
+         classification: :accepted,
+         compiled_pack_revision: installation.compiled_pack_revision,
+         outbox_status: outbox.status
+       }}
+    end
+  end
+
+  defp validate_claim!(claimed, installation, subject_id, recipe_ref) do
     if claimed.installation_id != installation.id do
       raise "genericity proof claimed the wrong installation"
     end
@@ -195,20 +394,38 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
       raise "genericity proof claimed the wrong subject"
     end
 
+    if claimed.submission_dedupe_key != "#{installation.id}:#{recipe_ref}" do
+      raise "genericity proof lowered with the wrong submission key"
+    end
+
     if claimed.compiled_pack_revision != installation.compiled_pack_revision do
       raise "genericity proof lowered with the wrong compiled-pack revision"
     end
 
-    if claimed.binding_snapshot != binding_snapshot_for(installation) do
+    if claimed.binding_snapshot != binding_snapshot_for(installation, recipe_ref) do
       raise "genericity proof lowered with the wrong binding snapshot"
     end
   end
 
-  defp binding_snapshot_for(installation) do
+  defp binding_snapshot_for(installation, recipe_ref) do
     installation
     |> Map.fetch!(:binding_config)
-    |> get_in(["execution_bindings", "expense_capture"])
+    |> get_in(["execution_bindings", recipe_ref])
     |> Map.take(["placement_ref", "execution_params", "connector_bindings"])
+  end
+
+  defp binding_config_for(recipe_ref, connector_key) do
+    %{
+      "execution_bindings" => %{
+        recipe_ref => %{
+          "placement_ref" => "local_runner",
+          "execution_params" => %{"timeout_ms" => 300_000},
+          "connector_bindings" => %{
+            connector_key => %{"connector_key" => "#{connector_key}_api"}
+          }
+        }
+      }
+    }
   end
 
   defp acceptance_payload(claimed) do
@@ -239,6 +456,23 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
       lifecycle_state: lifecycle_state,
       payload: subject.payload
     })
+  end
+
+  defp installation_summary(installation, compiled_pack, subject_kind) do
+    %{
+      installation_id: installation.id,
+      pack_slug: compiled_pack.pack_slug,
+      compiled_pack_revision: installation.compiled_pack_revision,
+      subject_kind: subject_kind
+    }
+  end
+
+  defp subject_summary(subject) do
+    %{
+      installation_id: subject.installation_id,
+      source_ref: subject.source_ref,
+      subject_kind: subject.subject_kind
+    }
   end
 
   defp fetch_outbox!(execution_id) do

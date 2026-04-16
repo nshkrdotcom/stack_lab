@@ -141,14 +141,17 @@ defmodule StackLab.CitadelSpineHarness do
       runbook: LabCore.runbook(:up_single),
       repo_roots: repo_roots(),
       cases: %{
-        expense_capture_acceptance: %{kind: :expense_capture_acceptance}
+        expense_capture_acceptance: %{kind: :expense_capture_acceptance},
+        multi_pack_installation_routing: %{kind: :multi_pack_installation_routing}
       }
     }
   end
 
-  @spec exercise_governed_run(:expense_capture_acceptance) :: {:ok, map()} | {:error, term()}
-  def exercise_governed_run(:expense_capture_acceptance) do
-    GovernedRun.run_case(:expense_capture_acceptance)
+  @spec exercise_governed_run(:expense_capture_acceptance | :multi_pack_installation_routing) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_governed_run(case_name)
+      when case_name in [:expense_capture_acceptance, :multi_pack_installation_routing] do
+    GovernedRun.run_case(case_name)
   end
 
   @spec multi_node_scenario() :: map()

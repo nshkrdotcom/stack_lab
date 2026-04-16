@@ -7,7 +7,12 @@ defmodule StackLab.Examples.GovernedRunRoundtripTest do
     scenario = GovernedRunRoundtrip.scenario()
 
     assert scenario.name == :governed_run_roundtrip
-    assert scenario.cases == %{expense_capture_acceptance: %{kind: :expense_capture_acceptance}}
+
+    assert scenario.cases == %{
+             expense_capture_acceptance: %{kind: :expense_capture_acceptance},
+             multi_pack_installation_routing: %{kind: :multi_pack_installation_routing}
+           }
+
     assert File.exists?(scenario.compose)
     assert File.exists?(scenario.runbook)
   end
@@ -27,5 +32,42 @@ defmodule StackLab.Examples.GovernedRunRoundtripTest do
 
     assert result.transitions.on_execution_requested == "processing"
     assert result.transitions.on_execution_completed == "paid"
+  end
+
+  test "same tenant can run two packs concurrently with installation-scoped routing" do
+    assert {:ok, result} = GovernedRunRoundtrip.exercise(:multi_pack_installation_routing)
+
+    assert result.case == :multi_pack_installation_routing
+    assert result.routing.tenant_id == "tenant-multi-pack"
+    assert result.routing.environment == "stage3"
+    assert result.routing.shared_source_ref == "shared:external:event-42"
+
+    assert result.installations.expense.pack_slug == "expense_approval"
+    assert result.installations.expense.subject_kind == "expense_request"
+    assert result.installations.invoice.pack_slug == "invoice_ops"
+    assert result.installations.invoice.subject_kind == "invoice_request"
+
+    refute result.installations.expense.installation_id ==
+             result.installations.invoice.installation_id
+
+    assert result.subjects.expense.installation_id == result.installations.expense.installation_id
+    assert result.subjects.expense.subject_kind == "expense_request"
+    assert result.subjects.expense.source_ref == result.routing.shared_source_ref
+
+    assert result.subjects.invoice.installation_id == result.installations.invoice.installation_id
+    assert result.subjects.invoice.subject_kind == "invoice_request"
+    assert result.subjects.invoice.source_ref == result.routing.shared_source_ref
+
+    assert result.dispatches.expense.installation_id ==
+             result.installations.expense.installation_id
+
+    assert result.dispatches.expense.recipe_ref == "expense_capture"
+    assert result.dispatches.expense.classification == :accepted
+
+    assert result.dispatches.invoice.installation_id ==
+             result.installations.invoice.installation_id
+
+    assert result.dispatches.invoice.recipe_ref == "invoice_capture"
+    assert result.dispatches.invoice.classification == :accepted
   end
 end
