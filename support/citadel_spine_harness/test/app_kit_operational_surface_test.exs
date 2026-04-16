@@ -74,4 +74,38 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert "lower_run_status" in result.trace.step_sources
     assert result.trace.join_keys["execution_id"] == result.dispatch.execution_id
   end
+
+  test "app-kit operational surface proves a terminal lower-backed rejection reaches the caller as a stable trace-visible rejection" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_app_kit_operational_surface(
+               :lower_backed_command_terminal_rejection
+             )
+
+    assert result.case == :lower_backed_command_terminal_rejection
+    assert result.tenant_id == "tenant-app-kit-lower-backed-reject"
+
+    assert result.work.state == :scheduled
+    assert result.dispatch.classification == :terminal_rejection
+    assert result.dispatch.execution_state == :rejected
+    assert result.dispatch.outbox_status == :terminal
+    assert result.dispatch.terminal_rejection_reason == "workspace_ref_unresolved"
+    assert result.dispatch.rejection_family == "scope_unresolvable"
+
+    assert "execution_record" in result.trace.step_sources
+    assert result.trace.rejected_execution.dispatch_state == :rejected
+    assert result.trace.rejected_execution.terminal_rejection_reason == "workspace_ref_unresolved"
+  end
+
+  test "app-kit operational surface returns an explicit authorization error for unauthorized lower-enriched trace reads" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_app_kit_operational_surface(
+               :unauthorized_lower_trace_read
+             )
+
+    assert result.case == :unauthorized_lower_trace_read
+    assert result.tenant_id == "tenant-app-kit-lower-backed-authz"
+    assert result.error.code == "unauthorized_lower_read"
+    assert result.error.kind == :authorization
+    refute result.error.retryable
+  end
 end

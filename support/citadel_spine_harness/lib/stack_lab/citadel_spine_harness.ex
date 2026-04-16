@@ -163,7 +163,11 @@ defmodule StackLab.CitadelSpineHarness do
       repo_roots: repo_roots(),
       cases: %{
         install_ingest_review_trace: %{kind: :install_ingest_review_trace},
-        lower_backed_command_trace: %{kind: :lower_backed_command_trace}
+        lower_backed_command_trace: %{kind: :lower_backed_command_trace},
+        lower_backed_command_terminal_rejection: %{
+          kind: :lower_backed_command_terminal_rejection
+        },
+        unauthorized_lower_trace_read: %{kind: :unauthorized_lower_trace_read}
       }
     }
   end
@@ -171,10 +175,17 @@ defmodule StackLab.CitadelSpineHarness do
   @spec exercise_app_kit_operational_surface(
           :install_ingest_review_trace
           | :lower_backed_command_trace
+          | :lower_backed_command_terminal_rejection
+          | :unauthorized_lower_trace_read
         ) ::
           {:ok, map()} | {:error, term()}
   def exercise_app_kit_operational_surface(case_name)
-      when case_name in [:install_ingest_review_trace, :lower_backed_command_trace] do
+      when case_name in [
+             :install_ingest_review_trace,
+             :lower_backed_command_trace,
+             :lower_backed_command_terminal_rejection,
+             :unauthorized_lower_trace_read
+           ] do
     AppKitOperationalSurface.run_case(case_name)
   end
 

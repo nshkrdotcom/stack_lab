@@ -117,7 +117,12 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     end
   end
 
-  @spec run_case(:install_ingest_review_trace | :lower_backed_command_trace) :: {:ok, map()}
+  @spec run_case(
+          :install_ingest_review_trace
+          | :lower_backed_command_trace
+          | :lower_backed_command_terminal_rejection
+          | :unauthorized_lower_trace_read
+        ) :: {:ok, map()}
   def run_case(:install_ingest_review_trace) do
     MezzanineOperationalStack.with_store(:app_kit_operational_surface, fn _repo_config ->
       tenant_id = "tenant-app-kit-operational"
@@ -328,99 +333,24 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   end
 
   def run_case(:lower_backed_command_trace) do
-    MezzanineOperationalStack.with_store(:app_kit_lower_backed_command_trace, fn _repo_config ->
-      tenant_id = "tenant-app-kit-lower-backed"
-      store_local_dir = store_local_dir(:app_kit_lower_backed_command_trace)
-
-      previous_transport =
-        Application.get_env(:citadel_jido_integration_bridge, :transport_module)
-
-      RoundtripRuntime.flush_transport_messages()
-      ensure_store_local_ready!(store_local_dir)
-      :ok = JidoIntegrationBridge.put_transport_module(InProcessTransport)
-
-      try do
-        activate_fixture_registration!("1.0.1")
-
-        %{program: program, work_class: work_class} =
-          operational_fixture_stack(tenant_id, review_required?: false)
-
-        {:ok, install_template} =
-          InstallTemplate.new(%{
-            template_key: "expense-lower-backed",
-            pack_slug: "expense_approval",
-            pack_version: "1.0.1",
-            default_bindings: %{
-              "execution_bindings" => %{
-                "expense_capture" => %{
-                  "placement_ref" => "workspace_runtime",
-                  "execution_params" => %{"timeout_ms" => 300_000}
-                }
-              }
-            },
-            metadata: %{"managed_by" => "stack_lab"}
-          })
-
-        surface_opts = surface_opts()
-
-        install_context =
-          request_context(
-            tenant_id,
-            "trace/app-kit/lower/install/#{System.unique_integer([:positive])}",
-            %{program_id: program.id, work_class_id: work_class.id}
-          )
-
-        {:ok, install_result} =
-          InstallationSurface.create_installation(install_context, install_template, surface_opts)
-
-        installation_ref = install_result.installation_ref
-
-        runtime_trace_id = "trace/app-kit/lower/runtime/#{System.unique_integer([:positive])}"
-
-        with_installation_context =
-          request_context(
-            tenant_id,
-            runtime_trace_id,
-            %{program_id: program.id, work_class_id: work_class.id},
-            installation_ref
-          )
-
-        {:ok, subject_ref} =
-          WorkSurface.ingest_subject(
-            with_installation_context,
-            %{
-              external_ref: "linear:ENG-801",
-              title: "Lower-backed operational flow subject",
-              payload: %{"issue_id" => "ENG-801"},
-              source_kind: "linear"
-            },
-            surface_opts
-          )
-
-        :ok = TransportRuntime.put!(lower_transport_config(self(), subject_ref.id))
-
-        {:ok, run_request} =
-          RunRequest.new(%{
-            subject_ref: subject_ref,
-            recipe_ref: "expense_capture",
-            params: %{"priority" => "high"}
-          })
-
-        {:ok, run_result} =
-          WorkControl.start_run(with_installation_context, run_request, surface_opts)
+    with_lower_backed_runtime(
+      :app_kit_lower_backed_command_trace,
+      "tenant-app-kit-lower-backed",
+      fn env ->
+        :ok = TransportRuntime.put!(lower_transport_config(self(), env.subject_ref.id))
 
         {:ok, lower_dispatch} =
           lower_backed_dispatch(
-            with_installation_context,
-            installation_ref,
-            subject_ref,
-            run_result
+            env.context,
+            env.installation_ref,
+            env.subject_ref,
+            env.run_result
           )
 
         receipt_proof =
           lower_receipt_proof!(
-            with_installation_context,
-            installation_ref.id,
+            env.context,
+            env.installation_ref.id,
             lower_dispatch.execution.id,
             lower_dispatch.acceptance.submission_key
           )
@@ -428,17 +358,17 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         {:ok, execution_ref} =
           ExecutionRef.new(%{
             id: lower_dispatch.execution.id,
-            subject_ref: subject_ref,
+            subject_ref: env.subject_ref,
             recipe_ref: "expense_capture",
             dispatch_state: lower_dispatch.execution.dispatch_state
           })
 
         {:ok, unified_trace} =
           OperatorSurface.get_unified_trace(
-            with_installation_context,
+            env.context,
             execution_ref,
             Keyword.merge(
-              surface_opts,
+              env.surface_opts,
               lower_operations: [:fetch_submission_receipt]
             )
           )
@@ -446,16 +376,16 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         {:ok,
          %{
            case: :lower_backed_command_trace,
-           tenant_id: tenant_id,
+           tenant_id: env.tenant_id,
            installation: %{
-             created_status: install_result.status,
-             installation_id: installation_ref.id,
-             pack_slug: installation_ref.pack_slug
+             created_status: env.install_result.status,
+             installation_id: env.installation_ref.id,
+             pack_slug: env.installation_ref.pack_slug
            },
            work: %{
-             subject_id: subject_ref.id,
-             run_id: run_result.payload.run_ref.run_id,
-             state: run_result.state
+             subject_id: env.subject_ref.id,
+             run_id: env.run_result.payload.run_ref.run_id,
+             state: env.run_result.state
            },
            dispatch: %{
              execution_id: lower_dispatch.execution.id,
@@ -472,6 +402,214 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              join_keys: unified_trace.join_keys
            }
          }}
+      end
+    )
+  end
+
+  def run_case(:lower_backed_command_terminal_rejection) do
+    with_lower_backed_runtime(
+      :app_kit_lower_backed_command_terminal_rejection,
+      "tenant-app-kit-lower-backed-reject",
+      fn env ->
+        :ok =
+          TransportRuntime.put!(
+            lower_transport_config(self(), env.subject_ref.id, :scope_rejection)
+          )
+
+        {:ok, lower_dispatch} =
+          lower_backed_dispatch(
+            env.context,
+            env.installation_ref,
+            env.subject_ref,
+            env.run_result
+          )
+
+        {:ok, execution_ref} =
+          ExecutionRef.new(%{
+            id: lower_dispatch.execution.id,
+            subject_ref: env.subject_ref,
+            recipe_ref: "expense_capture",
+            dispatch_state: lower_dispatch.execution.dispatch_state
+          })
+
+        {:ok, unified_trace} =
+          OperatorSurface.get_unified_trace(env.context, execution_ref, env.surface_opts)
+
+        rejected_execution =
+          unified_trace.steps
+          |> Enum.find(&(&1.source == "execution_record"))
+          |> Map.fetch!(:payload)
+
+        {:ok,
+         %{
+           case: :lower_backed_command_terminal_rejection,
+           tenant_id: env.tenant_id,
+           installation: %{
+             created_status: env.install_result.status,
+             installation_id: env.installation_ref.id,
+             pack_slug: env.installation_ref.pack_slug
+           },
+           work: %{
+             subject_id: env.subject_ref.id,
+             run_id: env.run_result.payload.run_ref.run_id,
+             state: env.run_result.state
+           },
+           dispatch: %{
+             execution_id: lower_dispatch.execution.id,
+             classification: lower_dispatch.classification,
+             execution_state: lower_dispatch.execution.dispatch_state,
+             outbox_status: lower_dispatch.outbox.status,
+             terminal_rejection_reason: lower_dispatch.execution.terminal_rejection_reason,
+             rejection_family:
+               if lower_dispatch.rejection do
+                 to_string(lower_dispatch.rejection.rejection_family)
+               end
+           },
+           trace: %{
+             trace_id: unified_trace.trace_id,
+             step_sources: Enum.map(unified_trace.steps, & &1.source),
+             rejected_execution: rejected_execution
+           }
+         }}
+      end
+    )
+  end
+
+  def run_case(:unauthorized_lower_trace_read) do
+    with_lower_backed_runtime(
+      :app_kit_unauthorized_lower_trace_read,
+      "tenant-app-kit-lower-backed-authz",
+      fn env ->
+        :ok = TransportRuntime.put!(lower_transport_config(self(), env.subject_ref.id))
+
+        {:ok, lower_dispatch} =
+          lower_backed_dispatch(
+            env.context,
+            env.installation_ref,
+            env.subject_ref,
+            env.run_result
+          )
+
+        unauthorized_context =
+          request_context(
+            env.tenant_id,
+            env.context.trace_id,
+            %{program_id: env.program.id, work_class_id: env.work_class.id},
+            %{
+              id: "inst-other",
+              pack_slug: env.installation_ref.pack_slug,
+              status: :active
+            }
+          )
+
+        {:ok, execution_ref} =
+          ExecutionRef.new(%{
+            id: lower_dispatch.execution.id,
+            subject_ref: env.subject_ref,
+            recipe_ref: "expense_capture",
+            dispatch_state: lower_dispatch.execution.dispatch_state
+          })
+
+        {:error, error} =
+          OperatorSurface.get_unified_trace(
+            unauthorized_context,
+            execution_ref,
+            env.surface_opts
+          )
+
+        {:ok,
+         %{
+           case: :unauthorized_lower_trace_read,
+           tenant_id: env.tenant_id,
+           installation_id: env.installation_ref.id,
+           execution_id: lower_dispatch.execution.id,
+           error: %{
+             code: error.code,
+             kind: error.kind,
+             retryable: error.retryable
+           }
+         }}
+      end
+    )
+  end
+
+  defp with_lower_backed_runtime(case_name, tenant_id, fun) when is_function(fun, 1) do
+    MezzanineOperationalStack.with_store(case_name, fn _repo_config ->
+      store_local_dir = store_local_dir(case_name)
+
+      previous_transport =
+        Application.get_env(:citadel_jido_integration_bridge, :transport_module)
+
+      RoundtripRuntime.flush_transport_messages()
+      ensure_store_local_ready!(store_local_dir)
+      :ok = JidoIntegrationBridge.put_transport_module(InProcessTransport)
+
+      try do
+        activate_fixture_registration!("1.0.1")
+
+        %{program: program, work_class: work_class} =
+          operational_fixture_stack(tenant_id, review_required?: false)
+
+        surface_opts = surface_opts()
+
+        install_context =
+          request_context(
+            tenant_id,
+            "trace/app-kit/lower/install/#{System.unique_integer([:positive])}",
+            %{program_id: program.id, work_class_id: work_class.id}
+          )
+
+        {:ok, install_result} =
+          InstallationSurface.create_installation(
+            install_context,
+            lower_backed_install_template!(),
+            surface_opts
+          )
+
+        installation_ref = install_result.installation_ref
+
+        runtime_trace_id = "trace/app-kit/lower/runtime/#{System.unique_integer([:positive])}"
+
+        context =
+          request_context(
+            tenant_id,
+            runtime_trace_id,
+            %{program_id: program.id, work_class_id: work_class.id},
+            installation_ref
+          )
+
+        {:ok, subject_ref} =
+          WorkSurface.ingest_subject(
+            context,
+            %{
+              external_ref: "linear:ENG-801",
+              title: "Lower-backed operational flow subject",
+              payload: %{"issue_id" => "ENG-801"},
+              source_kind: "linear"
+            },
+            surface_opts
+          )
+
+        {:ok, run_request} =
+          RunRequest.new(%{
+            subject_ref: subject_ref,
+            recipe_ref: "expense_capture",
+            params: %{"priority" => "high"}
+          })
+
+        {:ok, run_result} = WorkControl.start_run(context, run_request, surface_opts)
+
+        fun.(%{
+          tenant_id: tenant_id,
+          program: program,
+          work_class: work_class,
+          surface_opts: surface_opts,
+          install_result: install_result,
+          installation_ref: installation_ref,
+          context: context,
+          subject_ref: subject_ref,
+          run_result: run_result
+        })
       after
         :ok = TransportRuntime.reset!()
         stop_store_local()
@@ -488,6 +626,26 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         end
       end
     end)
+  end
+
+  defp lower_backed_install_template! do
+    {:ok, template} =
+      InstallTemplate.new(%{
+        template_key: "expense-lower-backed",
+        pack_slug: "expense_approval",
+        pack_version: "1.0.1",
+        default_bindings: %{
+          "execution_bindings" => %{
+            "expense_capture" => %{
+              "placement_ref" => "workspace_runtime",
+              "execution_params" => %{"timeout_ms" => 300_000}
+            }
+          }
+        },
+        metadata: %{"managed_by" => "stack_lab"}
+      })
+
+    template
   end
 
   defp surface_opts do
@@ -785,14 +943,15 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       )
 
     outbox = fetch_outbox!(accepted_execution.id)
-    acceptance = await_transport_acceptance!()
+    transport_result = await_transport_result!()
 
     {:ok,
      %{
        classification: classification,
        execution: accepted_execution,
        outbox: outbox,
-       acceptance: acceptance
+       acceptance: transport_acceptance(classification, transport_result),
+       rejection: transport_rejection(classification, transport_result)
      }}
   end
 
@@ -944,14 +1103,44 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     outbox
   end
 
-  defp await_transport_acceptance! do
+  defp await_transport_result! do
     receive do
       {:stack_lab_brain_ingress_result,
        %{result: :accepted, acceptance: acceptance, submission_key: _submission_key}} ->
-        acceptance
+        %{result: :accepted, acceptance: acceptance}
+
+      {:stack_lab_brain_ingress_result,
+       %{result: :rejected, rejection: rejection, submission_key: _submission_key}} ->
+        %{result: :rejected, rejection: rejection}
     after
-      5_000 -> raise "timed out waiting for lower-backed transport acceptance"
+      5_000 -> raise "timed out waiting for lower-backed transport result"
     end
+  end
+
+  defp transport_acceptance(:accepted, %{result: :accepted, acceptance: acceptance}),
+    do: acceptance
+
+  defp transport_acceptance(:terminal_rejection, %{result: :rejected}), do: nil
+
+  defp transport_acceptance(classification, transport_result) do
+    raise """
+    unexpected lower-backed transport acceptance state:
+    classification=#{inspect(classification)}
+    transport_result=#{inspect(transport_result)}
+    """
+  end
+
+  defp transport_rejection(:terminal_rejection, %{result: :rejected, rejection: rejection}),
+    do: rejection
+
+  defp transport_rejection(:accepted, %{result: :accepted}), do: nil
+
+  defp transport_rejection(classification, transport_result) do
+    raise """
+    unexpected lower-backed transport rejection state:
+    classification=#{inspect(classification)}
+    transport_result=#{inspect(transport_result)}
+    """
   end
 
   defp lower_receipt_proof!(
@@ -1017,7 +1206,19 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     end
   end
 
-  defp lower_transport_config(listener, work_object_id) do
+  defp lower_transport_config(listener, work_object_id, mode \\ :accepted)
+
+  defp lower_transport_config(listener, _work_object_id, :scope_rejection) do
+    %{
+      listener: listener,
+      submission_ledger: SubmissionLedger,
+      submission_ledger_opts: [],
+      scope_resolver: StaticScopeResolver,
+      scope_resolver_opts: [mapping: %{}]
+    }
+  end
+
+  defp lower_transport_config(listener, work_object_id, :accepted) do
     %{
       listener: listener,
       submission_ledger: SubmissionLedger,
