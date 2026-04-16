@@ -1015,7 +1015,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       raise "app_kit lower-backed proof unexpectedly required review"
     end
 
-    {:ok, _execution} =
+    {:ok, dispatched_execution} =
       ExecutionRecord.dispatch(%{
         installation_id: installation.id,
         subject_id: subject_ref.id,
@@ -1034,7 +1034,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       })
 
     bridge = InvocationBridge.new!(downstream: InvocationDownstream)
-    accepted_now = ~U[2026-04-16 14:00:00.000000Z]
+    initial_outbox = fetch_outbox!(dispatched_execution.id)
+    accepted_now = DateTime.add(initial_outbox.available_at, 1, :second)
 
     {:ok, %{classification: classification, execution: accepted_execution}} =
       Dispatcher.dispatch_next(
