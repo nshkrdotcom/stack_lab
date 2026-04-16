@@ -7,14 +7,16 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
   alias Mezzanine.Execution.Repo, as: ExecutionRepo
   alias Mezzanine.Objects.Repo, as: ObjectsRepo
   alias Mezzanine.Pack.Registry, as: PackRegistry
+  alias Mezzanine.RuntimeScheduler.Repo, as: RuntimeSchedulerRepo
   alias StackLab.CitadelSpineHarness.PostgresContainer
 
-  @repo_modules [AuditRepo, ObjectsRepo, ExecutionRepo, ConfigRegistryRepo]
+  @repo_modules [AuditRepo, ObjectsRepo, ExecutionRepo, ConfigRegistryRepo, RuntimeSchedulerRepo]
   @migration_components [
     {AuditRepo, "audit_engine"},
     {ObjectsRepo, "object_engine"},
     {ExecutionRepo, "execution_engine"},
-    {ConfigRegistryRepo, "config_registry"}
+    {ConfigRegistryRepo, "config_registry"},
+    {RuntimeSchedulerRepo, "runtime_scheduler"}
   ]
 
   @spec with_store(atom() | String.t(), (keyword() -> any())) :: any()

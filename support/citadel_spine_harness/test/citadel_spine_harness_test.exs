@@ -102,6 +102,19 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.exists?(scenario.runbook)
   end
 
+  test "describes the installation-runtime lease proof case as a Stage-3 neutral runtime scenario" do
+    scenario = CitadelSpineHarness.installation_runtime_lease_scenario()
+
+    assert scenario.name == :installation_runtime_lease
+
+    assert scenario.cases == %{
+             two_owner_fencing: %{kind: :two_owner_fencing}
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
   test "describes the governed-run proof case as a non-extravaganza Stage-2 scenario" do
     scenario = CitadelSpineHarness.governed_run_scenario()
 

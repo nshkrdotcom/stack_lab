@@ -6,6 +6,7 @@ defmodule StackLab.CitadelSpineHarness do
 
   alias StackLab.CitadelSpineHarness.{
     GovernedRun,
+    InstallationRuntimeLease,
     LowerFacts,
     MezzanineRestartRecovery,
     MultiNode,
@@ -131,6 +132,25 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_mezzanine_restart_recovery(:dispatching_retry_after_restart) do
     MezzanineRestartRecovery.run_case(:dispatching_retry_after_restart)
+  end
+
+  @spec installation_runtime_lease_scenario() :: map()
+  def installation_runtime_lease_scenario do
+    %{
+      name: :installation_runtime_lease,
+      compose: LabCore.compose_file(:single),
+      runbook: LabCore.runbook(:up_single),
+      repo_roots: repo_roots(),
+      cases: %{
+        two_owner_fencing: %{kind: :two_owner_fencing}
+      }
+    }
+  end
+
+  @spec exercise_installation_runtime_lease(:two_owner_fencing) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_installation_runtime_lease(:two_owner_fencing) do
+    InstallationRuntimeLease.run_case(:two_owner_fencing)
   end
 
   @spec governed_run_scenario() :: map()
