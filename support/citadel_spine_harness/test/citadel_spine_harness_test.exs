@@ -115,7 +115,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.exists?(scenario.runbook)
   end
 
-  test "describes the app-kit operational-surface proof case as the Phase-3 closeout scenario" do
+  test "describes the app-kit operational-surface proof case as the Phase-4 closeout scenario" do
     scenario = CitadelSpineHarness.app_kit_operational_surface_scenario()
 
     assert scenario.name == :app_kit_operational_surface
