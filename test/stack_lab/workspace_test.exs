@@ -15,6 +15,7 @@ defmodule StackLab.WorkspaceTest do
     assert "examples/single_node_roundtrip" in package_paths
     assert "examples/lower_facts_roundtrip" in package_paths
     assert "examples/outer_brain_restart_durability" in package_paths
+    assert "examples/mezzanine_restart_recovery" in package_paths
     assert "examples/semantic_host_roundtrip" in package_paths
     assert "examples/typed_host_roundtrip" in package_paths
     assert "examples/multi_node_roundtrip" in package_paths

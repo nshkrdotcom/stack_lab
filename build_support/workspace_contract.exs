@@ -7,6 +7,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/single_node_roundtrip",
     "examples/lower_facts_roundtrip",
     "examples/outer_brain_restart_durability",
+    "examples/mezzanine_restart_recovery",
     "examples/semantic_host_roundtrip",
     "examples/typed_host_roundtrip",
     "examples/multi_node_roundtrip",

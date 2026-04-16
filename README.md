@@ -24,6 +24,7 @@ submission seam:
 - `examples/single_node_roundtrip`
 - `examples/lower_facts_roundtrip`
 - `examples/outer_brain_restart_durability`
+- `examples/mezzanine_restart_recovery`
 - `examples/semantic_host_roundtrip`
 - `examples/typed_host_roundtrip`
 - `examples/multi_node_roundtrip`
@@ -37,7 +38,9 @@ the same lower seam. The dedicated OuterBrain restart-durability proof uses
 real `outer_brain` persistence, runtime, and restart-authority packages
 against backing Postgres. The semantic host proof remains adapter-shaped today
 and does not claim that its own path runs through a real `outer_brain`
-semantic-runtime surface inside `stack_lab`.
+semantic-runtime surface inside `stack_lab`. The neutral mezzanine restart
+recovery proof uses the real execution ledger, dispatch outbox, and runtime
+scheduler recovery slice against backing Postgres.
 
 ## Scope
 

@@ -6,6 +6,7 @@ defmodule StackLab.CitadelSpineHarness do
 
   alias StackLab.CitadelSpineHarness.{
     LowerFacts,
+    MezzanineRestartRecovery,
     MultiNode,
     OuterBrainDurability,
     PressureFailover,
@@ -110,6 +111,25 @@ defmodule StackLab.CitadelSpineHarness do
   def exercise_outer_brain_durability(case_name)
       when case_name in [:pending_recovery_after_restart, :final_reply_after_restart] do
     OuterBrainDurability.run_case(case_name)
+  end
+
+  @spec mezzanine_restart_recovery_scenario() :: map()
+  def mezzanine_restart_recovery_scenario do
+    %{
+      name: :mezzanine_restart_recovery,
+      compose: LabCore.compose_file(:single),
+      runbook: LabCore.runbook(:up_single),
+      repo_roots: repo_roots(),
+      cases: %{
+        dispatching_retry_after_restart: %{kind: :dispatching_retry_after_restart}
+      }
+    }
+  end
+
+  @spec exercise_mezzanine_restart_recovery(:dispatching_retry_after_restart) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_mezzanine_restart_recovery(:dispatching_retry_after_restart) do
+    MezzanineRestartRecovery.run_case(:dispatching_retry_after_restart)
   end
 
   @spec multi_node_scenario() :: map()

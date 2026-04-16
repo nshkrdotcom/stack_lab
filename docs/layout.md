@@ -14,6 +14,7 @@ The workspace is organized as:
   - first-class proving projects
   - `single_node_roundtrip`
   - `outer_brain_restart_durability`
+  - `mezzanine_restart_recovery`
   - `multi_node_roundtrip`
   - `restart_authority_drill`
   - `pressure_failover_drill`

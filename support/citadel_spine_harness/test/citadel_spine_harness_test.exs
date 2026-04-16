@@ -89,6 +89,19 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.exists?(scenario.runbook)
   end
 
+  test "describes the mezzanine restart-recovery proof case as a Stage-2 durable substrate scenario" do
+    scenario = CitadelSpineHarness.mezzanine_restart_recovery_scenario()
+
+    assert scenario.name == :mezzanine_restart_recovery
+
+    assert scenario.cases == %{
+             dispatching_retry_after_restart: %{kind: :dispatching_retry_after_restart}
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
   test "remote spine startup returns only after the remote service is callable" do
     try do
       remote = RemoteSupport.start_remote_spine!(:startup_probe)
