@@ -1,28 +1,37 @@
-defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
+defmodule StackLab.CitadelSpineHarness.MezzanineOperationalStack do
   @moduledoc false
 
   alias Ecto.Migrator
   alias Mezzanine.Audit.Repo, as: AuditRepo
   alias Mezzanine.ConfigRegistry.Repo, as: ConfigRegistryRepo
+  alias Mezzanine.Decisions.Repo, as: DecisionsRepo
+  alias Mezzanine.EvidenceLedger.Repo, as: EvidenceRepo
   alias Mezzanine.Execution.Repo, as: ExecutionRepo
-  alias Mezzanine.Objects.Repo, as: ObjectsRepo
+  alias Mezzanine.OpsDomain.Repo, as: OpsDomainRepo
   alias Mezzanine.Pack.Registry, as: PackRegistry
-  alias Mezzanine.RuntimeScheduler.Repo, as: RuntimeSchedulerRepo
   alias StackLab.CitadelSpineHarness.CompiledMigrations
   alias StackLab.CitadelSpineHarness.PostgresContainer
 
-  @repo_modules [AuditRepo, ObjectsRepo, ExecutionRepo, ConfigRegistryRepo, RuntimeSchedulerRepo]
+  @repo_modules [
+    AuditRepo,
+    ConfigRegistryRepo,
+    DecisionsRepo,
+    EvidenceRepo,
+    ExecutionRepo,
+    OpsDomainRepo
+  ]
   @migration_components [
     {AuditRepo, "audit_engine"},
-    {ObjectsRepo, "object_engine"},
-    {ExecutionRepo, "execution_engine"},
     {ConfigRegistryRepo, "config_registry"},
-    {RuntimeSchedulerRepo, "runtime_scheduler"}
+    {DecisionsRepo, "decision_engine"},
+    {EvidenceRepo, "evidence_engine"},
+    {ExecutionRepo, "execution_engine"},
+    {OpsDomainRepo, "ops_domain"}
   ]
 
   @spec with_store(atom() | String.t(), (keyword() -> any())) :: any()
   def with_store(label, fun) when is_function(fun, 1) do
-    container = PostgresContainer.start!("mezzanine_substrate_#{label}")
+    container = PostgresContainer.start!("mezzanine_operational_stack_#{label}")
     repo_config = PostgresContainer.repo_config(container.port)
 
     start_repos!(repo_config)
@@ -35,14 +44,6 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
       stop_runtime()
       PostgresContainer.stop!(container)
     end
-  end
-
-  @spec restart_runtime!(keyword()) :: :ok
-  def restart_runtime!(repo_config) do
-    stop_runtime()
-    start_repos!(repo_config)
-    start_pack_registry!()
-    :ok
   end
 
   @spec stop_runtime() :: :ok

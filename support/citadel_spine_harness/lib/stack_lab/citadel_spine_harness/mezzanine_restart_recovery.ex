@@ -36,7 +36,7 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
         :ok = MezzanineSubstrate.restart_runtime!(repo_config)
 
         {:ok, reconcile_summary} =
-          MezzanineRuntimeScheduler.reconcile_on_start(installation_id, recovery_now)
+          runtime_scheduler_call!(:reconcile_on_start, [installation_id, recovery_now])
 
         after_execution = fetch_execution!(execution.id)
         after_outbox = fetch_outbox!(execution.id)
@@ -161,28 +161,18 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
   end
 
   defp stop_submission_ledger(ledger) do
-    if is_pid(ledger) and Process.alive?(ledger) do
-      Agent.stop(ledger)
-    else
-      :ok
-    end
+    Agent.stop(ledger)
   end
 
   defp persist_initial_acceptance!(ledger, claimed) do
     acceptance = acceptance_payload(claimed, "accepted")
 
     Agent.update(ledger, fn state ->
-      case Map.has_key?(state.submissions, claimed.submission_dedupe_key) do
-        true ->
-          state
-
-        false ->
-          %{
-            state
-            | submissions: Map.put(state.submissions, claimed.submission_dedupe_key, acceptance),
-              unique_submission_count: state.unique_submission_count + 1
-          }
-      end
+      %{
+        state
+        | submissions: Map.put(state.submissions, claimed.submission_dedupe_key, acceptance),
+          unique_submission_count: state.unique_submission_count + 1
+      }
     end)
 
     acceptance
@@ -232,5 +222,15 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
   defp fetch_outbox!(execution_id) do
     {:ok, outbox} = DispatchOutboxEntry.by_execution_id(execution_id)
     outbox
+  end
+
+  defp runtime_scheduler_call!(function, args) when is_atom(function) and is_list(args) do
+    module = MezzanineRuntimeScheduler
+
+    if function_exported?(module, function, length(args)) do
+      apply(module, function, args)
+    else
+      raise "#{inspect(module)}.#{function}/#{length(args)} is unavailable"
+    end
   end
 end

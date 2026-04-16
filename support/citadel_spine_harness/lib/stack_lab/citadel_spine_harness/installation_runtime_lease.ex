@@ -13,7 +13,7 @@ defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLease do
     SubjectKindSpec
   }
 
-  alias Mezzanine.RuntimeScheduler.{InstallationLease, InstallationLeaseStore}
+  alias Mezzanine.RuntimeScheduler.InstallationLease
   alias MezzanineConfigRegistry
   alias StackLab.CitadelSpineHarness.MezzanineSubstrate
 
@@ -71,35 +71,41 @@ defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLease do
         )
 
       {:ok, :acquired, expense_claim} =
-        InstallationLeaseStore.acquire_lease(expense_lease, now)
+        runtime_scheduler_call!(:acquire_installation_lease, [expense_lease, now])
 
       {:ok, :acquired, invoice_claim} =
-        InstallationLeaseStore.acquire_lease(invoice_lease, now)
+        runtime_scheduler_call!(:acquire_installation_lease, [invoice_lease, now])
 
       {:error, {:held_by_other, expense_fence}} =
-        InstallationLeaseStore.acquire_lease(
-          lease!(
-            expense_installation.id,
-            "scheduler-b",
-            "lease:expense:b",
-            2,
-            expense_installation.compiled_pack_revision,
+        runtime_scheduler_call!(
+          :acquire_installation_lease,
+          [
+            lease!(
+              expense_installation.id,
+              "scheduler-b",
+              "lease:expense:b",
+              2,
+              expense_installation.compiled_pack_revision,
+              now
+            ),
             now
-          ),
-          now
+          ]
         )
 
       {:error, {:stale_epoch, stale_fence}} =
-        InstallationLeaseStore.acquire_lease(
-          lease!(
-            expense_installation.id,
-            "scheduler-b",
-            "lease:expense:b",
-            1,
-            expense_installation.compiled_pack_revision,
+        runtime_scheduler_call!(
+          :acquire_installation_lease,
+          [
+            lease!(
+              expense_installation.id,
+              "scheduler-b",
+              "lease:expense:b",
+              1,
+              expense_installation.compiled_pack_revision,
+              later
+            ),
             later
-          ),
-          later
+          ]
         )
 
       takeover_lease =
@@ -113,13 +119,13 @@ defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLease do
         )
 
       {:ok, :acquired, expense_takeover} =
-        InstallationLeaseStore.acquire_lease(takeover_lease, later)
+        runtime_scheduler_call!(:acquire_installation_lease, [takeover_lease, later])
 
       {:ok, persisted_expense} =
-        InstallationLeaseStore.fetch_current_lease(expense_installation.id)
+        runtime_scheduler_call!(:fetch_installation_lease, [expense_installation.id])
 
       {:ok, persisted_invoice} =
-        InstallationLeaseStore.fetch_current_lease(invoice_installation.id)
+        runtime_scheduler_call!(:fetch_installation_lease, [invoice_installation.id])
 
       {:ok,
        %{
@@ -230,17 +236,14 @@ defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLease do
   end
 
   defp lease!(installation_id, holder, lease_id, epoch, revision, now) do
-    {:ok, lease} =
-      InstallationLease.new(%{
-        installation_id: installation_id,
-        holder: holder,
-        lease_id: lease_id,
-        epoch: epoch,
-        compiled_pack_revision: revision,
-        expires_at: DateTime.add(now, 300, :second)
-      })
-
-    lease
+    %InstallationLease{
+      installation_id: installation_id,
+      holder: holder,
+      lease_id: lease_id,
+      epoch: epoch,
+      compiled_pack_revision: revision,
+      expires_at: DateTime.add(now, 300, :second)
+    }
   end
 
   defp installation_summary(installation) do
@@ -269,5 +272,15 @@ defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLease do
       epoch: fence.epoch,
       compiled_pack_revision: fence.compiled_pack_revision
     }
+  end
+
+  defp runtime_scheduler_call!(function, args) when is_atom(function) and is_list(args) do
+    module = MezzanineRuntimeScheduler
+
+    if function_exported?(module, function, length(args)) do
+      apply(module, function, args)
+    else
+      raise "#{inspect(module)}.#{function}/#{length(args)} is unavailable"
+    end
   end
 end

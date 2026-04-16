@@ -54,7 +54,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
     if Node.alive?() do
       :ok
     else
-      case Node.start(unique_name(:stack_lab_local), :shortnames) do
+      case Node.start(unique_name(:stack_lab_local), name_domain: :shortnames) do
         {:ok, _pid} -> :ok
         {:error, {:already_started, _pid}} -> :ok
         {:error, reason} -> {:error, reason}

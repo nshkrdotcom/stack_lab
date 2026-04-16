@@ -5,6 +5,7 @@ defmodule StackLab.CitadelSpineHarness do
   """
 
   alias StackLab.CitadelSpineHarness.{
+    AppKitOperationalSurface,
     GovernedRun,
     InstallationRuntimeLease,
     LowerFacts,
@@ -151,6 +152,25 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_installation_runtime_lease(:two_owner_fencing) do
     InstallationRuntimeLease.run_case(:two_owner_fencing)
+  end
+
+  @spec app_kit_operational_surface_scenario() :: map()
+  def app_kit_operational_surface_scenario do
+    %{
+      name: :app_kit_operational_surface,
+      compose: LabCore.compose_file(:single),
+      runbook: LabCore.runbook(:up_single),
+      repo_roots: repo_roots(),
+      cases: %{
+        install_ingest_review_trace: %{kind: :install_ingest_review_trace}
+      }
+    }
+  end
+
+  @spec exercise_app_kit_operational_surface(:install_ingest_review_trace) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_app_kit_operational_surface(:install_ingest_review_trace) do
+    AppKitOperationalSurface.run_case(:install_ingest_review_trace)
   end
 
   @spec governed_run_scenario() :: map()

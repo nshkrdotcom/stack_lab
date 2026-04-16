@@ -115,6 +115,19 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.exists?(scenario.runbook)
   end
 
+  test "describes the app-kit operational-surface proof case as the Phase-3 closeout scenario" do
+    scenario = CitadelSpineHarness.app_kit_operational_surface_scenario()
+
+    assert scenario.name == :app_kit_operational_surface
+
+    assert scenario.cases == %{
+             install_ingest_review_trace: %{kind: :install_ingest_review_trace}
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
   test "describes the governed-run proof case as a non-extravaganza Stage-2 scenario" do
     scenario = CitadelSpineHarness.governed_run_scenario()
 

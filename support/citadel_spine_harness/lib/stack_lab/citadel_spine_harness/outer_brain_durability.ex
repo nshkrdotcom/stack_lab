@@ -167,8 +167,6 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
     end
   end
 
-  defp stop_registry(nil), do: :ok
-
   defp stop_registry(registry) when is_pid(registry) do
     if Process.alive?(registry) do
       Agent.stop(registry)
