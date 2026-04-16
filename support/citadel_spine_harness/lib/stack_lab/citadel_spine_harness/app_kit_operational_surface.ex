@@ -30,6 +30,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     WorkSurface
   }
 
+  alias Mezzanine.AppKitBridge.SemanticFailureRecoveryService
   alias Mezzanine.Audit.Repo, as: AuditRepo
   alias Mezzanine.CitadelBridge.{AuthorityAssembler, RunIntentCompiler}
   alias Mezzanine.ConfigRegistry.Installation
@@ -121,6 +122,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
           :install_ingest_review_trace
           | :lower_backed_command_trace
           | :lower_backed_command_terminal_rejection
+          | :lower_backed_command_semantic_failure
           | :unauthorized_lower_trace_read
         ) :: {:ok, map()}
   def run_case(:install_ingest_review_trace) do
@@ -469,6 +471,115 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              trace_id: unified_trace.trace_id,
              step_sources: Enum.map(unified_trace.steps, & &1.source),
              rejected_execution: rejected_execution
+           }
+         }}
+      end
+    )
+  end
+
+  def run_case(:lower_backed_command_semantic_failure) do
+    with_lower_backed_runtime(
+      :app_kit_lower_backed_command_semantic_failure,
+      "tenant-app-kit-lower-backed-semantic-failure",
+      fn env ->
+        :ok = TransportRuntime.put!(lower_transport_config(self(), env.subject_ref.id))
+
+        {:ok, lower_dispatch} =
+          lower_backed_dispatch(
+            env.context,
+            env.installation_ref,
+            env.subject_ref,
+            env.run_result
+          )
+
+        {:ok, %{classification: :semantic_failure, execution: failed_execution}} =
+          Dispatcher.reconcile_result(
+            lower_dispatch.execution.id,
+            {:semantic_failure,
+             %{
+               "lower_receipt" => lower_dispatch.execution.lower_receipt,
+               "error" => %{
+                 "kind" => "semantic_failure",
+                 "reason" => "model_confused"
+               }
+             }},
+            actor_ref: %{kind: :reconciler}
+          )
+
+        {:ok, recovery} =
+          SemanticFailureRecoveryService.recover_execution(env.tenant_id, failed_execution.id)
+
+        {:ok, page_request} = PageRequest.new(%{limit: 10})
+
+        {:ok, subject_detail} =
+          WorkSurface.get_subject(env.context, env.subject_ref, env.surface_opts)
+
+        {:ok, operator_projection} =
+          OperatorSurface.subject_status(env.context, env.subject_ref, env.surface_opts)
+
+        {:ok, pending_reviews} =
+          ReviewSurface.list_pending(env.context, page_request, env.surface_opts)
+
+        decision_ref = hd(pending_reviews.entries).decision_ref
+
+        {:ok, review_detail} =
+          ReviewSurface.get_review(env.context, decision_ref, env.surface_opts)
+
+        {:ok, execution_ref} =
+          ExecutionRef.new(%{
+            id: failed_execution.id,
+            subject_ref: env.subject_ref,
+            recipe_ref: "expense_capture",
+            dispatch_state: failed_execution.dispatch_state
+          })
+
+        {:ok, unified_trace} =
+          OperatorSurface.get_unified_trace(env.context, execution_ref, env.surface_opts)
+
+        failed_execution_step =
+          unified_trace.steps
+          |> Enum.find(&(&1.source == "execution_record"))
+          |> Map.fetch!(:payload)
+
+        {:ok,
+         %{
+           case: :lower_backed_command_semantic_failure,
+           tenant_id: env.tenant_id,
+           installation: %{
+             created_status: env.install_result.status,
+             installation_id: env.installation_ref.id,
+             pack_slug: env.installation_ref.pack_slug
+           },
+           work: %{
+             subject_id: env.subject_ref.id,
+             run_id: env.run_result.payload.run_ref.run_id,
+             state: env.run_result.state
+           },
+           dispatch: %{
+             execution_id: failed_execution.id,
+             classification: :semantic_failure,
+             execution_state: failed_execution.dispatch_state,
+             failure_kind: failed_execution.failure_kind,
+             outbox_status: fetch_outbox!(failed_execution.id).status
+           },
+           recovery: %{
+             work_state: subject_detail.lifecycle_state,
+             active_run_state: subject_detail.payload.active_run_status,
+             pending_review_ids: Enum.map(subject_detail.pending_decision_refs, & &1.id),
+             operator_lifecycle_state: operator_projection.lifecycle_state,
+             operator_pending_decision_ids:
+               Enum.map(operator_projection.pending_decision_refs, & &1.id),
+             review_id: decision_ref.id,
+             review_status: review_detail.status,
+             review_recovery_kind:
+               review_detail.payload.review_unit.decision_profile["recovery_kind"],
+             timeline_kinds: Enum.map(operator_projection.payload.timeline, & &1.event_kind),
+             recovery_review_created?: recovery.review_created?
+           },
+           trace: %{
+             trace_id: unified_trace.trace_id,
+             step_sources: Enum.map(unified_trace.steps, & &1.source),
+             failed_execution: failed_execution_step
            }
          }}
       end

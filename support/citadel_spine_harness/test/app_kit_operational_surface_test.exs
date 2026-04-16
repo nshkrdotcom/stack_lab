@@ -96,6 +96,37 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert result.trace.rejected_execution.terminal_rejection_reason == "workspace_ref_unresolved"
   end
 
+  test "app-kit operational surface routes one normalized semantic failure into deterministic operator recovery" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_app_kit_operational_surface(
+               :lower_backed_command_semantic_failure
+             )
+
+    assert result.case == :lower_backed_command_semantic_failure
+    assert result.tenant_id == "tenant-app-kit-lower-backed-semantic-failure"
+
+    assert result.dispatch.classification == :semantic_failure
+    assert result.dispatch.execution_state == :failed
+    assert result.dispatch.failure_kind == :semantic_failure
+    assert result.dispatch.outbox_status == :completed
+
+    assert result.recovery.work_state == "awaiting_review"
+    assert result.recovery.active_run_state == "failed"
+    assert result.recovery.operator_lifecycle_state == "awaiting_review"
+    assert result.recovery.review_status == "pending"
+    assert result.recovery.review_recovery_kind == "semantic_failure"
+    assert result.recovery.recovery_review_created?
+    assert result.recovery.pending_review_ids == [result.recovery.review_id]
+    assert result.recovery.operator_pending_decision_ids == [result.recovery.review_id]
+    assert "run_failed" in result.recovery.timeline_kinds
+    assert "review_created" in result.recovery.timeline_kinds
+
+    assert "execution_record" in result.trace.step_sources
+    assert "audit_fact" in result.trace.step_sources
+    assert result.trace.failed_execution.dispatch_state == :failed
+    assert result.trace.failed_execution.failure_kind == :semantic_failure
+  end
+
   test "app-kit operational surface returns an explicit authorization error for unauthorized lower-enriched trace reads" do
     assert {:ok, result} =
              CitadelSpineHarness.exercise_app_kit_operational_surface(

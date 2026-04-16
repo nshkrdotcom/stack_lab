@@ -121,7 +121,15 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert scenario.name == :app_kit_operational_surface
 
     assert scenario.cases == %{
-             install_ingest_review_trace: %{kind: :install_ingest_review_trace}
+             install_ingest_review_trace: %{kind: :install_ingest_review_trace},
+             lower_backed_command_trace: %{kind: :lower_backed_command_trace},
+             lower_backed_command_terminal_rejection: %{
+               kind: :lower_backed_command_terminal_rejection
+             },
+             lower_backed_command_semantic_failure: %{
+               kind: :lower_backed_command_semantic_failure
+             },
+             unauthorized_lower_trace_read: %{kind: :unauthorized_lower_trace_read}
            }
 
     assert File.exists?(scenario.compose)

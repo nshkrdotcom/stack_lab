@@ -227,10 +227,12 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
   defp runtime_scheduler_call!(function, args) when is_atom(function) and is_list(args) do
     module = MezzanineRuntimeScheduler
 
-    if function_exported?(module, function, length(args)) do
+    with {:module, ^module} <- Code.ensure_loaded(module),
+         true <- function_exported?(module, function, length(args)) do
       apply(module, function, args)
     else
-      raise "#{inspect(module)}.#{function}/#{length(args)} is unavailable"
+      _ ->
+        raise "#{inspect(module)}.#{function}/#{length(args)} is unavailable"
     end
   end
 end

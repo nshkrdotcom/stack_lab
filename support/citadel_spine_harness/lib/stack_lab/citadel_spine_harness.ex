@@ -167,6 +167,9 @@ defmodule StackLab.CitadelSpineHarness do
         lower_backed_command_terminal_rejection: %{
           kind: :lower_backed_command_terminal_rejection
         },
+        lower_backed_command_semantic_failure: %{
+          kind: :lower_backed_command_semantic_failure
+        },
         unauthorized_lower_trace_read: %{kind: :unauthorized_lower_trace_read}
       }
     }
@@ -176,6 +179,7 @@ defmodule StackLab.CitadelSpineHarness do
           :install_ingest_review_trace
           | :lower_backed_command_trace
           | :lower_backed_command_terminal_rejection
+          | :lower_backed_command_semantic_failure
           | :unauthorized_lower_trace_read
         ) ::
           {:ok, map()} | {:error, term()}
@@ -184,6 +188,7 @@ defmodule StackLab.CitadelSpineHarness do
              :install_ingest_review_trace,
              :lower_backed_command_trace,
              :lower_backed_command_terminal_rejection,
+             :lower_backed_command_semantic_failure,
              :unauthorized_lower_trace_read
            ] do
     AppKitOperationalSurface.run_case(case_name)

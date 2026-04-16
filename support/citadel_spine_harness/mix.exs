@@ -8,6 +8,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       docs: docs(),
       name: "StackLab Citadel Spine Harness",
       description: "Harness-only assembly package for Citadel and Jido Integration proofs"
@@ -17,6 +18,19 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp aliases do
+    [
+      ci: [
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "cmd env MIX_ENV=test mix test",
+        "credo --strict",
+        "cmd env MIX_ENV=dev mix dialyzer --force-check",
+        "cmd env MIX_ENV=dev mix docs --warnings-as-errors"
+      ]
     ]
   end
 
