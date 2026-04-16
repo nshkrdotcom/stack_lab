@@ -62,6 +62,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
        path: "../../../mezzanine/core/runtime_scheduler", runtime: false},
       {:mezzanine_app_kit_bridge,
        path: "../../../mezzanine/bridges/app_kit_bridge", runtime: false},
+      {:mezzanine_citadel_bridge, path: "../../../mezzanine/bridges/citadel_bridge"},
       {:mezzanine_integration_bridge,
        path: "../../../mezzanine/bridges/integration_bridge", runtime: false},
       {:jido_integration_v2_contracts,

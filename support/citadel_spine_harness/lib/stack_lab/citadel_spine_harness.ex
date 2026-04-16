@@ -162,15 +162,20 @@ defmodule StackLab.CitadelSpineHarness do
       runbook: LabCore.runbook(:up_single),
       repo_roots: repo_roots(),
       cases: %{
-        install_ingest_review_trace: %{kind: :install_ingest_review_trace}
+        install_ingest_review_trace: %{kind: :install_ingest_review_trace},
+        lower_backed_command_trace: %{kind: :lower_backed_command_trace}
       }
     }
   end
 
-  @spec exercise_app_kit_operational_surface(:install_ingest_review_trace) ::
+  @spec exercise_app_kit_operational_surface(
+          :install_ingest_review_trace
+          | :lower_backed_command_trace
+        ) ::
           {:ok, map()} | {:error, term()}
-  def exercise_app_kit_operational_surface(:install_ingest_review_trace) do
-    AppKitOperationalSurface.run_case(:install_ingest_review_trace)
+  def exercise_app_kit_operational_surface(case_name)
+      when case_name in [:install_ingest_review_trace, :lower_backed_command_trace] do
+    AppKitOperationalSurface.run_case(case_name)
   end
 
   @spec governed_run_scenario() :: map()
