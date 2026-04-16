@@ -2,12 +2,9 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
   @moduledoc false
 
   alias Ash
-  alias Ecto.Migrator
-  alias Mezzanine.Audit.Repo, as: AuditRepo
-  alias Mezzanine.Execution.{Dispatcher, DispatchOutboxEntry, ExecutionRecord, Repo}
-  alias Mezzanine.Objects.Repo, as: ObjectsRepo
+  alias Mezzanine.Execution.{Dispatcher, DispatchOutboxEntry, ExecutionRecord}
   alias Mezzanine.Objects.SubjectRecord
-  alias StackLab.CitadelSpineHarness.PostgresContainer
+  alias StackLab.CitadelSpineHarness.MezzanineSubstrate
 
   @dispatch_snapshot %{
     "placement_ref" => "local_docker",
@@ -17,7 +14,7 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
 
   @spec run_case(:dispatching_retry_after_restart) :: {:ok, map()}
   def run_case(:dispatching_retry_after_restart) do
-    with_store(:dispatching_retry_after_restart, fn repo_config ->
+    MezzanineSubstrate.with_store(:dispatching_retry_after_restart, fn repo_config ->
       installation_id = "stack-lab-installation"
       crash_now = ~U[2026-04-16 12:00:00.000000Z]
       recovery_now = ~U[2026-04-16 12:00:05.000000Z]
@@ -36,7 +33,7 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
           submission_dedupe_key: claimed.submission_dedupe_key
         }
 
-        restart_repos!(repo_config)
+        :ok = MezzanineSubstrate.restart_runtime!(repo_config)
 
         {:ok, reconcile_summary} =
           MezzanineRuntimeScheduler.reconcile_on_start(installation_id, recovery_now)
@@ -95,76 +92,6 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
         stop_submission_ledger(ledger)
       end
     end)
-  end
-
-  defp with_store(label, fun) when is_function(fun, 1) do
-    container = PostgresContainer.start!("mezzanine_restart_recovery_#{label}")
-    repo_config = PostgresContainer.repo_config(container.port)
-
-    start_repos!(repo_config)
-
-    try do
-      migrate_schema!()
-      fun.(repo_config)
-    after
-      stop_repos()
-      PostgresContainer.stop!(container)
-    end
-  end
-
-  defp migrate_schema! do
-    migrate!(AuditRepo, migration_path("audit_engine"))
-    migrate!(ObjectsRepo, migration_path("object_engine"))
-    migrate!(Repo, migration_path("execution_engine"))
-  end
-
-  defp migrate!(repo, path) do
-    Migrator.run(repo, path, :up, all: true, log: false)
-  end
-
-  defp migration_path(component) do
-    Path.join(
-      StackLab.CitadelSpineHarness.repo_roots().mezzanine,
-      "core/#{component}/priv/repo/migrations"
-    )
-  end
-
-  defp start_repos!(repo_config) do
-    stop_repos()
-    start_repo!(AuditRepo, repo_config)
-    start_repo!(ObjectsRepo, repo_config)
-    start_repo!(Repo, repo_config)
-  end
-
-  defp restart_repos!(repo_config) do
-    stop_repos()
-    start_repos!(repo_config)
-  end
-
-  defp start_repo!(repo_module, repo_config) do
-    {:ok, repo_pid} = repo_module.start_link(repo_config)
-    Process.unlink(repo_pid)
-    repo_pid
-  end
-
-  defp stop_repos do
-    stop_repo(Repo)
-    stop_repo(ObjectsRepo)
-    stop_repo(AuditRepo)
-  end
-
-  defp stop_repo(repo_module) do
-    case Process.whereis(repo_module) do
-      nil ->
-        :ok
-
-      _pid ->
-        try do
-          GenServer.stop(repo_module)
-        catch
-          :exit, _reason -> :ok
-        end
-    end
   end
 
   defp ingest_subject(installation_id, source_ref) do

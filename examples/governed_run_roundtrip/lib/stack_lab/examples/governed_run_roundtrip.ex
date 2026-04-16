@@ -1,11 +1,13 @@
 defmodule StackLab.Examples.GovernedRunRoundtrip do
   @moduledoc false
 
+  alias StackLab.CitadelSpineHarness
+
   def scenario do
-    %{
-      name: :governed_run_roundtrip,
-      compose: StackLab.LabCore.compose_file(:single),
-      runbook: StackLab.LabCore.runbook(:up_single)
-    }
+    CitadelSpineHarness.governed_run_scenario()
+  end
+
+  def exercise(case_name) do
+    CitadelSpineHarness.exercise_governed_run(case_name)
   end
 end

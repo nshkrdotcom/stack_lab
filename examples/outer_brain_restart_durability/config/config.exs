@@ -1,7 +1,10 @@
 import Config
 
 config :ash,
-  domains: [Mezzanine.Execution, Mezzanine.Objects, Mezzanine.Audit]
+  domains: [Mezzanine.ConfigRegistry, Mezzanine.Execution, Mezzanine.Objects, Mezzanine.Audit]
+
+config :mezzanine_config_registry,
+  ash_domains: [Mezzanine.ConfigRegistry]
 
 config :mezzanine_execution_engine,
   ash_domains: [Mezzanine.Execution]

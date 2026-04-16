@@ -5,6 +5,7 @@ defmodule StackLab.CitadelSpineHarness do
   """
 
   alias StackLab.CitadelSpineHarness.{
+    GovernedRun,
     LowerFacts,
     MezzanineRestartRecovery,
     MultiNode,
@@ -130,6 +131,24 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_mezzanine_restart_recovery(:dispatching_retry_after_restart) do
     MezzanineRestartRecovery.run_case(:dispatching_retry_after_restart)
+  end
+
+  @spec governed_run_scenario() :: map()
+  def governed_run_scenario do
+    %{
+      name: :governed_run_roundtrip,
+      compose: LabCore.compose_file(:single),
+      runbook: LabCore.runbook(:up_single),
+      repo_roots: repo_roots(),
+      cases: %{
+        expense_capture_acceptance: %{kind: :expense_capture_acceptance}
+      }
+    }
+  end
+
+  @spec exercise_governed_run(:expense_capture_acceptance) :: {:ok, map()} | {:error, term()}
+  def exercise_governed_run(:expense_capture_acceptance) do
+    GovernedRun.run_case(:expense_capture_acceptance)
   end
 
   @spec multi_node_scenario() :: map()

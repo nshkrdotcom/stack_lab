@@ -1,3 +1,3 @@
 # Governed Run Roundtrip
 
-Governed-run smoke path for `stack_lab`.
+Non-`extravaganza` genericity proof for the neutral `mezzanine` substrate.

@@ -102,6 +102,19 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.exists?(scenario.runbook)
   end
 
+  test "describes the governed-run proof case as a non-extravaganza Stage-2 scenario" do
+    scenario = CitadelSpineHarness.governed_run_scenario()
+
+    assert scenario.name == :governed_run_roundtrip
+
+    assert scenario.cases == %{
+             expense_capture_acceptance: %{kind: :expense_capture_acceptance}
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
   test "remote spine startup returns only after the remote service is callable" do
     try do
       remote = RemoteSupport.start_remote_spine!(:startup_probe)
