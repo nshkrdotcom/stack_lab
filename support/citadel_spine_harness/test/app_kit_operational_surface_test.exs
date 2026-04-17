@@ -2,6 +2,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
   use ExUnit.Case, async: false
 
   alias StackLab.CitadelSpineHarness
+  alias StackLab.CitadelSpineHarness.MixProject, as: HarnessMixProject
 
   test "app-kit operational surface proof covers install, ingest, action, review, and unified trace" do
     assert {:ok, result} =
@@ -138,5 +139,15 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert result.error.code == "unauthorized_lower_read"
     assert result.error.kind == :authorization
     refute result.error.retryable
+  end
+
+  test "harness mix project does not depend on the deprecated mezzanine bridge package" do
+    deps = HarnessMixProject.project()[:deps]
+
+    refute Enum.any?(deps, fn
+             {:mezzanine_app_kit_bridge, _opts} -> true
+             {:mezzanine_app_kit_bridge, _requirement, _opts} -> true
+             _other -> false
+           end)
   end
 end
