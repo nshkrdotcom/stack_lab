@@ -2,32 +2,10 @@ defmodule StackLab.CitadelSpineHarness.MezzanineOperationalStack do
   @moduledoc false
 
   alias Ecto.Migrator
-  alias Mezzanine.Audit.Repo, as: AuditRepo
-  alias Mezzanine.ConfigRegistry.Repo, as: ConfigRegistryRepo
-  alias Mezzanine.Decisions.Repo, as: DecisionsRepo
-  alias Mezzanine.EvidenceLedger.Repo, as: EvidenceRepo
-  alias Mezzanine.Execution.Repo, as: ExecutionRepo
-  alias Mezzanine.OpsDomain.Repo, as: OpsDomainRepo
+  alias Mezzanine.Execution.RuntimeStack
   alias Mezzanine.Pack.Registry, as: PackRegistry
   alias StackLab.CitadelSpineHarness.CompiledMigrations
   alias StackLab.CitadelSpineHarness.PostgresContainer
-
-  @repo_modules [
-    AuditRepo,
-    ConfigRegistryRepo,
-    DecisionsRepo,
-    EvidenceRepo,
-    ExecutionRepo,
-    OpsDomainRepo
-  ]
-  @migration_components [
-    {AuditRepo, "audit_engine"},
-    {ConfigRegistryRepo, "config_registry"},
-    {DecisionsRepo, "decision_engine"},
-    {EvidenceRepo, "evidence_engine"},
-    {ExecutionRepo, "execution_engine"},
-    {OpsDomainRepo, "ops_domain"}
-  ]
 
   @spec with_store(atom() | String.t(), (keyword() -> any())) :: any()
   def with_store(label, fun) when is_function(fun, 1) do
@@ -49,12 +27,12 @@ defmodule StackLab.CitadelSpineHarness.MezzanineOperationalStack do
   @spec stop_runtime() :: :ok
   def stop_runtime do
     stop_pack_registry()
-    Enum.each(Enum.reverse(@repo_modules), &stop_repo/1)
+    Enum.each(Enum.reverse(RuntimeStack.repo_modules()), &stop_repo/1)
     :ok
   end
 
   defp migrate_schema! do
-    Enum.each(@migration_components, fn {repo, component} ->
+    Enum.each(RuntimeStack.migration_components(), fn {repo, component} ->
       Migrator.run(repo, CompiledMigrations.for_path(migration_path(component)), :up,
         all: true,
         log: false
@@ -70,7 +48,7 @@ defmodule StackLab.CitadelSpineHarness.MezzanineOperationalStack do
   end
 
   defp start_repos!(repo_config) do
-    Enum.each(@repo_modules, &start_repo!(&1, repo_config))
+    Enum.each(RuntimeStack.repo_modules(), &start_repo!(&1, repo_config))
   end
 
   defp start_repo!(repo_module, repo_config) do

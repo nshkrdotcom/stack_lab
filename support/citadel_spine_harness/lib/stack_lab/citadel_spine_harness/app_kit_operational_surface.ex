@@ -39,6 +39,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   alias Mezzanine.EvidenceLedger.Repo, as: EvidenceRepo
   alias Mezzanine.Execution.{Dispatcher, DispatchOutboxEntry, ExecutionRecord}
   alias Mezzanine.Execution.Repo, as: ExecutionRepo
+  alias Mezzanine.Installations
   alias Mezzanine.IntegrationBridge
   alias Mezzanine.Intent.{ReadIntent, RunIntent}
 
@@ -50,9 +51,6 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     ProjectionSpec,
     SubjectKindSpec
   }
-
-  alias Mezzanine.Programs.{PolicyBundle, Program}
-  alias Mezzanine.Work.WorkClass
 
   alias StackLab.CitadelSpineHarness.{
     InProcessTransport,
@@ -845,26 +843,18 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   end
 
   defp operational_fixture_stack(tenant_id, opts \\ []) do
-    actor = %{tenant_id: tenant_id}
     review_required? = Keyword.get(opts, :review_required?, true)
 
-    {:ok, program} =
-      Program.create_program(
-        %{
+    {:ok, bootstrap} =
+      Installations.ensure_runtime_profile(tenant_id, %{
+        program: %{
           slug: "app-kit-operational-#{System.unique_integer([:positive])}",
           name: "AppKit Operational Program",
           product_family: "operator_stack",
           configuration: %{},
           metadata: %{}
         },
-        actor: actor,
-        tenant: tenant_id
-      )
-
-    {:ok, bundle} =
-      PolicyBundle.load_bundle(
-        %{
-          program_id: program.id,
+        policy_bundle: %{
           name: "default",
           version: "1.0.0",
           policy_kind: :workflow_md,
@@ -872,26 +862,24 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
           body: workflow_body(review_required?),
           metadata: %{}
         },
-        actor: actor,
-        tenant: tenant_id
-      )
-
-    {:ok, work_class} =
-      WorkClass.create_work_class(
-        %{
-          program_id: program.id,
+        work_class: %{
           name: "coding_task_#{System.unique_integer([:positive])}",
           kind: "coding_task",
           intake_schema: %{"required" => ["title"]},
-          policy_bundle_id: bundle.id,
           default_review_profile: %{"required" => review_required?},
           default_run_profile: %{"runtime" => "session"}
         },
-        actor: actor,
-        tenant: tenant_id
-      )
+        placement_profile: %{
+          profile_id: "local_default",
+          strategy: "affinity",
+          target_selector: %{"runtime_driver" => "jido_session"},
+          runtime_preferences: %{"locality" => "same_region"},
+          workspace_policy: %{},
+          metadata: %{}
+        }
+      })
 
-    %{program: program, work_class: work_class}
+    %{program: bootstrap.program, work_class: bootstrap.work_class}
   end
 
   defp seed_trace_ledger(installation_id, subject_id, trace_id) do

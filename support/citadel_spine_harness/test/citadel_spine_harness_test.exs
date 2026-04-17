@@ -230,6 +230,34 @@ defmodule StackLab.CitadelSpineHarnessTest do
     end)
   end
 
+  test "harness mix project does not declare or reference the deprecated mezzanine ops_domain package directly" do
+    deps = MixProject.project()[:deps]
+
+    refute Enum.any?(deps, fn
+             {:mezzanine_ops_domain, _opts} -> true
+             {:mezzanine_ops_domain, _requirement, _opts} -> true
+             _other -> false
+           end)
+
+    harness_root = Path.expand("..", __DIR__)
+
+    harness_root
+    |> Path.join("lib/**/*.ex")
+    |> Path.wildcard(match_dot: true)
+    |> Enum.each(fn path ->
+      contents = File.read!(path)
+
+      refute contents =~ "Mezzanine.OpsDomain.Repo",
+             "#{path} still references Mezzanine.OpsDomain.Repo"
+
+      refute Regex.match?(
+               ~r/Mezzanine\.(Programs|Work|Runs|Review|Evidence|Control)\b/,
+               contents
+             ),
+             "#{path} still references direct ops_domain namespaces"
+    end)
+  end
+
   test "remote spine startup returns only after the remote service is callable" do
     try do
       remote = RemoteSupport.start_remote_spine!(:startup_probe)
