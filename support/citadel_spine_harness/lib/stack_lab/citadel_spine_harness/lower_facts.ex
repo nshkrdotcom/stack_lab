@@ -22,7 +22,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   alias Jido.Integration.V2.SubmissionIdentity
   alias Mezzanine.Audit.ExecutionLineage
   alias Mezzanine.IntegrationBridge
-  alias MezzanineOpsModel.Intent.ReadIntent
+  alias Mezzanine.Intent.ReadIntent
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
 
   @control_plane_keys [

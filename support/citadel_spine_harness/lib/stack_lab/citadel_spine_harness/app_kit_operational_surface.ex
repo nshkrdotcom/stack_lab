@@ -40,6 +40,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   alias Mezzanine.Execution.{Dispatcher, DispatchOutboxEntry, ExecutionRecord}
   alias Mezzanine.Execution.Repo, as: ExecutionRepo
   alias Mezzanine.IntegrationBridge
+  alias Mezzanine.Intent.{ReadIntent, RunIntent}
 
   alias Mezzanine.Pack.{
     Compiler,
@@ -52,7 +53,6 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
   alias Mezzanine.Programs.{PolicyBundle, Program}
   alias Mezzanine.Work.WorkClass
-  alias MezzanineOpsModel.Intent.{ReadIntent, RunIntent}
 
   alias StackLab.CitadelSpineHarness.{
     InProcessTransport,

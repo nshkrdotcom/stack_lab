@@ -56,7 +56,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:app_kit_scope_objects, path: "../../../app_kit/core/scope_objects"},
       {:app_kit_work_control, path: "../../../app_kit/core/work_control"},
       {:app_kit_work_surface, path: "../../../app_kit/core/work_surface"},
-      {:mezzanine_ops_model, path: "../../../mezzanine/core/ops_model", runtime: false},
+      {:mezzanine_core, path: "../../../mezzanine/core/mezzanine_core", runtime: false},
       {:mezzanine_audit_engine, path: "../../../mezzanine/core/audit_engine", runtime: false},
       {:mezzanine_config_registry,
        path: "../../../mezzanine/core/config_registry", runtime: false},
