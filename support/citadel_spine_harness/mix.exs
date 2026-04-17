@@ -68,7 +68,6 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:mezzanine_execution_engine,
        path: "../../../mezzanine/core/execution_engine", runtime: false},
       {:mezzanine_ops_assurance, path: "../../../mezzanine/core/ops_assurance", runtime: false},
-      {:mezzanine_ops_audit, path: "../../../mezzanine/core/ops_audit", runtime: false},
       {:mezzanine_ops_control, path: "../../../mezzanine/core/ops_control", runtime: false},
       {:mezzanine_ops_domain, path: "../../../mezzanine/core/ops_domain", runtime: false},
       {:mezzanine_pack_compiler, path: "../../../mezzanine/core/pack_compiler", runtime: false},
