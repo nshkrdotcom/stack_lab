@@ -64,7 +64,8 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
           "finance.expense.capture"
         )
 
-      accepted_now = ~U[2026-04-16 13:00:00.000000Z]
+      initial_outbox = fetch_outbox!(execution.id)
+      accepted_now = DateTime.add(initial_outbox.available_at, 1, :second)
 
       {:ok, %{classification: :accepted, execution: accepted_execution}} =
         Dispatcher.dispatch_next(
@@ -192,7 +193,7 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
           "cause-subject-invoice-shared"
         )
 
-      {:ok, _expense_execution} =
+      {:ok, expense_execution} =
         dispatch_execution(
           expense_subject,
           expense_installation,
@@ -202,13 +203,14 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
 
       {:ok, expense_dispatch} =
         accept_next_dispatch!(
+          expense_execution,
           expense_installation,
           expense_subject.id,
           "expense_capture",
           "expense"
         )
 
-      {:ok, _invoice_execution} =
+      {:ok, invoice_execution} =
         dispatch_execution(
           invoice_subject,
           invoice_installation,
@@ -218,6 +220,7 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
 
       {:ok, invoice_dispatch} =
         accept_next_dispatch!(
+          invoice_execution,
           invoice_installation,
           invoice_subject.id,
           "invoice_capture",
@@ -359,8 +362,9 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
     })
   end
 
-  defp accept_next_dispatch!(installation, subject_id, recipe_ref, label) do
-    accepted_now = ~U[2026-04-16 13:30:00.000000Z]
+  defp accept_next_dispatch!(execution, installation, subject_id, recipe_ref, label) do
+    initial_outbox = fetch_outbox!(execution.id)
+    accepted_now = DateTime.add(initial_outbox.available_at, 1, :second)
 
     with {:ok, %{classification: :accepted, execution: accepted_execution}} <-
            Dispatcher.dispatch_next(

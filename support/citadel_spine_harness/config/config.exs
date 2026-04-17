@@ -5,7 +5,7 @@ config :ash,
     Mezzanine.ConfigRegistry,
     Mezzanine.Execution,
     Mezzanine.Objects,
-    Mezzanine.AuditDomain,
+    Mezzanine.Audit,
     Mezzanine.Decisions,
     Mezzanine.EvidenceLedger,
     Mezzanine.Programs,
@@ -33,7 +33,7 @@ config :mezzanine_object_engine,
 
 config :mezzanine_audit_engine,
   ecto_repos: [Mezzanine.Audit.Repo],
-  ash_domains: [Mezzanine.AuditDomain],
+  ash_domains: [Mezzanine.Audit],
   start_runtime_children?: false
 
 config :mezzanine_decision_engine,

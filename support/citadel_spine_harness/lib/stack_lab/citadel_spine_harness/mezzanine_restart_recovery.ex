@@ -16,14 +16,14 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
   def run_case(:dispatching_retry_after_restart) do
     MezzanineSubstrate.with_store(:dispatching_retry_after_restart, fn repo_config ->
       installation_id = "stack-lab-installation"
-      crash_now = ~U[2026-04-16 12:00:00.000000Z]
-      recovery_now = ~U[2026-04-16 12:00:05.000000Z]
       {:ok, ledger} = start_submission_ledger()
 
       try do
         {:ok, subject} = ingest_subject(installation_id, "stack-lab:restart-recovery")
         {:ok, execution} = dispatch_execution(subject, installation_id)
         {:ok, initial_outbox} = DispatchOutboxEntry.by_execution_id(execution.id)
+        crash_now = DateTime.add(initial_outbox.available_at, 1, :second)
+        recovery_now = DateTime.add(crash_now, 5, :second)
         claimed = crash_after_submission!(crash_now, ledger)
 
         before_restart = %{
