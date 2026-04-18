@@ -10,6 +10,7 @@ defmodule StackLab.CitadelSpineHarness do
     GovernedRun,
     InstallationRuntimeLease,
     LowerFacts,
+    MemoryBindingsThroughExistingSeams,
     MezzanineRestartRecovery,
     MultiNode,
     OuterBrainDurability,
@@ -350,6 +351,28 @@ defmodule StackLab.CitadelSpineHarness do
              :claim_check_degradation_and_compactness
            ] do
     Stage12LoadReadiness.run_case(case_name)
+  end
+
+  @spec memory_bindings_through_existing_seams_scenario() :: map()
+  def memory_bindings_through_existing_seams_scenario do
+    %{
+      name: :memory_bindings_through_existing_seams,
+      compose: LabCore.compose_file(:single),
+      runbook: LabCore.runbook(:up_single),
+      repo_roots: repo_roots(),
+      cases: %{
+        memory_bindings_through_existing_seams: %{
+          kind: :memory_bindings_through_existing_seams,
+          scenario: 28
+        }
+      }
+    }
+  end
+
+  @spec exercise_memory_bindings_through_existing_seams(:memory_bindings_through_existing_seams) ::
+          {:ok, map()}
+  def exercise_memory_bindings_through_existing_seams(:memory_bindings_through_existing_seams) do
+    MemoryBindingsThroughExistingSeams.run_case(:memory_bindings_through_existing_seams)
   end
 
   @spec reviewable_connector_automation_console_scenario() :: map()

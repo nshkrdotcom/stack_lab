@@ -199,6 +199,22 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.exists?(scenario.runbook)
   end
 
+  test "describes the Scenario 28 memory-binding proof case through the frozen seams" do
+    scenario = CitadelSpineHarness.memory_bindings_through_existing_seams_scenario()
+
+    assert scenario.name == :memory_bindings_through_existing_seams
+
+    assert scenario.cases == %{
+             memory_bindings_through_existing_seams: %{
+               kind: :memory_bindings_through_existing_seams,
+               scenario: 28
+             }
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
   test "describes the Scenario 15 reviewable connector automation console as a second synthetic product shape" do
     scenario = CitadelSpineHarness.reviewable_connector_automation_console_scenario()
 
