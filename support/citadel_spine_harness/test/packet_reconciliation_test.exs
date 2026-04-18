@@ -67,4 +67,19 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliationTest do
     assert result.case == :stale_reference_absence
     assert result.checked_files > 0
   end
+
+  test "proves the active substrate-origin AppKit proof does not use host sessions" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_packet_reconciliation(
+               :substrate_origin_no_host_session_path
+             )
+
+    assert result.case == :substrate_origin_no_host_session_path
+    assert result.checked_files == 1
+
+    assert String.ends_with?(
+             result.active_surface,
+             "app_kit_operational_surface.ex"
+           )
+  end
 end

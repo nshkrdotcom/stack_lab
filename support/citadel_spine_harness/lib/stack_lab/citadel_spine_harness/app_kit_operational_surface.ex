@@ -3,7 +3,6 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
   alias AppKit.Bridges.MezzanineBridge
   alias Ash
-  alias Citadel.HostIngress
   alias Citadel.InvocationBridge
   alias Citadel.JidoIntegrationBridge
   alias Citadel.JidoIntegrationBridge.InvocationDownstream
@@ -40,7 +39,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
   alias Mezzanine.Archival.Scheduler
   alias Mezzanine.Audit.Repo, as: AuditRepo
-  alias Mezzanine.CitadelBridge.{AuthorityAssembler, RunIntentCompiler}
+  alias Mezzanine.Citadel.SubstrateIngress
   alias Mezzanine.ConfigRegistry.Installation
   alias Mezzanine.ConfigRegistry.PackRegistration
   alias Mezzanine.Decisions.Repo, as: DecisionsRepo
@@ -1848,13 +1847,17 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
        ) do
     compile_attrs = %{
       tenant_id: context.tenant_ref.id,
+      installation_id: claimed.installation_id,
+      installation_revision: claimed.compiled_pack_revision,
+      compiled_pack_revision: claimed.compiled_pack_revision,
+      actor_ref: context.actor_ref.id,
       actor_id: context.actor_ref.id,
-      request_id: claimed.execution_id,
-      trace_id: claimed.trace_id,
+      subject_id: claimed.subject_id,
+      execution_id: claimed.execution_id,
+      request_trace_id: context.trace_id,
+      substrate_trace_id: claimed.trace_id,
       idempotency_key: claimed.submission_dedupe_key,
       submission_dedupe_key: claimed.submission_dedupe_key,
-      host_request_id: claimed.execution_id,
-      session_id: "work/#{claimed.subject_id}",
       environment: "stage4",
       scope_kind: "work_object",
       target_kind: "runtime_target",
@@ -1877,15 +1880,18 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       objective: "Execute #{run_intent.capability} for work #{claimed.subject_id}"
     }
 
-    {:ok, run_request} = RunIntentCompiler.compile(run_intent, compile_attrs)
-    {:ok, request_context} = AuthorityAssembler.request_context(run_intent, compile_attrs)
-
     {:ok, compiled} =
-      HostIngress.compile_run_request(run_request, request_context, [policy_pack()], [])
+      SubstrateIngress.compile_run_intent(run_intent, compile_attrs, [policy_pack()], [])
 
-    case InvocationBridge.submit(bridge, compiled.invocation_request, compiled.outbox_entry) do
+    lower_intent = compiled.lower_intent
+
+    case InvocationBridge.submit(
+           bridge,
+           lower_intent.invocation_request,
+           lower_intent.outbox_entry
+         ) do
       {:accepted, acceptance, _bridge} ->
-        {:accepted, acceptance_payload(compiled, acceptance, claimed)}
+        {:accepted, acceptance_payload(lower_intent, acceptance, claimed)}
 
       {:rejected, rejection, _bridge} ->
         {:rejected, rejection_payload(rejection)}
@@ -1895,10 +1901,10 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     end
   end
 
-  defp acceptance_payload(compiled, acceptance, claimed) do
+  defp acceptance_payload(lower_intent, acceptance, claimed) do
     %{
       "submission_ref" => %{
-        "id" => compiled.entry_id,
+        "id" => lower_intent.entry_id,
         "status" => Atom.to_string(acceptance.status),
         "submission_key" => acceptance.submission_key,
         "submission_receipt_ref" => acceptance.submission_receipt_ref

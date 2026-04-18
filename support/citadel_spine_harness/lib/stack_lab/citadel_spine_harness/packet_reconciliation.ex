@@ -32,11 +32,25 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
     ~r/dispatch_outbox_entry_id/
   ]
 
+  @substrate_ingress_host_patterns [
+    ~r/\bCitadel\.HostIngress\b/,
+    ~r/\bHostIngress\.compile_run_request\b/,
+    ~r/\bMezzanine\.CitadelBridge\.\{AuthorityAssembler,\s*RunIntentCompiler\}/,
+    ~r/\bAuthorityAssembler\b/,
+    ~r/\bRunIntentCompiler\b/,
+    ~r/\bSessionServer\b/,
+    ~r/\bSessionDirectory\b/,
+    ~r/\bSessionContinuityCommit\b/,
+    ~r/\bPersistedSessionBlob\b/,
+    ~r/\bPersistedSessionEnvelope\b/
+  ]
+
   @spec run_case(
           :packet_ownership_freeze
           | :stack_ir_binding_map_freeze
           | :control_path_boundaries
           | :stale_reference_absence
+          | :substrate_origin_no_host_session_path
         ) ::
           {:ok, map()}
   def run_case(:packet_ownership_freeze) do
@@ -260,6 +274,28 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
      %{
        case: :stale_reference_absence,
        checked_files: length(checked_files)
+     }}
+  end
+
+  def run_case(:substrate_origin_no_host_session_path) do
+    roots = CitadelSpineHarness.repo_roots()
+
+    checked_files =
+      scan_absence!(
+        [
+          Path.join(
+            roots.stack_lab,
+            "support/citadel_spine_harness/lib/stack_lab/citadel_spine_harness/app_kit_operational_surface.ex"
+          )
+        ],
+        @substrate_ingress_host_patterns
+      )
+
+    {:ok,
+     %{
+       case: :substrate_origin_no_host_session_path,
+       checked_files: length(checked_files),
+       active_surface: List.first(checked_files)
      }}
   end
 

@@ -430,7 +430,8 @@ defmodule StackLab.CitadelSpineHarness do
         packet_ownership_freeze: %{kind: :packet_ownership_freeze},
         stack_ir_binding_map_freeze: %{kind: :stack_ir_binding_map_freeze},
         control_path_boundaries: %{kind: :control_path_boundaries},
-        stale_reference_absence: %{kind: :stale_reference_absence}
+        stale_reference_absence: %{kind: :stale_reference_absence},
+        substrate_origin_no_host_session_path: %{kind: :substrate_origin_no_host_session_path}
       }
     }
   end
@@ -440,13 +441,15 @@ defmodule StackLab.CitadelSpineHarness do
           | :stack_ir_binding_map_freeze
           | :control_path_boundaries
           | :stale_reference_absence
+          | :substrate_origin_no_host_session_path
         ) :: {:ok, map()} | {:error, term()}
   def exercise_packet_reconciliation(case_name)
       when case_name in [
              :packet_ownership_freeze,
              :stack_ir_binding_map_freeze,
              :control_path_boundaries,
-             :stale_reference_absence
+             :stale_reference_absence,
+             :substrate_origin_no_host_session_path
            ] do
     PacketReconciliation.run_case(case_name)
   end

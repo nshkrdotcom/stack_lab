@@ -288,7 +288,10 @@ defmodule StackLab.CitadelSpineHarnessTest do
              packet_ownership_freeze: %{kind: :packet_ownership_freeze},
              stack_ir_binding_map_freeze: %{kind: :stack_ir_binding_map_freeze},
              control_path_boundaries: %{kind: :control_path_boundaries},
-             stale_reference_absence: %{kind: :stale_reference_absence}
+             stale_reference_absence: %{kind: :stale_reference_absence},
+             substrate_origin_no_host_session_path: %{
+               kind: :substrate_origin_no_host_session_path
+             }
            }
 
     assert File.exists?(scenario.compose)

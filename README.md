@@ -44,6 +44,10 @@ recovery proof uses the real execution ledger, JobOutbox-backed dispatch
 worker, and runtime-scheduler recovery slice against backing Postgres. The
 governed-run proof exercises the current `app_kit -> mezzanine -> citadel ->
 jido_integration` control path without product-specific `extravaganza` code.
+For substrate-origin commands, that proof uses the Mezzanine substrate ingress
+facade and Citadel governance library directly, with a packet reconciliation
+gate proving the active path does not use host ingress or host-session
+continuity.
 
 ## Scope
 

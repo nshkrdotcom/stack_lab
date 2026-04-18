@@ -18,6 +18,8 @@ This package owns:
   continuity proof across the public northbound and lower-backed surfaces
 - the Scenario-25 AITrace, claim-check, and lower-lineage continuity proof
 - the Stage-7 packet-reconciliation and no-bypass boundary proof
+- the Phase-3 substrate-origin no-session absence proof for the active
+  lower-backed AppKit operational path
 - the real split-node remote transport proof
 - restart and failover drill helpers
 
@@ -29,6 +31,13 @@ this package only assembles them for proof work inside `stack_lab`.
 The semantic host path in this harness is intentionally adapter-shaped. The
 real `outer_brain` durability proof is covered separately by the dedicated
 restart-durability scenario.
+
+The lower-backed AppKit operational proof now enters Citadel through
+`Mezzanine.Citadel.SubstrateIngress` and the pure
+`Citadel.Governance.SubstrateIngress` compiler. It still submits the resulting
+`InvocationRequest.V2` through the real invocation bridge into Jido Integration,
+but it does not use `Citadel.HostIngress` or host-session continuity for
+substrate-origin commands.
 
 ## Generated Artifact Hygiene
 
