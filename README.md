@@ -48,6 +48,10 @@ For substrate-origin commands, that proof uses the Mezzanine substrate ingress
 facade and Citadel governance library directly, with a packet reconciliation
 gate proving the active path does not use host ingress or host-session
 continuity.
+The current lower-backed read proofs require tenant-scoped lower facts and
+caller-carried lease authorization scope across the `app_kit -> mezzanine ->
+jido_integration` path, including negative checks for cross-tenant read and
+stream attachment reuse.
 
 ## Scope
 

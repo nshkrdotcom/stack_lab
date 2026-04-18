@@ -14,12 +14,15 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   alias Jido.Integration.V2.StoreLocal
   alias Jido.Integration.V2.StoreLocal.Server, as: StoreLocalServer
   alias Jido.Integration.V2.StoreLocal.SubmissionLedger
+  alias Jido.Integration.V2.SubmissionAcceptance
+  alias Jido.Integration.V2.TenantScope
 
   alias AppKit.Core.{
     ExecutionRef,
     InstallTemplate,
     OperatorActionRequest,
     PageRequest,
+    ReadLease,
     RequestContext,
     RunRequest,
     SurfaceError,
@@ -50,6 +53,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   alias Mezzanine.IntegrationBridge
   alias Mezzanine.Intent.{ReadIntent, RunIntent}
   alias Mezzanine.Leasing
+  alias Mezzanine.Leasing.AuthorizationScope
   alias Mezzanine.Objects.Repo, as: ObjectsRepo
   alias Mezzanine.OperatorCommands
   alias Mezzanine.StreamAttachHost
@@ -95,10 +99,20 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     @moduledoc false
 
     def operation_supported?(operation),
-      do: operation in [:fetch_submission_receipt, :fetch_run, :events, :attempts, :run_artifacts]
+      do:
+        operation in [
+          :fetch_submission_receipt,
+          :fetch_run,
+          :events,
+          :attempts,
+          :fetch_attempt,
+          :fetch_artifact,
+          :run_artifacts,
+          :resolve_trace
+        ]
 
-    def fetch_submission_receipt(submission_key) do
-      send(self(), {:lower_fetch_submission_receipt, submission_key})
+    def fetch_submission_receipt(%TenantScope{} = scope, submission_key) do
+      send(self(), {:lower_fetch_submission_receipt, scope.tenant_id, submission_key})
 
       {:ok,
        %{
@@ -108,8 +122,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
        }}
     end
 
-    def fetch_run(run_id) do
-      send(self(), {:lower_fetch_run, run_id})
+    def fetch_run(%TenantScope{} = scope, run_id) do
+      send(self(), {:lower_fetch_run, scope.tenant_id, run_id})
 
       {:ok,
        %{
@@ -119,8 +133,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
        }}
     end
 
-    def events(run_id) do
-      send(self(), {:lower_events, run_id})
+    def events(%TenantScope{} = scope, run_id) do
+      send(self(), {:lower_events, scope.tenant_id, run_id})
 
       [
         %{
@@ -132,8 +146,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       ]
     end
 
-    def attempts(run_id) do
-      send(self(), {:lower_attempts, run_id})
+    def attempts(%TenantScope{} = scope, run_id) do
+      send(self(), {:lower_attempts, scope.tenant_id, run_id})
 
       [
         %{
@@ -145,8 +159,32 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       ]
     end
 
-    def run_artifacts(run_id) do
-      send(self(), {:lower_run_artifacts, run_id})
+    def fetch_attempt(%TenantScope{} = scope, attempt_id) do
+      send(self(), {:lower_fetch_attempt, scope.tenant_id, attempt_id})
+
+      {:ok,
+       %{
+         attempt_id: attempt_id,
+         run_id: "run-#{attempt_id}",
+         status: :running,
+         occurred_at: ~U[2026-04-16 11:12:00Z]
+       }}
+    end
+
+    def fetch_artifact(%TenantScope{} = scope, artifact_id) do
+      send(self(), {:lower_fetch_artifact, scope.tenant_id, artifact_id})
+
+      {:ok,
+       %{
+         artifact_id: artifact_id,
+         run_id: "run-#{artifact_id}",
+         kind: :log,
+         occurred_at: ~U[2026-04-16 11:13:00Z]
+       }}
+    end
+
+    def run_artifacts(%TenantScope{} = scope, run_id) do
+      send(self(), {:lower_run_artifacts, scope.tenant_id, run_id})
 
       [
         %{
@@ -156,6 +194,19 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
           occurred_at: ~U[2026-04-16 11:13:00Z]
         }
       ]
+    end
+
+    def resolve_trace(%TenantScope{} = scope, trace_id) do
+      send(self(), {:lower_resolve_trace, scope.tenant_id, trace_id})
+
+      {:ok,
+       %{
+         trace_id: trace_id,
+         run: %{run_id: "run-#{trace_id}"},
+         attempts: [],
+         events: [],
+         artifacts: []
+       }}
     end
   end
 
@@ -857,16 +908,19 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
             )
           )
 
+        live_stream_lease_id = live_stream_lease.lease_ref.id
+
         {:ok, live_host} =
           StreamAttachHost.start_link(
-            lease_id: live_stream_lease.lease_ref.id,
+            lease_id: live_stream_lease_id,
             token: live_stream_lease.attach_token,
+            authorization_scope: authorization_scope!(live_stream_lease),
             repo: ExecutionRepo,
             poll_interval_ms: @scenario_24_poll_interval_ms,
             notify: self()
           )
 
-        live_attach_cursor = await_stream_attached!(live_stream_lease.lease_ref.id)
+        live_attach_cursor = await_stream_attached!(live_stream_lease_id)
 
         direct_receipt =
           direct_submission_receipt_read!(
@@ -923,6 +977,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
         post_pause_read_error =
           Leasing.authorize_read(
+            authorization_scope!(read_lease),
             read_lease.lease_ref.id,
             read_lease.lease_token,
             :fetch_submission_receipt,
@@ -931,7 +986,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
         post_pause_stream_error =
           Leasing.authorize_stream_attach(
-            live_stream_lease.lease_ref.id,
+            authorization_scope!(live_stream_lease),
+            live_stream_lease_id,
             live_stream_lease.attach_token,
             repo: ExecutionRepo
           )
@@ -1015,8 +1071,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              applied_action: pause_result.action_ref.action_kind,
              action_status: pause_result.status,
              invalidated_live_leases?:
-               lease_invalidated?(post_pause_read_error) and
-                 lease_invalidated?(post_pause_stream_error)
+               leases_invalidated?([post_pause_read_error, post_pause_stream_error])
            },
            review: %{
              decision_id: decision_ref.id,
@@ -1030,7 +1085,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              submission_key: direct_receipt.submission_key,
              submission_receipt_ref: direct_receipt.submission_receipt_ref,
              stream_attached_cursor: live_attach_cursor,
-             live_stream_lease_id: live_stream_lease.lease_ref.id,
+             live_stream_lease_id: live_stream_lease_id,
              post_pause_read: normalize_read_error(post_pause_read_error),
              post_pause_stream: normalize_read_error(post_pause_stream_error)
            },
@@ -1077,24 +1132,26 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
             )
           )
 
+        disconnected_stream_lease_id = disconnected_stream_lease.lease_ref.id
+
         {:ok, disconnected_host} =
           StreamAttachHost.start_link(
-            lease_id: disconnected_stream_lease.lease_ref.id,
+            lease_id: disconnected_stream_lease_id,
             token: disconnected_stream_lease.attach_token,
+            authorization_scope: authorization_scope!(disconnected_stream_lease),
             repo: ExecutionRepo,
             poll_interval_ms: @scenario_24_poll_interval_ms,
             notify: self()
           )
 
-        disconnected_attach_cursor =
-          await_stream_attached!(disconnected_stream_lease.lease_ref.id)
+        disconnected_attach_cursor = await_stream_attached!(disconnected_stream_lease_id)
 
         disconnect_started_at_ms = System.monotonic_time(:millisecond)
         :ok = GenServer.stop(disconnected_host, :normal)
 
         burst_rows =
           emit_stream_invalidation_burst!(
-            disconnected_stream_lease.lease_ref.id,
+            disconnected_stream_lease_id,
             @scenario_24_burst_count,
             @scenario_24_burst_concurrency
           )
@@ -1106,8 +1163,9 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
         {:ok, reconnect_host} =
           StreamAttachHost.start_link(
-            lease_id: disconnected_stream_lease.lease_ref.id,
+            lease_id: disconnected_stream_lease_id,
             token: disconnected_stream_lease.attach_token,
+            authorization_scope: authorization_scope!(disconnected_stream_lease),
             repo: ExecutionRepo,
             poll_interval_ms: @scenario_24_poll_interval_ms,
             notify: self()
@@ -1115,11 +1173,11 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
         reconnect_invalidation =
           await_stream_invalidated!(
-            disconnected_stream_lease.lease_ref.id,
+            disconnected_stream_lease_id,
             @scenario_24_reconnect_timeout_ms
           )
 
-        ensure_no_stream_attached!(disconnected_stream_lease.lease_ref.id)
+        ensure_no_stream_attached!(disconnected_stream_lease_id)
         wait_for_stream_host_shutdown!(reconnect_host)
 
         {:ok, read_lease} =
@@ -1142,16 +1200,19 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
             )
           )
 
+        live_stream_lease_id = live_stream_lease.lease_ref.id
+
         {:ok, live_host} =
           StreamAttachHost.start_link(
-            lease_id: live_stream_lease.lease_ref.id,
+            lease_id: live_stream_lease_id,
             token: live_stream_lease.attach_token,
+            authorization_scope: authorization_scope!(live_stream_lease),
             repo: ExecutionRepo,
             poll_interval_ms: @scenario_24_poll_interval_ms,
             notify: self()
           )
 
-        live_attach_cursor = await_stream_attached!(live_stream_lease.lease_ref.id)
+        live_attach_cursor = await_stream_attached!(live_stream_lease_id)
 
         direct_read_before =
           direct_submission_receipt_read!(
@@ -1171,7 +1232,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
         live_stream_invalidation =
           await_stream_invalidated!(
-            live_stream_lease.lease_ref.id,
+            live_stream_lease_id,
             @scenario_24_reconnect_timeout_ms
           )
 
@@ -1182,6 +1243,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
         post_pause_read_error =
           Leasing.authorize_read(
+            authorization_scope!(read_lease),
             read_lease.lease_ref.id,
             read_lease.lease_token,
             :fetch_submission_receipt,
@@ -1190,8 +1252,9 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
         {:ok, refused_live_host} =
           StreamAttachHost.start_link(
-            lease_id: live_stream_lease.lease_ref.id,
+            lease_id: live_stream_lease_id,
             token: live_stream_lease.attach_token,
+            authorization_scope: authorization_scope!(live_stream_lease),
             repo: ExecutionRepo,
             poll_interval_ms: @scenario_24_poll_interval_ms,
             notify: self()
@@ -1199,11 +1262,11 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
         refused_live_invalidation =
           await_stream_invalidated!(
-            live_stream_lease.lease_ref.id,
+            live_stream_lease_id,
             @scenario_24_reconnect_timeout_ms
           )
 
-        ensure_no_stream_attached!(live_stream_lease.lease_ref.id)
+        ensure_no_stream_attached!(live_stream_lease_id)
         wait_for_stream_host_shutdown!(refused_live_host)
 
         burst_sequence_numbers = Enum.map(burst_rows, & &1.sequence_number)
@@ -1222,7 +1285,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              submission_receipt_ref: direct_read_before.submission_receipt_ref
            },
            disconnected_stream: %{
-             lease_id: disconnected_stream_lease.lease_ref.id,
+             lease_id: disconnected_stream_lease_id,
              attached_cursor: disconnected_attach_cursor,
              reconnect_invalidation_reason: reconnect_invalidation.reason,
              reconnect_invalidation_sequence: reconnect_invalidation.sequence_number
@@ -1238,7 +1301,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
                |> contiguous_sequence?()
            },
            live_stream: %{
-             lease_id: live_stream_lease.lease_ref.id,
+             lease_id: live_stream_lease_id,
              attached_cursor: live_attach_cursor,
              invalidation_reason: live_stream_invalidation.reason,
              invalidated_after_ms: live_stream_invalidated_after_ms,
@@ -1249,7 +1312,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              invalidated_lease_ids: pause_invalidated_ids,
              invalidated_live_leases?:
                Enum.all?(
-                 [read_lease.lease_ref.id, live_stream_lease.lease_ref.id],
+                 [read_lease.lease_ref.id, live_stream_lease_id],
                  &(&1 in pause_invalidated_ids)
                )
            },
@@ -2049,9 +2112,15 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
          submission_key
        ) do
     direct_receipt =
-      case LowerFacts.fetch_submission_receipt(submission_key) do
-        {:ok, receipt} -> receipt
-        :error -> raise "lower-backed proof could not fetch a direct submission receipt"
+      case LowerFacts.fetch_submission_receipt(
+             tenant_scope!(context, installation_id),
+             submission_key
+           ) do
+        {:ok, receipt} ->
+          receipt
+
+        {:error, reason} ->
+          raise "lower-backed proof could not fetch a direct submission receipt: #{inspect(reason)}"
       end
 
     read_intent =
@@ -2060,6 +2129,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         read_type: :lower_fact,
         subject: %{
           actor_id: context.actor_ref.id,
+          tenant_id: context.tenant_ref.id,
           installation_id: installation_id,
           execution_id: execution_id
         },
@@ -2151,17 +2221,34 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       {:lower_fetch_submission_receipt, submission_key} ->
         collect_lower_fetch_messages!([{:fetch_submission_receipt, submission_key} | acc])
 
+      {:lower_fetch_submission_receipt, tenant_id, submission_key} ->
+        collect_lower_fetch_messages!([
+          {:fetch_submission_receipt, tenant_id, submission_key} | acc
+        ])
+
       {:lower_fetch_run, run_id} ->
         collect_lower_fetch_messages!([{:fetch_run, run_id} | acc])
+
+      {:lower_fetch_run, tenant_id, run_id} ->
+        collect_lower_fetch_messages!([{:fetch_run, tenant_id, run_id} | acc])
 
       {:lower_events, run_id} ->
         collect_lower_fetch_messages!([{:events, run_id} | acc])
 
+      {:lower_events, tenant_id, run_id} ->
+        collect_lower_fetch_messages!([{:events, tenant_id, run_id} | acc])
+
       {:lower_attempts, run_id} ->
         collect_lower_fetch_messages!([{:attempts, run_id} | acc])
 
+      {:lower_attempts, tenant_id, run_id} ->
+        collect_lower_fetch_messages!([{:attempts, tenant_id, run_id} | acc])
+
       {:lower_run_artifacts, run_id} ->
         collect_lower_fetch_messages!([{:run_artifacts, run_id} | acc])
+
+      {:lower_run_artifacts, tenant_id, run_id} ->
+        collect_lower_fetch_messages!([{:run_artifacts, tenant_id, run_id} | acc])
     after
       50 -> Enum.reverse(acc)
     end
@@ -2417,19 +2504,56 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     raise "expected archived #{label} surface result for #{manifest_ref}, got: #{inspect(result)}"
   end
 
-  defp direct_submission_receipt_read!(read_lease, submission_key) do
+  @spec direct_submission_receipt_read!(ReadLease.t(), String.t()) :: SubmissionAcceptance.t()
+  defp direct_submission_receipt_read!(%ReadLease{} = read_lease, submission_key)
+       when is_binary(submission_key) do
+    authorization_scope = authorization_scope!(read_lease)
+
     {:ok, _lease} =
       Leasing.authorize_read(
+        authorization_scope,
         read_lease.lease_ref.id,
         read_lease.lease_token,
         :fetch_submission_receipt,
         repo: ExecutionRepo
       )
 
-    case LowerFacts.fetch_submission_receipt(submission_key) do
-      {:ok, receipt} -> receipt
-      :error -> raise "direct leased lower read could not fetch a submission receipt"
+    case LowerFacts.fetch_submission_receipt(tenant_scope!(authorization_scope), submission_key) do
+      {:ok, receipt} ->
+        receipt
+
+      {:error, reason} ->
+        raise "direct leased lower read could not fetch a submission receipt: #{inspect(reason)}"
     end
+  end
+
+  @spec authorization_scope!(map()) :: AuthorizationScope.t()
+  defp authorization_scope!(lease) do
+    lease
+    |> Map.get(:authorization_scope)
+    |> AuthorizationScope.new!()
+  end
+
+  @spec tenant_scope!(RequestContext.t(), String.t()) :: TenantScope.t()
+  defp tenant_scope!(%RequestContext{} = context, installation_id) do
+    TenantScope.new!(
+      tenant_id: context.tenant_ref.id,
+      installation_id: installation_id,
+      actor_ref: Map.from_struct(context.actor_ref),
+      trace_id: context.trace_id,
+      authorized_at: DateTime.utc_now()
+    )
+  end
+
+  @spec tenant_scope!(AuthorizationScope.t()) :: TenantScope.t()
+  defp tenant_scope!(%AuthorizationScope{} = authorization_scope) do
+    TenantScope.new!(
+      tenant_id: authorization_scope.tenant_id,
+      installation_id: authorization_scope.installation_id,
+      actor_ref: authorization_scope.actor_ref,
+      trace_id: authorization_scope.trace_id,
+      authorized_at: authorization_scope.authorized_at || DateTime.utc_now()
+    )
   end
 
   defp emit_stream_invalidation_burst!(lease_id, count, max_concurrency) do
@@ -2559,6 +2683,10 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
   defp lease_invalidated?({:error, {:lease_invalidated, _reason, _sequence_number}}), do: true
   defp lease_invalidated?(_other), do: false
+
+  defp leases_invalidated?(results) when is_list(results) do
+    Enum.all?(results, &lease_invalidated?/1)
+  end
 
   defp ensure_store_local_ready!(storage_dir) do
     stop_store_local()

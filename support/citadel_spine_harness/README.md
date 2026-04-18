@@ -39,6 +39,13 @@ The lower-backed AppKit operational proof now enters Citadel through
 but it does not use `Citadel.HostIngress` or host-session continuity for
 substrate-origin commands.
 
+The lower-backed AppKit and lower-facts proofs now also carry tenant-scoped
+read authorization end to end. Harness stubs require
+`Jido.Integration.V2.TenantScope`, Mezzanine leases require
+`Mezzanine.Leasing.AuthorizationScope`, and the scenario assertions prove that
+submission receipt, run, attempt, event, artifact, trace, read-lease, and
+stream-attach pivots cannot be reused across tenants.
+
 ## Generated Artifact Hygiene
 
 The harness must not write mutable proof artifacts into tracked repo paths.

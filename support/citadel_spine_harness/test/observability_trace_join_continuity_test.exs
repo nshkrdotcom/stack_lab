@@ -43,6 +43,10 @@ defmodule StackLab.CitadelSpineHarness.ObservabilityTraceJoinContinuityTest do
              :run_artifacts
            ]
 
+    assert Enum.all?(result.archival.live_lower_fetches, fn
+             {_operation, tenant_id, _lower_id} -> tenant_id == result.tenant_id
+           end)
+
     assert result.archival.archived_lower_fetches == []
 
     assert result.archival.hot_read_errors.work_query ==

@@ -53,10 +53,10 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert "evidence_record" in result.trace.step_sources
     assert "lower_run_status" in result.trace.step_sources
 
-    assert_received {:lower_fetch_run, _run_id}
-    assert_received {:lower_events, _run_id}
-    assert_received {:lower_attempts, _run_id}
-    assert_received {:lower_run_artifacts, _run_id}
+    assert_received {:lower_fetch_run, "tenant-app-kit-operational", _run_id}
+    assert_received {:lower_events, "tenant-app-kit-operational", _run_id}
+    assert_received {:lower_attempts, "tenant-app-kit-operational", _run_id}
+    assert_received {:lower_run_artifacts, "tenant-app-kit-operational", _run_id}
   end
 
   test "app-kit operational surface proves one real lower-backed command path and receipt readback" do

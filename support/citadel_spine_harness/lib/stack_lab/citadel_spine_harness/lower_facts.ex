@@ -20,6 +20,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   alias Jido.Integration.V2.StoreLocal.TestSupport, as: StoreLocalTestSupport
   alias Jido.Integration.V2.SubmissionAcceptance
   alias Jido.Integration.V2.SubmissionIdentity
+  alias Jido.Integration.V2.TenantScope
   alias Mezzanine.Audit.ExecutionLineage
   alias Mezzanine.IntegrationBridge
   alias Mezzanine.Intent.ReadIntent
@@ -82,16 +83,20 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
       :ok = EventStore.append_events(events)
       :ok = ArtifactStore.put_artifact_ref(artifact)
 
-      {:ok, fetched_receipt} = LowerFacts.fetch_submission_receipt(invocation.submission_key)
-      {:ok, fetched_run} = LowerFacts.fetch_run(run.run_id)
+      tenant_scope = tenant_scope(token)
 
-      [listed_attempt] = LowerFacts.attempts(run.run_id)
-      {:ok, fetched_attempt} = LowerFacts.fetch_attempt(attempt.attempt_id)
+      {:ok, fetched_receipt} =
+        LowerFacts.fetch_submission_receipt(tenant_scope, invocation.submission_key)
 
-      fetched_events = LowerFacts.events(run.run_id)
+      {:ok, fetched_run} = LowerFacts.fetch_run(tenant_scope, run.run_id)
 
-      {:ok, fetched_artifact} = LowerFacts.fetch_artifact(artifact.artifact_id)
-      run_artifacts = LowerFacts.run_artifacts(run.run_id)
+      {:ok, [listed_attempt]} = LowerFacts.attempts(tenant_scope, run.run_id)
+      {:ok, fetched_attempt} = LowerFacts.fetch_attempt(tenant_scope, attempt.attempt_id)
+
+      {:ok, fetched_events} = LowerFacts.events(tenant_scope, run.run_id)
+
+      {:ok, fetched_artifact} = LowerFacts.fetch_artifact(tenant_scope, artifact.artifact_id)
+      {:ok, run_artifacts} = LowerFacts.run_artifacts(tenant_scope, run.run_id)
 
       case case_name do
         :generic_readback ->
@@ -143,6 +148,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
         read_type: :lower_fact,
         subject: %{
           actor_id: "actor-lower-facts",
+          tenant_id: "tenant-lower-facts",
           installation_id: lineage.installation_id,
           execution_id: lineage.execution_id
         },
@@ -194,6 +200,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
         read_type: :lower_fact,
         subject: %{
           actor_id: "actor-lower-facts",
+          tenant_id: "tenant-lower-facts",
           installation_id: "inst-other",
           execution_id: lineage.execution_id
         },
@@ -427,7 +434,14 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
       capability_id: "inference.execute",
       runtime_class: :direct,
       status: :completed,
-      input: %{"prompt" => "Summarize the lower facts seam"},
+      input: %{
+        "prompt" => "Summarize the lower facts seam",
+        "metadata" => %{
+          "tenant_id" => "tenant-lower-facts",
+          "installation_id" => "inst-lower-facts",
+          "trace_id" => "trace-#{token}"
+        }
+      },
       credential_ref:
         CredentialRef.new!(%{
           id: "credential-ref-#{token}",
@@ -436,6 +450,16 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
       result: %{"status" => "ok"},
       artifact_refs: []
     })
+  end
+
+  defp tenant_scope(token) do
+    TenantScope.new!(
+      tenant_id: "tenant-lower-facts",
+      installation_id: "inst-lower-facts",
+      actor_ref: %{id: "actor-lower-facts"},
+      trace_id: "trace-#{token}",
+      authorized_at: DateTime.utc_now()
+    )
   end
 
   defp attempt_fixture(run_id) do
