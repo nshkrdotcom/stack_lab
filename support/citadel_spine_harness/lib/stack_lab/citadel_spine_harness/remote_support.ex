@@ -15,6 +15,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
   @spec start_remote_spine!(atom()) :: remote_spine()
   def start_remote_spine!(case_name) when is_atom(case_name) do
     ensure_distribution_started!()
+    _ = Application.ensure_all_started(:telemetry)
     {:ok, peer_pid, remote_node} = :peer.start_link(%{name: unique_name(:stack_lab_spine)})
     storage_dir = remote_store_local_dir(case_name)
 

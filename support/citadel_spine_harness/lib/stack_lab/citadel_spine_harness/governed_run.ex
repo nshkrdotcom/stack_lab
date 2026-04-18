@@ -92,6 +92,7 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
            compiled_pack_revision: installation.compiled_pack_revision
          },
          dispatch: %{
+           tenant_id: dispatch.tenant_id,
            recipe_ref: dispatch.recipe_ref,
            classification: dispatch.classification,
            job_status: dispatch.job_status,
@@ -343,6 +344,7 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
 
   defp dispatch_execution(subject, installation, recipe_ref, capability) do
     ExecutionRecord.dispatch(%{
+      tenant_id: installation.tenant_id,
       installation_id: installation.id,
       subject_id: subject.id,
       recipe_ref: recipe_ref,
@@ -373,6 +375,7 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
 
         %{
           label: label,
+          tenant_id: dispatch.execution.tenant_id,
           installation_id: installation.id,
           recipe_ref: dispatch.execution.recipe_ref,
           classification: dispatch.classification,
@@ -387,6 +390,10 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
   defp validate_claim!(claimed, installation, subject_id, recipe_ref) do
     if claimed.installation_id != installation.id do
       raise "genericity proof claimed the wrong installation"
+    end
+
+    if claimed.tenant_id != installation.tenant_id do
+      raise "genericity proof lowered with the wrong tenant"
     end
 
     if claimed.subject_id != subject_id do

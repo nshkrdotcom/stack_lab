@@ -28,7 +28,7 @@ defmodule StackLab.Examples.MezzanineRestartRecoveryTest do
     assert result.after_restart.job_status == :scheduled
     assert result.after_restart.dispatch_attempt_count == 1
     assert result.final.classification == :accepted
-    assert result.final.execution_dispatch_state == :accepted
+    assert result.final.execution_dispatch_state == :awaiting_receipt
     assert result.final.job_status == :completed
     refute result.final.job_id == result.before_restart.job_id
     assert result.final.submission_ref_status == "duplicate"

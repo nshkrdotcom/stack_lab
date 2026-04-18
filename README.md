@@ -60,6 +60,10 @@ mix deps.get
 mix ci
 ```
 
+Proof scenarios must not mutate committed fixtures or leave generated archive
+bundles in tracked paths. Harnesses use OS temp roots or ignored generated
+directories so a successful `mix ci` also preserves worktree hygiene.
+
 The welded `stack_lab_lab_core` artifact is tracked through the prepared bundle
 flow:
 

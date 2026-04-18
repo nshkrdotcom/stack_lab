@@ -14,6 +14,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSpine do
     File.rm_rf!(storage_dir)
     File.mkdir_p!(storage_dir)
     :ok = StoreLocal.configure_defaults!(storage_dir: storage_dir)
+    _ = Application.ensure_all_started(:telemetry)
     _ = Application.ensure_all_started(:jido_integration_v2_store_local)
     :ok = StoreLocal.reset!()
   end

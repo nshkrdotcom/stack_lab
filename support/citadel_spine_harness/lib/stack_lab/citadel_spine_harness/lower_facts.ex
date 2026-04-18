@@ -404,7 +404,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
       request_id: "request-#{token}",
       session_id: "session-#{token}",
       tenant_id: "tenant-lower-facts",
-      trace_id: "trace-#{token}",
+      trace_id: RoundtripRuntime.trace_id("lower-facts:#{token}"),
       actor_id: "actor-lower-facts",
       target_id: "target-#{token}",
       target_kind: "cli",
@@ -417,7 +417,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
       boundary_request: compiled_projection.boundary_request,
       execution_intent_family: "process",
       execution_intent: %{"argv" => ["echo", "lower-facts"]},
-      extensions: %{}
+      extensions: %{"submission_dedupe_key" => "lower-facts:#{token}"}
     })
   end
 

@@ -122,6 +122,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
       SessionServer.start_link(
         name: session_server_name,
         session_id: session_id,
+        trace_id: trace_id(session_id),
         session_directory: session_directory_name,
         kernel_snapshot: kernel_snapshot_name,
         boundary_lease_tracker: boundary_tracker_name,
@@ -272,6 +273,15 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
     path
   end
 
+  @spec trace_id(String.t()) :: String.t()
+  def trace_id(seed) when is_binary(seed) do
+    seed
+    |> then(fn value -> :crypto.hash(:sha256, value) end)
+    |> Base.encode16(case: :lower)
+    |> binary_part(0, 32)
+    |> ensure_non_zero_trace_id(seed)
+  end
+
   @spec flush_transport_messages() :: :ok
   def flush_transport_messages do
     receive do
@@ -321,7 +331,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
       request_id: request_id,
       session_id: session_id,
       tenant_id: "tenant-stack-lab",
-      trace_id: "trace/#{request_id}",
+      trace_id: trace_id(request_id),
       actor_id: "actor-stack-lab",
       target_id: "target-stack-lab",
       target_kind: "cli",
@@ -361,6 +371,9 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
             "environment" => %{},
             "stdin" => nil,
             "extensions" => %{}
+          },
+          "execution_envelope" => %{
+            "submission_dedupe_key" => submission_dedupe_key(request_id)
           }
         }
       }
@@ -435,5 +448,15 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
 
   defp unique_name(prefix) do
     :"#{prefix}_#{System.unique_integer([:positive])}"
+  end
+
+  defp submission_dedupe_key(request_id), do: "submission/#{request_id}"
+
+  defp ensure_non_zero_trace_id(trace_id, seed) do
+    if trace_id == String.duplicate("0", 32) do
+      trace_id("nonzero:#{seed}")
+    else
+      trace_id
+    end
   end
 end

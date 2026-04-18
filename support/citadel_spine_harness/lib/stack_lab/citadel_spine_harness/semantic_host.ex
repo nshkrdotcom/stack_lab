@@ -79,14 +79,14 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
 
       {:ok, first_result} =
         submit_turn(scope, runtime_opts, "semantic-host-turn-replay",
-          trace_id: "trace/semantic-host-turn-replay-1"
+          trace_id: RoundtripRuntime.trace_id("semantic-host-turn-replay-1")
         )
 
       {request, attempt_entry} = await_invocation_request!()
 
       {:ok, second_result} =
         submit_turn(scope, runtime_opts, "semantic-host-turn-replay",
-          trace_id: "trace/semantic-host-turn-replay-2"
+          trace_id: RoundtripRuntime.trace_id("semantic-host-turn-replay-2")
         )
 
       refute_invocation_request!()
@@ -139,7 +139,7 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
 
       {:ok, result} =
         submit_turn(scope, runtime_opts, "semantic-host-turn-rejection",
-          trace_id: "trace/semantic-host-turn-rejection"
+          trace_id: RoundtripRuntime.trace_id("semantic-host-turn-rejection")
         )
 
       {_request, attempt_entry} = await_invocation_request!()
@@ -358,7 +358,7 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
       route_sources: [Citadel.DomainSurface.Examples.ProvingGround.Routes.CompileWorkspace],
       kernel_runtime: {CitadelAdapter, runtime_opts},
       workspace_root: "/workspace/main",
-      trace_id: Keyword.get(opts, :trace_id, "trace/#{idempotency_key}")
+      trace_id: Keyword.get(opts, :trace_id, RoundtripRuntime.trace_id(idempotency_key))
     )
   end
 

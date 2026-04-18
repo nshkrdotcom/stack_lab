@@ -26,6 +26,7 @@ defmodule StackLab.Examples.GovernedRunRoundtripTest do
     assert result.pack.compiled_pack_revision == 2
 
     assert result.dispatch.recipe_ref == "expense_capture"
+    assert result.dispatch.tenant_id == "tenant-expense"
     assert result.dispatch.classification == :accepted
     assert result.dispatch.job_status == :completed
     assert result.dispatch.submission_ref_status == "accepted"
@@ -61,12 +62,14 @@ defmodule StackLab.Examples.GovernedRunRoundtripTest do
     assert result.dispatches.expense.installation_id ==
              result.installations.expense.installation_id
 
+    assert result.dispatches.expense.tenant_id == result.routing.tenant_id
     assert result.dispatches.expense.recipe_ref == "expense_capture"
     assert result.dispatches.expense.classification == :accepted
 
     assert result.dispatches.invoice.installation_id ==
              result.installations.invoice.installation_id
 
+    assert result.dispatches.invoice.tenant_id == result.routing.tenant_id
     assert result.dispatches.invoice.recipe_ref == "invoice_capture"
     assert result.dispatches.invoice.classification == :accepted
   end

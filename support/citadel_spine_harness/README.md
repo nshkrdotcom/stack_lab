@@ -29,3 +29,14 @@ this package only assembles them for proof work inside `stack_lab`.
 The semantic host path in this harness is intentionally adapter-shaped. The
 real `outer_brain` durability proof is covered separately by the dedicated
 restart-durability scenario.
+
+## Generated Artifact Hygiene
+
+The harness must not write mutable proof artifacts into tracked repo paths.
+Archival cold-store output is configured under
+`System.tmp_dir!/stack_lab_citadel_spine_harness_archival_store`, and scenario
+helpers that need isolated cold-store bundles allocate their own OS temp roots.
+
+Committed fixtures are deterministic inputs only. Runtime output belongs in
+temp storage or an ignored generated directory that leaves `git status` clean
+after `mix ci`.

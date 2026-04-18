@@ -80,7 +80,7 @@ defmodule StackLab.CitadelSpineHarness.TypedHost do
 
       {:ok, first_result} =
         submit_command(scope, runtime_opts, "typed-host-command-duplicate",
-          trace_id: "trace/typed-host-command-duplicate-1",
+          trace_id: RoundtripRuntime.trace_id("typed-host-command-duplicate-1"),
           host_request_id: "host/typed-host-command-duplicate-1"
         )
 
@@ -88,7 +88,7 @@ defmodule StackLab.CitadelSpineHarness.TypedHost do
 
       {:ok, second_result} =
         submit_command(scope, runtime_opts, "typed-host-command-duplicate",
-          trace_id: "trace/typed-host-command-duplicate-2",
+          trace_id: RoundtripRuntime.trace_id("typed-host-command-duplicate-2"),
           host_request_id: "host/typed-host-command-duplicate-2"
         )
 
@@ -138,7 +138,7 @@ defmodule StackLab.CitadelSpineHarness.TypedHost do
 
       {:ok, result} =
         submit_command(scope, runtime_opts, "typed-host-command-rejection",
-          trace_id: "trace/typed-host-command-rejection"
+          trace_id: RoundtripRuntime.trace_id("typed-host-command-rejection")
         )
 
       {_request, attempt_entry} = await_invocation_request!()
@@ -353,7 +353,7 @@ defmodule StackLab.CitadelSpineHarness.TypedHost do
       idempotency_key: idempotency_key,
       context:
         %{
-          trace_id: Keyword.get(opts, :trace_id, "trace/#{idempotency_key}")
+          trace_id: Keyword.get(opts, :trace_id, RoundtripRuntime.trace_id(idempotency_key))
         }
         |> maybe_put(:request_id, Keyword.get(opts, :host_request_id))
     )
