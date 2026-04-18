@@ -7,7 +7,10 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   alias Citadel.InvocationBridge
   alias Citadel.JidoIntegrationBridge
   alias Citadel.JidoIntegrationBridge.InvocationDownstream
+  alias Citadel.Kernel.TracePublisher
+  alias Citadel.TraceEnvelope
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
+  alias Jido.Integration.V2.ControlPlane.ClaimCheckTelemetry
   alias Jido.Integration.V2.LowerFacts
   alias Jido.Integration.V2.StoreLocal
   alias Jido.Integration.V2.StoreLocal.Server, as: StoreLocalServer
@@ -19,7 +22,10 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     OperatorActionRequest,
     PageRequest,
     RequestContext,
-    RunRequest
+    RunRequest,
+    SurfaceError,
+    Telemetry,
+    TraceIdentity
   }
 
   alias AppKit.{
@@ -31,17 +37,23 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   }
 
   alias Mezzanine.AppKitBridge.SemanticFailureRecoveryService
+
+  alias Mezzanine.Archival.Scheduler
   alias Mezzanine.Audit.Repo, as: AuditRepo
   alias Mezzanine.CitadelBridge.{AuthorityAssembler, RunIntentCompiler}
   alias Mezzanine.ConfigRegistry.Installation
   alias Mezzanine.ConfigRegistry.PackRegistration
   alias Mezzanine.Decisions.Repo, as: DecisionsRepo
   alias Mezzanine.EvidenceLedger.Repo, as: EvidenceRepo
-  alias Mezzanine.Execution.{Dispatcher, DispatchOutboxEntry, ExecutionRecord}
+  alias Mezzanine.Execution.ExecutionRecord
   alias Mezzanine.Execution.Repo, as: ExecutionRepo
   alias Mezzanine.Installations
   alias Mezzanine.IntegrationBridge
   alias Mezzanine.Intent.{ReadIntent, RunIntent}
+  alias Mezzanine.Leasing
+  alias Mezzanine.Objects.Repo, as: ObjectsRepo
+  alias Mezzanine.OperatorCommands
+  alias Mezzanine.StreamAttachHost
 
   alias Mezzanine.Pack.{
     Compiler,
@@ -53,17 +65,49 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   }
 
   alias StackLab.CitadelSpineHarness.{
+    AITraceClaimCheckTraceContinuity,
+    DispatchProbe,
     InProcessTransport,
+    LowerGatewayStub,
     MezzanineOperationalStack,
     RoundtripRuntime,
     TransportRuntime
   }
 
+  @scenario_24_disconnect_window_ms 10_000
+  @scenario_24_poll_interval_ms 250
+  @scenario_24_burst_count 100
+  @scenario_24_burst_concurrency 10
+  @scenario_24_reconnect_timeout_ms 4_000
+  @scenario_19_archive_now ~U[2026-04-16 12:00:00Z]
+  @scenario_19_terminal_at ~U[2026-03-01 09:00:00Z]
+  @scenario_19_execution_plane_required_keys [
+    :tenant_id,
+    :trace_id,
+    :request_id,
+    :decision_id,
+    :boundary_session_id,
+    :attempt_ref,
+    :route_id,
+    :idempotency_key
+  ]
+
   defmodule LowerFactsStub do
     @moduledoc false
 
     def operation_supported?(operation),
-      do: operation in [:fetch_run, :events, :attempts, :run_artifacts]
+      do: operation in [:fetch_submission_receipt, :fetch_run, :events, :attempts, :run_artifacts]
+
+    def fetch_submission_receipt(submission_key) do
+      send(self(), {:lower_fetch_submission_receipt, submission_key})
+
+      {:ok,
+       %{
+         submission_key: submission_key,
+         submission_receipt_ref: "submission://stub/#{submission_key}",
+         occurred_at: ~U[2026-04-16 11:09:00Z]
+       }}
+    end
 
     def fetch_run(run_id) do
       send(self(), {:lower_fetch_run, run_id})
@@ -116,11 +160,21 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     end
   end
 
+  defmodule FailingTracePort do
+    @moduledoc false
+
+    def publish_trace(_envelope), do: {:error, :backend_rejected}
+    def publish_traces(_envelopes), do: {:error, :backend_rejected}
+  end
+
   @spec run_case(
           :install_ingest_review_trace
           | :lower_backed_command_trace
           | :lower_backed_command_terminal_rejection
           | :lower_backed_command_semantic_failure
+          | :reviewable_connector_automation_console
+          | :leased_direct_read_and_stream_invalidation
+          | :observability_trace_join_continuity
           | :unauthorized_lower_trace_read
         ) :: {:ok, map()}
   def run_case(:install_ingest_review_trace) do
@@ -196,6 +250,9 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
           surface_opts
         )
 
+      {:ok, pre_run_detail} =
+        WorkSurface.get_subject(with_installation_context, subject_ref, surface_opts)
+
       {:ok, listed_subjects} =
         WorkSurface.list_subjects(with_installation_context, page_request, surface_opts)
 
@@ -259,6 +316,9 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       {:ok, review_detail_after} =
         ReviewSurface.get_review(with_installation_context, decision_ref, surface_opts)
 
+      {:ok, operator_projection_after_review} =
+        OperatorSurface.subject_status(with_installation_context, subject_ref, surface_opts)
+
       trace_id = "trace/app-kit/unified/#{System.unique_integer([:positive])}"
 
       %{execution_id: execution_id} =
@@ -301,8 +361,26 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
          work: %{
            subject_id: subject_ref.id,
            listed_ids: Enum.map(listed_subjects.entries, & &1.subject_ref.id),
-           detail_active_run_id: subject_detail.current_execution_ref.id,
-           detail_pending_reviews: Enum.map(subject_detail.pending_decision_refs, & &1.id)
+           pre_run_pending_obligation_ids:
+             Enum.map(pre_run_detail.pending_obligations, & &1.obligation_id),
+           pre_run_pending_decision_ref_ids:
+             pre_run_detail.pending_obligations
+             |> Enum.map(& &1.decision_ref_id)
+             |> Enum.reject(&is_nil/1),
+           pre_run_blocker_kinds: Enum.map(pre_run_detail.blocking_conditions, & &1.blocker_kind),
+           pre_run_next_step_kind:
+             pre_run_detail.next_step_preview && pre_run_detail.next_step_preview.step_kind,
+           detail_active_run_id: payload_value(subject_detail, :active_run_id),
+           detail_pending_reviews: Enum.map(subject_detail.pending_decision_refs, & &1.id),
+           detail_pending_obligation_ids:
+             Enum.map(subject_detail.pending_obligations, & &1.obligation_id),
+           detail_pending_decision_ref_ids:
+             subject_detail.pending_obligations
+             |> Enum.map(& &1.decision_ref_id)
+             |> Enum.reject(&is_nil/1),
+           detail_blocker_kinds: Enum.map(subject_detail.blocking_conditions, & &1.blocker_kind),
+           detail_next_step_kind:
+             subject_detail.next_step_preview && subject_detail.next_step_preview.step_kind
          },
          control: %{
            state: run_result.state,
@@ -311,17 +389,35 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
          },
          operator: %{
            lifecycle_state: operator_projection.lifecycle_state,
-           current_execution_ref: operator_projection.current_execution_ref.id,
+           current_run_id: payload_value(subject_detail, :active_run_id),
+           current_execution_ref:
+             operator_projection.current_execution_ref &&
+               operator_projection.current_execution_ref.id,
            chosen_action: chosen_action.action_ref.action_kind,
            applied_action: action_result.action_ref.action_kind,
-           timeline_kinds: Enum.map(timeline, & &1.event_kind)
+           timeline_kinds: Enum.map(timeline, & &1.event_kind),
+           pending_obligation_ids:
+             Enum.map(operator_projection.pending_obligations, & &1.obligation_id),
+           pending_decision_ref_ids:
+             operator_projection.pending_obligations
+             |> Enum.map(& &1.decision_ref_id)
+             |> Enum.reject(&is_nil/1),
+           blocker_kinds: Enum.map(operator_projection.blocking_conditions, & &1.blocker_kind),
+           next_step_kind:
+             operator_projection.next_step_preview &&
+               operator_projection.next_step_preview.step_kind
          },
          review: %{
            pending_ids_before: Enum.map(pending_reviews_before.entries, & &1.decision_ref.id),
            pending_ids_after: Enum.map(pending_reviews_after.entries, & &1.decision_ref.id),
            status_before: review_detail_before.status,
            status_after: review_detail_after.status,
-           action_kind: review_action.action_ref.action_kind
+           action_kind: review_action.action_ref.action_kind,
+           blocker_kinds_after:
+             Enum.map(operator_projection_after_review.blocking_conditions, & &1.blocker_kind),
+           next_step_kind_after:
+             operator_projection_after_review.next_step_preview &&
+               operator_projection_after_review.next_step_preview.step_kind
          },
          trace: %{
            execution_id: execution_id,
@@ -390,7 +486,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
            dispatch: %{
              execution_id: lower_dispatch.execution.id,
              classification: lower_dispatch.classification,
-             outbox_status: lower_dispatch.outbox.status,
+             job_status: lower_dispatch.job_status,
              submission_status: lower_dispatch.execution.submission_ref["status"],
              submission_key: lower_dispatch.acceptance.submission_key,
              submission_receipt_ref: lower_dispatch.acceptance.submission_receipt_ref
@@ -402,6 +498,136 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              join_keys: unified_trace.join_keys
            }
          }}
+      end
+    )
+  end
+
+  def run_case(:observability_trace_join_continuity) do
+    with_lower_backed_runtime(
+      :observability_trace_join_continuity,
+      "tenant-observability-trace-join",
+      fn env ->
+        telemetry_handler_id = "stack-lab-scenario19-#{System.unique_integer([:positive])}"
+
+        attach_observability_telemetry!(telemetry_handler_id, self())
+
+        try do
+          :ok = TransportRuntime.put!(lower_transport_config(self(), env.subject_ref.id))
+
+          {:ok, lower_dispatch} =
+            lower_backed_dispatch(
+              env.context,
+              env.installation_ref,
+              env.subject_ref,
+              env.run_result
+            )
+
+          trace_id = lower_dispatch.execution.trace_id
+          execution_id = lower_dispatch.execution.id
+
+          enrich_subject_trace_graph!(
+            env.installation_ref.id,
+            env.subject_ref.id,
+            execution_id,
+            trace_id
+          )
+
+          {:ok, execution_ref} =
+            ExecutionRef.new(%{
+              id: execution_id,
+              subject_ref: env.subject_ref,
+              recipe_ref: "expense_capture",
+              dispatch_state: :completed
+            })
+
+          trace_opts = Keyword.put(env.surface_opts, :lower_facts, LowerFactsStub)
+
+          {:ok, live_trace} =
+            OperatorSurface.get_unified_trace(
+              env.context,
+              execution_ref,
+              trace_opts
+            )
+
+          live_lower_fetches = collect_lower_fetch_messages!()
+
+          {:ok, trace_surfaces} =
+            AITraceClaimCheckTraceContinuity.prove_trace_surfaces(
+              trace_id,
+              env.tenant_id,
+              execution_id,
+              label: :observability_trace_join_continuity
+            )
+
+          execution_plane_backfill =
+            emit_execution_plane_backfill!(trace_id, env.tenant_id)
+
+          :ok = emit_citadel_trace_failure!(trace_id, env.tenant_id, execution_id)
+
+          {:ok, archival_result} =
+            Scheduler.archive_subject(
+              env.installation_ref.id,
+              env.subject_ref.id,
+              now: @scenario_19_archive_now
+            )
+
+          archived_hot_reads =
+            assert_archived_hot_reads!(
+              env.context,
+              env.subject_ref,
+              env.surface_opts,
+              archival_result.manifest_ref
+            )
+
+          {:ok, archived_trace} =
+            OperatorSurface.get_unified_trace(
+              env.context,
+              execution_ref,
+              trace_opts
+            )
+
+          archived_lower_fetches = collect_lower_fetch_messages!()
+          Process.sleep(50)
+          telemetry_events = collect_observability_telemetry!()
+          telemetry = summarize_observability_telemetry!(telemetry_events)
+
+          {:ok,
+           %{
+             case: :observability_trace_join_continuity,
+             scenario: 19,
+             tenant_id: env.tenant_id,
+             installation_id: env.installation_ref.id,
+             subject_id: env.subject_ref.id,
+             execution_id: execution_id,
+             trace_id: trace_id,
+             live_path: %{
+               request_edge_trace_id: env.context.trace_id,
+               mezzanine_trace_id: lower_dispatch.execution.trace_id,
+               lower_gateway_trace_id: lower_dispatch.gateway.trace_id,
+               classification: lower_dispatch.classification,
+               submission_key: lower_dispatch.acceptance.submission_key,
+               step_sources: Enum.map(live_trace.steps, & &1.source),
+               join_keys: live_trace.join_keys
+             },
+             telemetry: telemetry,
+             execution_plane_backfill: execution_plane_backfill,
+             claim_check: trace_surfaces.claim_check,
+             execution_plane: trace_surfaces.execution_plane,
+             aitrace: trace_surfaces.aitrace,
+             archival: %{
+               manifest_ref: archival_result.manifest_ref,
+               hot_read_errors: archived_hot_reads,
+               trace_id: archived_trace.trace_id,
+               archived_manifest_ref: archived_trace.metadata.archived_manifest_ref,
+               step_sources: Enum.map(archived_trace.steps, & &1.source),
+               join_keys: archived_trace.join_keys,
+               live_lower_fetches: live_lower_fetches,
+               archived_lower_fetches: archived_lower_fetches
+             }
+           }}
+        after
+          :telemetry.detach(telemetry_handler_id)
+        end
       end
     )
   end
@@ -458,7 +684,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              execution_id: lower_dispatch.execution.id,
              classification: lower_dispatch.classification,
              execution_state: lower_dispatch.execution.dispatch_state,
-             outbox_status: lower_dispatch.outbox.status,
+             job_status: lower_dispatch.job_status,
              terminal_rejection_reason: lower_dispatch.execution.terminal_rejection_reason,
              rejection_family:
                if lower_dispatch.rejection do
@@ -490,19 +716,19 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
             env.run_result
           )
 
-        {:ok, %{classification: :semantic_failure, execution: failed_execution}} =
-          Dispatcher.reconcile_result(
-            lower_dispatch.execution.id,
-            {:semantic_failure,
-             %{
-               "lower_receipt" => lower_dispatch.execution.lower_receipt,
-               "error" => %{
-                 "kind" => "semantic_failure",
-                 "reason" => "model_confused"
-               }
-             }},
+        {:ok, failed_execution} =
+          ExecutionRecord.record_semantic_failure(lower_dispatch.execution, %{
+            lower_receipt: lower_dispatch.execution.lower_receipt,
+            last_dispatch_error_payload: %{
+              "error" => %{
+                "kind" => "semantic_failure",
+                "reason" => "model_confused"
+              }
+            },
+            trace_id: lower_dispatch.execution.trace_id,
+            causation_id: "semantic-failure:#{lower_dispatch.execution.id}",
             actor_ref: %{kind: :reconciler}
-          )
+          })
 
         {:ok, recovery} =
           SemanticFailureRecoveryService.recover_execution(env.tenant_id, failed_execution.id)
@@ -558,7 +784,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              classification: :semantic_failure,
              execution_state: failed_execution.dispatch_state,
              failure_kind: failed_execution.failure_kind,
-             outbox_status: fetch_outbox!(failed_execution.id).status
+             job_status: :completed
            },
            recovery: %{
              work_state: subject_detail.lifecycle_state,
@@ -579,6 +805,456 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              step_sources: Enum.map(unified_trace.steps, & &1.source),
              failed_execution: failed_execution_step
            }
+         }}
+      end
+    )
+  end
+
+  def run_case(:reviewable_connector_automation_console) do
+    with_lower_backed_runtime(
+      :reviewable_connector_automation_console,
+      "tenant-reviewable-connector-automation",
+      fn env ->
+        :ok = TransportRuntime.put!(lower_transport_config(self(), env.subject_ref.id))
+
+        {:ok, lower_dispatch} =
+          lower_backed_dispatch(
+            env.context,
+            env.installation_ref,
+            env.subject_ref,
+            env.run_result
+          )
+
+        {:ok, execution_ref} =
+          ExecutionRef.new(%{
+            id: lower_dispatch.execution.id,
+            subject_ref: env.subject_ref,
+            recipe_ref: "expense_capture",
+            dispatch_state: lower_dispatch.execution.dispatch_state
+          })
+
+        {:ok, page_request} = PageRequest.new(%{limit: 10})
+
+        {:ok, listed_subjects} =
+          WorkSurface.list_subjects(env.context, page_request, env.surface_opts)
+
+        {:ok, read_lease} =
+          OperatorSurface.issue_read_lease(
+            env.context,
+            execution_ref,
+            Keyword.merge(env.surface_opts,
+              allowed_operations: [:fetch_submission_receipt],
+              scope: %{"mode" => "connector_console_receipt"}
+            )
+          )
+
+        {:ok, live_stream_lease} =
+          OperatorSurface.issue_stream_attach_lease(
+            env.context,
+            execution_ref,
+            Keyword.merge(env.surface_opts,
+              poll_interval_ms: @scenario_24_poll_interval_ms,
+              scope: %{"mode" => "connector_console_live_stream"}
+            )
+          )
+
+        {:ok, live_host} =
+          StreamAttachHost.start_link(
+            lease_id: live_stream_lease.lease_ref.id,
+            token: live_stream_lease.attach_token,
+            repo: ExecutionRepo,
+            poll_interval_ms: @scenario_24_poll_interval_ms,
+            notify: self()
+          )
+
+        live_attach_cursor = await_stream_attached!(live_stream_lease.lease_ref.id)
+
+        direct_receipt =
+          direct_submission_receipt_read!(
+            read_lease,
+            lower_dispatch.acceptance.submission_key
+          )
+
+        {:ok, failed_execution} =
+          ExecutionRecord.record_semantic_failure(lower_dispatch.execution, %{
+            lower_receipt: lower_dispatch.execution.lower_receipt,
+            last_dispatch_error_payload: %{
+              "error" => %{
+                "kind" => "semantic_failure",
+                "reason" => "connector_schema_mismatch"
+              }
+            },
+            trace_id: lower_dispatch.execution.trace_id,
+            causation_id: "connector-console-semantic-failure:#{lower_dispatch.execution.id}",
+            actor_ref: %{kind: :reconciler}
+          })
+
+        {:ok, recovery} =
+          SemanticFailureRecoveryService.recover_execution(env.tenant_id, failed_execution.id)
+
+        {:ok, case_file_before_pause} =
+          connector_console_case_file(env.context, env.subject_ref, env.surface_opts)
+
+        {:ok, pending_reviews_before} =
+          ReviewSurface.list_pending(env.context, page_request, env.surface_opts)
+
+        decision_ref = hd(pending_reviews_before.entries).decision_ref
+
+        {:ok, review_detail_before} =
+          ReviewSurface.get_review(env.context, decision_ref, env.surface_opts)
+
+        {:ok, actions} =
+          OperatorSurface.available_actions(env.context, env.subject_ref, env.surface_opts)
+
+        chosen_action = choose_operator_action(actions, "pause")
+
+        {:ok, action_request} =
+          OperatorActionRequest.new(%{
+            action_ref: chosen_action.action_ref,
+            params: %{"reason" => "connector case triage"}
+          })
+
+        {:ok, pause_result} =
+          OperatorSurface.apply_action(
+            env.context,
+            env.subject_ref,
+            action_request,
+            env.surface_opts
+          )
+
+        post_pause_read_error =
+          Leasing.authorize_read(
+            read_lease.lease_ref.id,
+            read_lease.lease_token,
+            :fetch_submission_receipt,
+            repo: ExecutionRepo
+          )
+
+        post_pause_stream_error =
+          Leasing.authorize_stream_attach(
+            live_stream_lease.lease_ref.id,
+            live_stream_lease.attach_token,
+            repo: ExecutionRepo
+          )
+
+        if Process.alive?(live_host) do
+          GenServer.stop(live_host, :normal)
+        end
+
+        {:ok, review_action} =
+          ReviewSurface.record_decision(
+            env.context,
+            decision_ref,
+            %{decision: :accept, reason: "connector recovery approved"},
+            env.surface_opts
+          )
+
+        {:ok, pending_reviews_after} =
+          ReviewSurface.list_pending(env.context, page_request, env.surface_opts)
+
+        {:ok, review_detail_after} =
+          ReviewSurface.get_review(env.context, decision_ref, env.surface_opts)
+
+        {:ok, case_file_after_review} =
+          connector_console_case_file(env.context, env.subject_ref, env.surface_opts)
+
+        {:ok, failed_execution_ref} =
+          ExecutionRef.new(%{
+            id: failed_execution.id,
+            subject_ref: env.subject_ref,
+            recipe_ref: "expense_capture",
+            dispatch_state: failed_execution.dispatch_state
+          })
+
+        trace_opts = Keyword.put(env.surface_opts, :lower_facts, LowerFactsStub)
+
+        {:ok, unified_trace} =
+          OperatorSurface.get_unified_trace(env.context, failed_execution_ref, trace_opts)
+
+        failed_execution_step =
+          unified_trace.steps
+          |> Enum.find(&(&1.source == "execution_record"))
+          |> Map.fetch!(:payload)
+
+        {:ok,
+         %{
+           case: :reviewable_connector_automation_console,
+           scenario: 15,
+           tenant_id: env.tenant_id,
+           whitepaper_use_case: :"18.2_reviewable_connector_automation",
+           synthetic_shape: %{
+             surface_kind: :connector_automation_console,
+             differs_from: :extravaganza_operator_shell,
+             product_posture: :reviewable_connector_automation
+           },
+           console: %{
+             listed_subject_ids: Enum.map(listed_subjects.entries, & &1.subject_ref.id),
+             pending_review_ids_before:
+               Enum.map(pending_reviews_before.entries, & &1.decision_ref.id),
+             pending_review_ids_after:
+               Enum.map(pending_reviews_after.entries, & &1.decision_ref.id),
+             recovery_review_created?: recovery.review_created?
+           },
+           automation_case: %{
+             subject_id: env.subject_ref.id,
+             run_id: env.run_result.payload.run_ref.run_id,
+             lifecycle_state_before_pause: case_file_before_pause.lifecycle_state,
+             lifecycle_state_after_review: case_file_after_review.lifecycle_state,
+             blocker_kinds_before_pause: case_file_before_pause.blocker_kinds,
+             blocker_kinds_after_review: case_file_after_review.blocker_kinds,
+             next_step_kind_before_pause: case_file_before_pause.next_step_kind,
+             next_step_kind_after_review: case_file_after_review.next_step_kind,
+             current_execution_ref_before_pause: case_file_before_pause.current_execution_ref,
+             current_execution_ref_after_review: case_file_after_review.current_execution_ref,
+             lineage_execution_ref_before_pause: case_file_before_pause.lineage_execution_ref,
+             lineage_execution_ref_after_review: case_file_after_review.lineage_execution_ref,
+             pending_review_ids_before: case_file_before_pause.pending_review_ids,
+             pending_review_ids_after: case_file_after_review.pending_review_ids
+           },
+           operator: %{
+             available_action_kinds: Enum.map(actions, & &1.action_ref.action_kind),
+             applied_action: pause_result.action_ref.action_kind,
+             action_status: pause_result.status,
+             invalidated_live_leases?:
+               lease_invalidated?(post_pause_read_error) and
+                 lease_invalidated?(post_pause_stream_error)
+           },
+           review: %{
+             decision_id: decision_ref.id,
+             status_before: review_detail_before.status,
+             status_after: review_detail_after.status,
+             recovery_kind:
+               review_detail_before.payload.review_unit.decision_profile["recovery_kind"],
+             action_kind: review_action.action_ref.action_kind
+           },
+           lower_access: %{
+             submission_key: direct_receipt.submission_key,
+             submission_receipt_ref: direct_receipt.submission_receipt_ref,
+             stream_attached_cursor: live_attach_cursor,
+             live_stream_lease_id: live_stream_lease.lease_ref.id,
+             post_pause_read: normalize_read_error(post_pause_read_error),
+             post_pause_stream: normalize_read_error(post_pause_stream_error)
+           },
+           trace: %{
+             trace_id: unified_trace.trace_id,
+             step_sources: Enum.map(unified_trace.steps, & &1.source),
+             failed_execution: failed_execution_step
+           }
+         }}
+      end
+    )
+  end
+
+  def run_case(:leased_direct_read_and_stream_invalidation) do
+    with_lower_backed_runtime(
+      :app_kit_leased_direct_read_and_stream_invalidation,
+      "tenant-app-kit-leased-read-stream",
+      fn env ->
+        :ok = TransportRuntime.put!(lower_transport_config(self(), env.subject_ref.id))
+
+        {:ok, lower_dispatch} =
+          lower_backed_dispatch(
+            env.context,
+            env.installation_ref,
+            env.subject_ref,
+            env.run_result
+          )
+
+        {:ok, execution_ref} =
+          ExecutionRef.new(%{
+            id: lower_dispatch.execution.id,
+            subject_ref: env.subject_ref,
+            recipe_ref: "expense_capture",
+            dispatch_state: lower_dispatch.execution.dispatch_state
+          })
+
+        {:ok, disconnected_stream_lease} =
+          OperatorSurface.issue_stream_attach_lease(
+            env.context,
+            execution_ref,
+            Keyword.merge(env.surface_opts,
+              poll_interval_ms: @scenario_24_poll_interval_ms,
+              scope: %{"mode" => "disconnect_catchup"}
+            )
+          )
+
+        {:ok, disconnected_host} =
+          StreamAttachHost.start_link(
+            lease_id: disconnected_stream_lease.lease_ref.id,
+            token: disconnected_stream_lease.attach_token,
+            repo: ExecutionRepo,
+            poll_interval_ms: @scenario_24_poll_interval_ms,
+            notify: self()
+          )
+
+        disconnected_attach_cursor =
+          await_stream_attached!(disconnected_stream_lease.lease_ref.id)
+
+        disconnect_started_at_ms = System.monotonic_time(:millisecond)
+        :ok = GenServer.stop(disconnected_host, :normal)
+
+        burst_rows =
+          emit_stream_invalidation_burst!(
+            disconnected_stream_lease.lease_ref.id,
+            @scenario_24_burst_count,
+            @scenario_24_burst_concurrency
+          )
+
+        ensure_disconnect_window_elapsed!(
+          disconnect_started_at_ms,
+          @scenario_24_disconnect_window_ms
+        )
+
+        {:ok, reconnect_host} =
+          StreamAttachHost.start_link(
+            lease_id: disconnected_stream_lease.lease_ref.id,
+            token: disconnected_stream_lease.attach_token,
+            repo: ExecutionRepo,
+            poll_interval_ms: @scenario_24_poll_interval_ms,
+            notify: self()
+          )
+
+        reconnect_invalidation =
+          await_stream_invalidated!(
+            disconnected_stream_lease.lease_ref.id,
+            @scenario_24_reconnect_timeout_ms
+          )
+
+        ensure_no_stream_attached!(disconnected_stream_lease.lease_ref.id)
+        wait_for_stream_host_shutdown!(reconnect_host)
+
+        {:ok, read_lease} =
+          OperatorSurface.issue_read_lease(
+            env.context,
+            execution_ref,
+            Keyword.merge(env.surface_opts,
+              allowed_operations: [:fetch_submission_receipt],
+              scope: %{"mode" => "direct_receipt_read"}
+            )
+          )
+
+        {:ok, live_stream_lease} =
+          OperatorSurface.issue_stream_attach_lease(
+            env.context,
+            execution_ref,
+            Keyword.merge(env.surface_opts,
+              poll_interval_ms: @scenario_24_poll_interval_ms,
+              scope: %{"mode" => "live_stream"}
+            )
+          )
+
+        {:ok, live_host} =
+          StreamAttachHost.start_link(
+            lease_id: live_stream_lease.lease_ref.id,
+            token: live_stream_lease.attach_token,
+            repo: ExecutionRepo,
+            poll_interval_ms: @scenario_24_poll_interval_ms,
+            notify: self()
+          )
+
+        live_attach_cursor = await_stream_attached!(live_stream_lease.lease_ref.id)
+
+        direct_read_before =
+          direct_submission_receipt_read!(
+            read_lease,
+            lower_dispatch.acceptance.submission_key
+          )
+
+        pause_started_at_ms = System.monotonic_time(:millisecond)
+
+        {:ok, pause_result} =
+          OperatorCommands.pause(env.subject_ref.id,
+            reason: "leased stream shutdown",
+            trace_id: "trace-stage24-pause",
+            causation_id: "cause-stage24-pause",
+            actor_ref: %{kind: :operator}
+          )
+
+        live_stream_invalidation =
+          await_stream_invalidated!(
+            live_stream_lease.lease_ref.id,
+            @scenario_24_reconnect_timeout_ms
+          )
+
+        live_stream_invalidated_after_ms =
+          System.monotonic_time(:millisecond) - pause_started_at_ms
+
+        wait_for_stream_host_shutdown!(live_host)
+
+        post_pause_read_error =
+          Leasing.authorize_read(
+            read_lease.lease_ref.id,
+            read_lease.lease_token,
+            :fetch_submission_receipt,
+            repo: ExecutionRepo
+          )
+
+        {:ok, refused_live_host} =
+          StreamAttachHost.start_link(
+            lease_id: live_stream_lease.lease_ref.id,
+            token: live_stream_lease.attach_token,
+            repo: ExecutionRepo,
+            poll_interval_ms: @scenario_24_poll_interval_ms,
+            notify: self()
+          )
+
+        refused_live_invalidation =
+          await_stream_invalidated!(
+            live_stream_lease.lease_ref.id,
+            @scenario_24_reconnect_timeout_ms
+          )
+
+        ensure_no_stream_attached!(live_stream_lease.lease_ref.id)
+        wait_for_stream_host_shutdown!(refused_live_host)
+
+        burst_sequence_numbers = Enum.map(burst_rows, & &1.sequence_number)
+        pause_invalidated_ids = Map.get(pause_result.details, :invalidated_lease_ids, [])
+
+        {:ok,
+         %{
+           case: :leased_direct_read_and_stream_invalidation,
+           scenario: 24,
+           tenant_id: env.tenant_id,
+           installation_id: env.installation_ref.id,
+           execution_id: lower_dispatch.execution.id,
+           disconnect_window_ms: @scenario_24_disconnect_window_ms,
+           direct_read: %{
+             submission_key: direct_read_before.submission_key,
+             submission_receipt_ref: direct_read_before.submission_receipt_ref
+           },
+           disconnected_stream: %{
+             lease_id: disconnected_stream_lease.lease_ref.id,
+             attached_cursor: disconnected_attach_cursor,
+             reconnect_invalidation_reason: reconnect_invalidation.reason,
+             reconnect_invalidation_sequence: reconnect_invalidation.sequence_number
+           },
+           concurrent_burst: %{
+             invalidation_count: length(burst_rows),
+             requested_connection_count: @scenario_24_burst_concurrency,
+             repo_pool_size: ExecutionRepo.config()[:pool_size],
+             sequence_numbers: burst_sequence_numbers,
+             contiguous_sequences?:
+               burst_sequence_numbers
+               |> Enum.sort()
+               |> contiguous_sequence?()
+           },
+           live_stream: %{
+             lease_id: live_stream_lease.lease_ref.id,
+             attached_cursor: live_attach_cursor,
+             invalidation_reason: live_stream_invalidation.reason,
+             invalidated_after_ms: live_stream_invalidated_after_ms,
+             post_pause_refusal_reason: refused_live_invalidation.reason
+           },
+           control_write: %{
+             result_status: pause_result.status,
+             invalidated_lease_ids: pause_invalidated_ids,
+             invalidated_live_leases?:
+               Enum.all?(
+                 [read_lease.lease_ref.id, live_stream_lease.lease_ref.id],
+                 &(&1 in pause_invalidated_ids)
+               )
+           },
+           post_pause_read: normalize_read_error(post_pause_read_error)
          }}
       end
     )
@@ -699,6 +1375,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
             surface_opts
           )
 
+        :ok = seed_mezzanine_subject!(installation_ref.id, subject_ref)
+
         {:ok, run_request} =
           RunRequest.new(%{
             subject_ref: subject_ref,
@@ -757,6 +1435,42 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     template
   end
 
+  defp seed_mezzanine_subject!(installation_id, subject_ref) do
+    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
+    ObjectsRepo.query!(
+      """
+      INSERT INTO subject_records (
+        id,
+        installation_id,
+        source_ref,
+        subject_kind,
+        lifecycle_state,
+        status,
+        payload,
+        schema_version,
+        opened_at,
+        status_updated_at,
+        row_version,
+        inserted_at,
+        updated_at
+      )
+      VALUES ($1::uuid, $2, $3, $4, $5, 'active', $6, 1, $7, $7, 1, $7, $7)
+      """,
+      [
+        dump_uuid!(subject_ref.id),
+        installation_id,
+        "app-kit:#{subject_ref.id}",
+        "expense_request",
+        "submitted",
+        %{},
+        now
+      ]
+    )
+
+    :ok
+  end
+
   defp surface_opts do
     [
       installation_backend: MezzanineBridge,
@@ -770,7 +1484,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   defp request_context(tenant_id, trace_id, metadata, installation_ref \\ nil) do
     {:ok, context} =
       RequestContext.new(%{
-        trace_id: trace_id,
+        trace_id: normalize_trace_id(trace_id),
         actor_ref: %{id: "ops_lead", kind: :human},
         tenant_ref: %{id: tenant_id},
         installation_ref: installation_ref,
@@ -780,8 +1494,60 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     context
   end
 
-  defp choose_operator_action(actions) do
-    Enum.find(actions, &(&1.action_ref.action_kind == "pause")) || hd(actions)
+  defp choose_operator_action(actions, preferred_action_kind \\ "pause") do
+    Enum.find(actions, &(&1.action_ref.action_kind == preferred_action_kind)) || hd(actions)
+  end
+
+  defp connector_console_case_file(context, subject_ref, surface_opts) do
+    with {:ok, subject_detail} <- WorkSurface.get_subject(context, subject_ref, surface_opts),
+         {:ok, operator_projection} <-
+           OperatorSurface.subject_status(context, subject_ref, surface_opts) do
+      current_execution_ref =
+        operator_projection.current_execution_ref &&
+          operator_projection.current_execution_ref.id
+
+      {:ok,
+       %{
+         lifecycle_state: subject_detail.lifecycle_state,
+         blocker_kinds: Enum.map(operator_projection.blocking_conditions, & &1.blocker_kind),
+         next_step_kind:
+           operator_projection.next_step_preview &&
+             operator_projection.next_step_preview.step_kind,
+         current_execution_ref: current_execution_ref,
+         lineage_execution_ref:
+           current_execution_ref || latest_execution_id(subject_detail, operator_projection),
+         pending_review_ids: Enum.map(subject_detail.pending_decision_refs, & &1.id)
+       }}
+    end
+  end
+
+  defp latest_execution_id(subject_detail, operator_projection) do
+    payload_value(subject_detail, :latest_execution_id) ||
+      payload_value(operator_projection, :latest_execution_id)
+  end
+
+  defp payload_value(struct_or_map, key) when is_atom(key) do
+    payload = Map.get(struct_or_map, :payload, %{})
+
+    if is_map(payload) do
+      Map.get(payload, key) || Map.get(payload, Atom.to_string(key))
+    end
+  end
+
+  defp normalize_trace_id(trace_id) do
+    case TraceIdentity.ensure(trace_id) do
+      {:ok, normalized_trace_id} ->
+        normalized_trace_id
+
+      {:error, :invalid_trace_id} when is_binary(trace_id) ->
+        trace_id
+        |> then(&:crypto.hash(:sha256, &1))
+        |> Base.encode16(case: :lower)
+        |> binary_part(0, 32)
+
+      {:error, :invalid_trace_id} ->
+        TraceIdentity.mint()
+    end
   end
 
   defp activate_fixture_registration!(version) do
@@ -883,16 +1649,28 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   end
 
   defp seed_trace_ledger(installation_id, subject_id, trace_id) do
+    installation = fetch_installation!(installation_id)
     execution_id = Ecto.UUID.generate()
     now = ~U[2026-04-16 11:00:00Z]
+    trace_id = normalize_trace_id(trace_id)
 
     {1, _} =
       ExecutionRepo.insert_all("execution_records", [
         %{
           id: dump_uuid!(execution_id),
+          tenant_id: installation.tenant_id,
           installation_id: installation_id,
           subject_id: dump_uuid!(subject_id),
           recipe_ref: "expense_capture",
+          compiled_pack_revision: installation.compiled_pack_revision || 1,
+          binding_snapshot: %{"placement_ref" => "local_docker"},
+          dispatch_envelope: %{"capability" => "finance.expense.capture"},
+          intent_snapshot: %{
+            "recipe_ref" => "expense_capture",
+            "subject_id" => subject_id,
+            "trace_id" => trace_id
+          },
+          submission_dedupe_key: "submission-key-#{execution_id}",
           trace_id: trace_id,
           causation_id: execution_id,
           dispatch_state: "accepted",
@@ -903,9 +1681,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
           last_dispatch_error_payload: %{},
           row_version: 1,
           inserted_at: now,
-          updated_at: now,
-          compiled_pack_revision: 1,
-          binding_snapshot: %{"placement_ref" => "local_docker"}
+          updated_at: now
         }
       ])
 
@@ -936,7 +1712,6 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
           installation_id: installation_id,
           subject_id: subject_id,
           execution_id: execution_id,
-          dispatch_outbox_entry_id: Ecto.UUID.generate(),
           ji_submission_key: "submission-#{execution_id}",
           lower_run_id: "lower-run-#{execution_id}",
           lower_attempt_id: "attempt-#{execution_id}",
@@ -1005,6 +1780,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
     {:ok, dispatched_execution} =
       ExecutionRecord.dispatch(%{
+        tenant_id: installation.tenant_id,
         installation_id: installation.id,
         subject_id: subject_ref.id,
         recipe_ref: recipe_ref,
@@ -1022,36 +1798,44 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       })
 
     bridge = InvocationBridge.new!(downstream: InvocationDownstream)
-    initial_outbox = fetch_outbox!(dispatched_execution.id)
-    accepted_now = DateTime.add(initial_outbox.available_at, 1, :second)
 
-    {:ok, %{classification: classification, execution: accepted_execution}} =
-      Dispatcher.dispatch_next(
-        submit_fun: fn claimed ->
-          validate_lower_backed_claim!(
-            claimed,
-            installation,
-            subject_ref.id,
-            recipe_ref,
-            binding_snapshot
-          )
+    dispatch =
+      LowerGatewayStub.with_handlers(
+        %{
+          dispatch: fn [claimed] ->
+            validate_lower_backed_claim!(
+              claimed,
+              installation,
+              subject_ref.id,
+              recipe_ref,
+              binding_snapshot
+            )
 
-          dispatch_through_citadel!(bridge, run_intent, context, claimed, binding_snapshot)
-        end,
-        actor_ref: %{kind: :dispatcher},
-        now: accepted_now
+            dispatch_through_citadel!(bridge, run_intent, context, claimed, binding_snapshot)
+          end
+        },
+        fn ->
+          dispatch = DispatchProbe.perform_dispatch!(dispatched_execution.id)
+
+          if dispatch.classification not in [:accepted, :terminal_rejection] do
+            raise "unexpected lower-backed dispatch classification: #{inspect(dispatch)}"
+          end
+
+          dispatch
+        end
       )
 
-    outbox = fetch_outbox!(accepted_execution.id)
     transport_result = await_transport_result!()
 
     {:ok,
      %{
-       classification: classification,
-       execution: accepted_execution,
-       outbox: outbox,
-       acceptance: transport_acceptance(classification, transport_result),
-       rejection: transport_rejection(classification, transport_result)
+       classification: dispatch.classification,
+       execution: dispatch.execution,
+       job_status: dispatch.job_status,
+       gateway: Map.get(transport_result, :gateway),
+       runtime_inputs: Map.get(transport_result, :runtime_inputs),
+       acceptance: transport_acceptance(dispatch.classification, transport_result),
+       rejection: transport_rejection(dispatch.classification, transport_result)
      }}
   end
 
@@ -1068,7 +1852,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       request_id: claimed.execution_id,
       trace_id: claimed.trace_id,
       idempotency_key: claimed.submission_dedupe_key,
-      host_request_id: claimed.outbox_id,
+      submission_dedupe_key: claimed.submission_dedupe_key,
+      host_request_id: claimed.execution_id,
       session_id: "work/#{claimed.subject_id}",
       environment: "stage4",
       scope_kind: "work_object",
@@ -1100,7 +1885,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
     case InvocationBridge.submit(bridge, compiled.invocation_request, compiled.outbox_entry) do
       {:accepted, acceptance, _bridge} ->
-        {:accepted, acceptance_payload(compiled, acceptance)}
+        {:accepted, acceptance_payload(compiled, acceptance, claimed)}
 
       {:rejected, rejection, _bridge} ->
         {:rejected, rejection_payload(rejection)}
@@ -1110,7 +1895,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     end
   end
 
-  defp acceptance_payload(compiled, acceptance) do
+  defp acceptance_payload(compiled, acceptance, claimed) do
     %{
       "submission_ref" => %{
         "id" => compiled.entry_id,
@@ -1119,8 +1904,10 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         "submission_receipt_ref" => acceptance.submission_receipt_ref
       },
       "lower_receipt" => %{
+        "state" => "accepted",
         "ji_submission_key" => acceptance.submission_key,
-        "submission_receipt_ref" => acceptance.submission_receipt_ref
+        "submission_receipt_ref" => acceptance.submission_receipt_ref,
+        "run_id" => "run-#{claimed.execution_id}"
       }
     }
   end
@@ -1198,16 +1985,22 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     end
   end
 
-  defp fetch_outbox!(execution_id) do
-    {:ok, outbox} = DispatchOutboxEntry.by_execution_id(execution_id)
-    outbox
-  end
-
   defp await_transport_result! do
     receive do
       {:stack_lab_brain_ingress_result,
-       %{result: :accepted, acceptance: acceptance, submission_key: _submission_key}} ->
-        %{result: :accepted, acceptance: acceptance}
+       %{
+         result: :accepted,
+         acceptance: acceptance,
+         submission_key: _submission_key,
+         gateway: gateway,
+         runtime_inputs: runtime_inputs
+       }} ->
+        %{
+          result: :accepted,
+          acceptance: acceptance,
+          gateway: gateway,
+          runtime_inputs: runtime_inputs
+        }
 
       {:stack_lab_brain_ingress_result,
        %{result: :rejected, rejection: rejection, submission_key: _submission_key}} ->
@@ -1279,6 +2072,487 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       receipt_ref: direct_receipt.submission_receipt_ref
     }
   end
+
+  def handle_observability_telemetry(event, measurements, metadata, test_pid) do
+    send(test_pid, {:observability_telemetry, event, measurements, metadata})
+  end
+
+  defp attach_observability_telemetry!(handler_id, test_pid) do
+    :ok =
+      :telemetry.attach_many(
+        handler_id,
+        [
+          Telemetry.event_name(:unified_trace_assembled),
+          ClaimCheckTelemetry.event(:stage),
+          Citadel.ObservabilityContract.Telemetry.event_name(:trace_publication_failure),
+          [:lower_gateway, :trace_id, :backfill],
+          [:mezzanine, :archival, :run],
+          [:mezzanine, :archival, :verified],
+          [:mezzanine, :archival, :rows_removed]
+        ],
+        &__MODULE__.handle_observability_telemetry/4,
+        test_pid
+      )
+
+    :ok
+  end
+
+  defp collect_observability_telemetry!(acc \\ []) do
+    receive do
+      {:observability_telemetry, event, measurements, metadata} ->
+        collect_observability_telemetry!([
+          %{event: event, measurements: measurements, metadata: metadata} | acc
+        ])
+    after
+      100 -> Enum.reverse(acc)
+    end
+  end
+
+  defp summarize_observability_telemetry!(events) when is_list(events) do
+    %{
+      app_kit_unified_trace:
+        fetch_events!(events, Telemetry.event_name(:unified_trace_assembled)),
+      claim_check_stage: fetch_events!(events, ClaimCheckTelemetry.event(:stage)),
+      execution_plane_backfill: fetch_one_event!(events, [:lower_gateway, :trace_id, :backfill]),
+      citadel_trace_publication_failure:
+        fetch_one_event!(
+          events,
+          Citadel.ObservabilityContract.Telemetry.event_name(:trace_publication_failure)
+        ),
+      archival_run: fetch_one_event!(events, [:mezzanine, :archival, :run]),
+      archival_verified: fetch_one_event!(events, [:mezzanine, :archival, :verified]),
+      archival_rows_removed: fetch_one_event!(events, [:mezzanine, :archival, :rows_removed])
+    }
+  end
+
+  defp fetch_events!(events, event_name) do
+    matched = Enum.filter(events, &(&1.event == event_name))
+
+    if matched == [] do
+      raise "missing observability telemetry for #{inspect(event_name)}"
+    end
+
+    matched
+  end
+
+  defp fetch_one_event!(events, event_name) do
+    fetch_events!(events, event_name)
+    |> hd()
+  end
+
+  defp collect_lower_fetch_messages!(acc \\ []) do
+    receive do
+      {:lower_fetch_submission_receipt, submission_key} ->
+        collect_lower_fetch_messages!([{:fetch_submission_receipt, submission_key} | acc])
+
+      {:lower_fetch_run, run_id} ->
+        collect_lower_fetch_messages!([{:fetch_run, run_id} | acc])
+
+      {:lower_events, run_id} ->
+        collect_lower_fetch_messages!([{:events, run_id} | acc])
+
+      {:lower_attempts, run_id} ->
+        collect_lower_fetch_messages!([{:attempts, run_id} | acc])
+
+      {:lower_run_artifacts, run_id} ->
+        collect_lower_fetch_messages!([{:run_artifacts, run_id} | acc])
+    after
+      50 -> Enum.reverse(acc)
+    end
+  end
+
+  defp enrich_subject_trace_graph!(installation_id, subject_id, execution_id, trace_id) do
+    decision_id = Ecto.UUID.generate()
+    evidence_id = Ecto.UUID.generate()
+    audit_fact_id = Ecto.UUID.generate()
+    now = ~U[2026-04-16 11:00:00Z]
+
+    ObjectsRepo.query!(
+      """
+      UPDATE subject_records
+      SET lifecycle_state = 'approved',
+          status = 'completed',
+          terminal_at = $3,
+          status_updated_at = $4,
+          updated_at = $4
+      WHERE installation_id = $1
+        AND id = $2::uuid
+      """,
+      [installation_id, dump_uuid!(subject_id), @scenario_19_terminal_at, now]
+    )
+
+    ExecutionRepo.query!(
+      """
+      UPDATE execution_records
+      SET dispatch_state = 'completed',
+          updated_at = $3
+      WHERE installation_id = $1
+        AND id = $2::uuid
+      """,
+      [installation_id, dump_uuid!(execution_id), now]
+    )
+
+    DecisionsRepo.query!(
+      """
+      INSERT INTO decision_records (
+        id,
+        installation_id,
+        subject_id,
+        execution_id,
+        decision_kind,
+        lifecycle_state,
+        decision_value,
+        trace_id,
+        row_version,
+        inserted_at,
+        updated_at
+      )
+      VALUES ($1::uuid, $2, $3::uuid, $4::uuid, 'review', 'resolved', 'accept', $5, 1, $6, $6)
+      """,
+      [
+        dump_uuid!(decision_id),
+        installation_id,
+        dump_uuid!(subject_id),
+        dump_uuid!(execution_id),
+        trace_id,
+        now
+      ]
+    )
+
+    EvidenceRepo.query!(
+      """
+      INSERT INTO evidence_records (
+        id,
+        installation_id,
+        subject_id,
+        execution_id,
+        evidence_kind,
+        status,
+        metadata,
+        trace_id,
+        row_version,
+        inserted_at,
+        updated_at
+      )
+      VALUES ($1::uuid, $2, $3::uuid, $4::uuid, 'artifact', 'verified', '{}'::jsonb, $5, 1, $6, $6)
+      """,
+      [
+        dump_uuid!(evidence_id),
+        installation_id,
+        dump_uuid!(subject_id),
+        dump_uuid!(execution_id),
+        trace_id,
+        now
+      ]
+    )
+
+    AuditRepo.query!(
+      """
+      INSERT INTO audit_facts (
+        id,
+        installation_id,
+        subject_id,
+        execution_id,
+        decision_id,
+        evidence_id,
+        trace_id,
+        fact_kind,
+        actor_ref,
+        payload,
+        occurred_at,
+        inserted_at,
+        updated_at
+      )
+      VALUES ($1::uuid, $2, $3::uuid, $4::uuid, $5::uuid, $6::uuid, $7, 'execution_completed', '{}'::jsonb, '{}'::jsonb, $8, $8, $8)
+      """,
+      [
+        dump_uuid!(audit_fact_id),
+        installation_id,
+        dump_uuid!(subject_id),
+        dump_uuid!(execution_id),
+        dump_uuid!(decision_id),
+        dump_uuid!(evidence_id),
+        trace_id,
+        now
+      ]
+    )
+
+    :ok
+  end
+
+  defp emit_execution_plane_backfill!(trace_id, tenant_id) do
+    lineage =
+      ExecutionPlane.Contracts.normalize_lineage!(
+        %{
+          tenant_id: tenant_id,
+          request_id: trace_id,
+          decision_id: "scenario19-decision",
+          boundary_session_id: "scenario19-boundary-session",
+          attempt_ref: "attempt://scenario19/#{trace_id}",
+          route_id: "scenario19-route",
+          idempotency_key: "scenario19-idempotency"
+        },
+        @scenario_19_execution_plane_required_keys
+      )
+
+    envelope =
+      ExecutionPlane.LaneSupport.build_envelope(
+        "scenario19",
+        "process",
+        "scenario19.execute",
+        lineage,
+        requested_capabilities: ["scenario19.execute"]
+      )
+
+    route =
+      ExecutionPlane.LaneSupport.build_route(
+        "scenario19",
+        "process",
+        "process",
+        "local",
+        %{"execution_surface" => %{"surface_kind" => "local_subprocess"}},
+        30_000,
+        lineage
+      )
+
+    %{
+      lineage_trace_id: lineage.trace_id,
+      envelope_trace_id: envelope.trace_id,
+      route_trace_id: route.lineage.trace_id,
+      request_id: lineage.request_id,
+      route_id: lineage.route_id
+    }
+  end
+
+  defp emit_citadel_trace_failure!(trace_id, tenant_id, request_id) do
+    {:ok, publisher} =
+      TracePublisher.start_link(
+        trace_port: FailingTracePort,
+        batch_size: 1,
+        flush_interval_ms: 1
+      )
+
+    Process.unlink(publisher)
+
+    envelope =
+      TraceEnvelope.new!(%{
+        trace_envelope_id: "scenario19-failure-#{System.unique_integer([:positive])}",
+        record_kind: :event,
+        family: "scenario19",
+        name: "citadel.scenario19.trace_join_probe",
+        phase: "post_commit",
+        trace_id: trace_id,
+        tenant_id: tenant_id,
+        session_id: "scenario19/session",
+        request_id: request_id,
+        decision_id: nil,
+        snapshot_seq: 1,
+        signal_id: nil,
+        outbox_entry_id: nil,
+        boundary_ref: "scenario19-boundary",
+        span_id: nil,
+        parent_span_id: nil,
+        occurred_at: DateTime.utc_now() |> DateTime.truncate(:second),
+        started_at: nil,
+        finished_at: nil,
+        status: "error",
+        attributes: %{},
+        extensions: %{}
+      })
+
+    :ok = TracePublisher.publish_trace(publisher, envelope)
+    Process.sleep(50)
+    GenServer.stop(publisher)
+    :ok
+  end
+
+  defp assert_archived_hot_reads!(context, subject_ref, surface_opts, manifest_ref) do
+    work_query_result =
+      archived_surface_result!(
+        "work-query",
+        WorkSurface.get_subject(context, subject_ref, surface_opts),
+        manifest_ref
+      )
+
+    operator_query_result =
+      archived_surface_result!(
+        "operator-status",
+        OperatorSurface.subject_status(context, subject_ref, surface_opts),
+        manifest_ref
+      )
+
+    assert_archived_result!("work-query", work_query_result, manifest_ref)
+    assert_archived_result!("operator-status", operator_query_result, manifest_ref)
+
+    %{
+      work_query: work_query_result,
+      operator_status: operator_query_result
+    }
+  end
+
+  defp assert_archived_result!(label, result, manifest_ref) do
+    if match?({:error, :archived, ^manifest_ref}, result) do
+      :ok
+    else
+      raise "expected archived #{label} result, got: #{inspect(result)}"
+    end
+  end
+
+  defp archived_surface_result!(
+         _label,
+         {:error, %SurfaceError{code: code, details: %{manifest_ref: manifest_ref}}},
+         manifest_ref
+       )
+       when code in [:archived, "archived"] do
+    {:error, :archived, manifest_ref}
+  end
+
+  defp archived_surface_result!(label, result, manifest_ref) do
+    raise "expected archived #{label} surface result for #{manifest_ref}, got: #{inspect(result)}"
+  end
+
+  defp direct_submission_receipt_read!(read_lease, submission_key) do
+    {:ok, _lease} =
+      Leasing.authorize_read(
+        read_lease.lease_ref.id,
+        read_lease.lease_token,
+        :fetch_submission_receipt,
+        repo: ExecutionRepo
+      )
+
+    case LowerFacts.fetch_submission_receipt(submission_key) do
+      {:ok, receipt} -> receipt
+      :error -> raise "direct leased lower read could not fetch a submission receipt"
+    end
+  end
+
+  defp emit_stream_invalidation_burst!(lease_id, count, max_concurrency) do
+    1..count
+    |> Task.async_stream(
+      fn index ->
+        {:ok, [row]} =
+          Leasing.invalidate_stream_attach_lease(
+            lease_id,
+            "disconnect_burst_#{index}",
+            repo: ExecutionRepo,
+            trace_id: "trace-stage24-burst-#{index}"
+          )
+
+        row
+      end,
+      max_concurrency: max_concurrency,
+      timeout: 15_000,
+      ordered: false
+    )
+    |> Enum.map(fn
+      {:ok, row} -> row
+      {:exit, reason} -> raise "stream invalidation burst failed: #{inspect(reason)}"
+      {:error, reason} -> raise "stream invalidation burst failed: #{inspect(reason)}"
+    end)
+  end
+
+  defp ensure_disconnect_window_elapsed!(started_at_ms, required_ms) do
+    elapsed_ms = System.monotonic_time(:millisecond) - started_at_ms
+    remaining_ms = max(required_ms - elapsed_ms, 0)
+
+    if remaining_ms > 0 do
+      Process.sleep(remaining_ms)
+    end
+
+    :ok
+  end
+
+  defp await_stream_attached!(lease_id, timeout_ms \\ 2_000) do
+    deadline_ms = System.monotonic_time(:millisecond) + timeout_ms
+    do_await_stream_attached(lease_id, deadline_ms)
+  end
+
+  defp await_stream_invalidated!(lease_id, timeout_ms) do
+    deadline_ms = System.monotonic_time(:millisecond) + timeout_ms
+    do_await_stream_invalidated(lease_id, deadline_ms)
+  end
+
+  defp ensure_no_stream_attached!(lease_id) do
+    deadline_ms = System.monotonic_time(:millisecond) + 100
+    do_ensure_no_stream_attached(lease_id, deadline_ms)
+  end
+
+  defp wait_for_stream_host_shutdown!(pid) when is_pid(pid) do
+    ref = Process.monitor(pid)
+
+    receive do
+      {:DOWN, ^ref, :process, ^pid, _reason} -> :ok
+    after
+      2_000 ->
+        Process.demonitor(ref, [:flush])
+        raise "timed out waiting for stream host shutdown"
+    end
+  end
+
+  defp contiguous_sequence?([]), do: true
+
+  defp contiguous_sequence?(sequence_numbers) do
+    sorted = Enum.sort(sequence_numbers)
+    sorted == Enum.to_list(hd(sorted)..List.last(sorted))
+  end
+
+  defp do_await_stream_attached(lease_id, deadline_ms) do
+    timeout_ms = max(deadline_ms - System.monotonic_time(:millisecond), 0)
+
+    receive do
+      {:stream_attached, ^lease_id, cursor} ->
+        cursor
+
+      _other ->
+        do_await_stream_attached(lease_id, deadline_ms)
+    after
+      timeout_ms ->
+        raise "timed out waiting for stream attach for #{inspect(lease_id)}"
+    end
+  end
+
+  defp do_await_stream_invalidated(lease_id, deadline_ms) do
+    timeout_ms = max(deadline_ms - System.monotonic_time(:millisecond), 0)
+
+    receive do
+      {:stream_invalidated, ^lease_id, reason, sequence_number} ->
+        %{reason: reason, sequence_number: sequence_number}
+
+      _other ->
+        do_await_stream_invalidated(lease_id, deadline_ms)
+    after
+      timeout_ms ->
+        raise "timed out waiting for stream invalidation for #{inspect(lease_id)}"
+    end
+  end
+
+  defp do_ensure_no_stream_attached(lease_id, deadline_ms) do
+    timeout_ms = max(deadline_ms - System.monotonic_time(:millisecond), 0)
+
+    receive do
+      {:stream_attached, ^lease_id, cursor} ->
+        raise "unexpected stream attachment for invalidated lease #{inspect(lease_id)} at #{cursor}"
+
+      _other ->
+        do_ensure_no_stream_attached(lease_id, deadline_ms)
+    after
+      timeout_ms ->
+        :ok
+    end
+  end
+
+  defp normalize_read_error({:error, {:lease_invalidated, reason, sequence_number}}) do
+    %{
+      code: :lease_invalidated,
+      reason: reason,
+      sequence_number: sequence_number
+    }
+  end
+
+  defp normalize_read_error(other), do: %{code: :unexpected_result, result: other}
+
+  defp lease_invalidated?({:error, {:lease_invalidated, _reason, _sequence_number}}), do: true
+  defp lease_invalidated?(_other), do: false
 
   defp ensure_store_local_ready!(storage_dir) do
     stop_store_local()

@@ -2,7 +2,7 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
   @moduledoc false
 
   alias Mezzanine.ConfigRegistry.PackRegistration
-  alias Mezzanine.Execution.{Dispatcher, DispatchOutboxEntry, ExecutionRecord}
+  alias Mezzanine.Execution.ExecutionRecord
   alias Mezzanine.Lifecycle.{Evaluator, SubjectSnapshot}
   alias Mezzanine.Objects.SubjectRecord
 
@@ -17,7 +17,7 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
     SubjectKindSpec
   }
 
-  alias StackLab.CitadelSpineHarness.MezzanineSubstrate
+  alias StackLab.CitadelSpineHarness.{DispatchProbe, LowerGatewayStub, MezzanineSubstrate}
 
   @spec run_case(:expense_capture_acceptance | :multi_pack_installation_routing) ::
           {:ok, map()}
@@ -64,20 +64,14 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
           "finance.expense.capture"
         )
 
-      initial_outbox = fetch_outbox!(execution.id)
-      accepted_now = DateTime.add(initial_outbox.available_at, 1, :second)
-
-      {:ok, %{classification: :accepted, execution: accepted_execution}} =
-        Dispatcher.dispatch_next(
-          submit_fun: fn claimed ->
-            validate_claim!(claimed, installation, subject.id, "expense_capture")
-            {:accepted, acceptance_payload(claimed)}
-          end,
-          actor_ref: %{kind: :dispatcher},
-          now: accepted_now
+      dispatch =
+        accept_next_dispatch!(
+          execution,
+          installation,
+          subject.id,
+          "expense_capture",
+          "expense"
         )
-
-      outbox = fetch_outbox!(execution.id)
 
       {:ok, requested_transition} =
         transition_for(compiled_from_registry, subject, {:execution_requested, "expense_capture"})
@@ -98,10 +92,10 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
            compiled_pack_revision: installation.compiled_pack_revision
          },
          dispatch: %{
-           recipe_ref: accepted_execution.recipe_ref,
-           classification: :accepted,
-           outbox_status: outbox.status,
-           submission_ref_status: accepted_execution.submission_ref["status"]
+           recipe_ref: dispatch.recipe_ref,
+           classification: dispatch.classification,
+           job_status: dispatch.job_status,
+           submission_ref_status: dispatch.submission_ref_status
          },
          transitions: %{
            on_execution_requested: requested_transition.to,
@@ -201,7 +195,7 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
           "finance.expense.capture"
         )
 
-      {:ok, expense_dispatch} =
+      expense_dispatch =
         accept_next_dispatch!(
           expense_execution,
           expense_installation,
@@ -218,7 +212,7 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
           "finance.invoice.capture"
         )
 
-      {:ok, invoice_dispatch} =
+      invoice_dispatch =
         accept_next_dispatch!(
           invoice_execution,
           invoice_installation,
@@ -363,30 +357,31 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
   end
 
   defp accept_next_dispatch!(execution, installation, subject_id, recipe_ref, label) do
-    initial_outbox = fetch_outbox!(execution.id)
-    accepted_now = DateTime.add(initial_outbox.available_at, 1, :second)
+    LowerGatewayStub.with_handlers(
+      %{
+        dispatch: fn [claim] ->
+          validate_claim!(claim, installation, subject_id, recipe_ref)
+          {:accepted, acceptance_payload(claim)}
+        end
+      },
+      fn ->
+        dispatch = DispatchProbe.perform_dispatch!(execution.id)
 
-    with {:ok, %{classification: :accepted, execution: accepted_execution}} <-
-           Dispatcher.dispatch_next(
-             submit_fun: fn claimed ->
-               validate_claim!(claimed, installation, subject_id, recipe_ref)
-               {:accepted, acceptance_payload(claimed)}
-             end,
-             actor_ref: %{kind: :dispatcher},
-             now: accepted_now
-           ) do
-      outbox = fetch_outbox!(accepted_execution.id)
+        if dispatch.classification != :accepted do
+          raise "expected governed-run dispatch to be accepted, got: #{inspect(dispatch)}"
+        end
 
-      {:ok,
-       %{
-         label: label,
-         installation_id: installation.id,
-         recipe_ref: accepted_execution.recipe_ref,
-         classification: :accepted,
-         compiled_pack_revision: installation.compiled_pack_revision,
-         outbox_status: outbox.status
-       }}
-    end
+        %{
+          label: label,
+          installation_id: installation.id,
+          recipe_ref: dispatch.execution.recipe_ref,
+          classification: dispatch.classification,
+          compiled_pack_revision: installation.compiled_pack_revision,
+          job_status: dispatch.job_status,
+          submission_ref_status: dispatch.execution.submission_ref["status"]
+        }
+      end
+    )
   end
 
   defp validate_claim!(claimed, installation, subject_id, recipe_ref) do
@@ -477,10 +472,5 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
       source_ref: subject.source_ref,
       subject_kind: subject.subject_kind
     }
-  end
-
-  defp fetch_outbox!(execution_id) do
-    {:ok, outbox} = DispatchOutboxEntry.by_execution_id(execution_id)
-    outbox
   end
 end

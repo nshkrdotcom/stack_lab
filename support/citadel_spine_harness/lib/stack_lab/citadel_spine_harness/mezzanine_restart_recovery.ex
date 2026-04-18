@@ -2,10 +2,12 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
   @moduledoc false
 
   alias Ash
-  alias Mezzanine.Execution.{Dispatcher, DispatchOutboxEntry, ExecutionRecord}
+  alias Mezzanine.Execution.ExecutionRecord
   alias Mezzanine.Objects.SubjectRecord
-  alias StackLab.CitadelSpineHarness.MezzanineSubstrate
+  alias Mezzanine.RuntimeScheduler.ReconcileOnStart
+  alias StackLab.CitadelSpineHarness.{DispatchProbe, LowerGatewayStub, MezzanineSubstrate}
 
+  @tenant_id "tenant-1"
   @dispatch_snapshot %{
     "placement_ref" => "local_docker",
     "execution_params" => %{"timeout_ms" => 600_000},
@@ -16,56 +18,58 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
   def run_case(:dispatching_retry_after_restart) do
     MezzanineSubstrate.with_store(:dispatching_retry_after_restart, fn repo_config ->
       installation_id = "stack-lab-installation"
+      tenant_id = @tenant_id
       {:ok, ledger} = start_submission_ledger()
 
       try do
         {:ok, subject} = ingest_subject(installation_id, "stack-lab:restart-recovery")
-        {:ok, execution} = dispatch_execution(subject, installation_id)
-        {:ok, initial_outbox} = DispatchOutboxEntry.by_execution_id(execution.id)
-        crash_now = DateTime.add(initial_outbox.available_at, 1, :second)
-        recovery_now = DateTime.add(crash_now, 5, :second)
-        claimed = crash_after_submission!(crash_now, ledger)
+        {:ok, execution} = dispatch_execution(subject, tenant_id, installation_id)
+        initial_job = DispatchProbe.dispatch_job_for!(execution.id)
+        recovery_now = DateTime.add(DateTime.utc_now(), 5, :second)
+        claimed = crash_after_submission!(execution.id, ledger)
+
+        :ok = DispatchProbe.delete_dispatch_jobs!(execution.id)
 
         before_restart = %{
           execution_dispatch_state: fetch_execution!(execution.id).dispatch_state,
-          outbox_status: fetch_outbox!(execution.id).status,
-          outbox_id: initial_outbox.id,
+          job_id: initial_job.id,
+          job_status: :missing_after_crash,
           submission_dedupe_key: claimed.submission_dedupe_key
         }
 
         :ok = MezzanineSubstrate.restart_runtime!(repo_config)
 
-        {:ok, reconcile_summary} =
-          runtime_scheduler_call!(:reconcile_on_start, [installation_id, recovery_now])
+        {:ok, reconcile_summary} = reconcile_on_start!(installation_id, recovery_now)
 
         after_execution = fetch_execution!(execution.id)
-        after_outbox = fetch_outbox!(execution.id)
+        after_job = DispatchProbe.dispatch_job_for!(execution.id)
 
-        replay_submit =
-          fn replay_claim ->
-            if replay_claim.execution_id != execution.id do
-              raise "unexpected execution replayed after restart"
+        final_dispatch =
+          LowerGatewayStub.with_handlers(
+            %{
+              lookup_submission: fn [submission_dedupe_key, replay_tenant_id] ->
+                if replay_tenant_id != tenant_id do
+                  raise "restart recovery replayed the wrong tenant"
+                end
+
+                if submission_dedupe_key != claimed.submission_dedupe_key do
+                  raise "restart recovery changed the submission dedupe key"
+                end
+
+                {:accepted, normalize_lookup_acceptance!(replay_duplicate!(ledger, claimed))}
+              end
+            },
+            fn ->
+              dispatch = DispatchProbe.perform_dispatch!(execution.id)
+
+              if dispatch.classification != :accepted do
+                raise "expected restart recovery replay to resume as accepted, got: #{inspect(dispatch)}"
+              end
+
+              dispatch
             end
-
-            if replay_claim.outbox_id != initial_outbox.id do
-              raise "restart recovery replayed a different outbox row"
-            end
-
-            if replay_claim.submission_dedupe_key != claimed.submission_dedupe_key do
-              raise "restart recovery changed the submission dedupe key"
-            end
-
-            {:accepted, replay_duplicate!(ledger, replay_claim)}
-          end
-
-        {:ok, %{classification: :accepted, execution: accepted_execution}} =
-          Dispatcher.dispatch_next(
-            submit_fun: replay_submit,
-            actor_ref: %{kind: :dispatcher},
-            now: recovery_now
           )
 
-        final_outbox = fetch_outbox!(execution.id)
         ledger_stats = submission_ledger_stats(ledger)
 
         {:ok,
@@ -73,17 +77,18 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
            case: :dispatching_retry_after_restart,
            before_restart: before_restart,
            after_restart: %{
-             recovered_count: reconcile_summary.recovered_count,
+             recovered_count: reconcile_summary.dispatch_recovered_count,
              execution_dispatch_state: after_execution.dispatch_state,
-             outbox_status: after_outbox.status,
+             job_id: after_job.id,
+             job_status: normalize_job_state(after_job.state),
              dispatch_attempt_count: after_execution.dispatch_attempt_count
            },
            final: %{
-             classification: :accepted,
-             execution_dispatch_state: accepted_execution.dispatch_state,
-             outbox_status: final_outbox.status,
-             outbox_id: final_outbox.id,
-             submission_ref_status: accepted_execution.submission_ref["status"],
+             classification: final_dispatch.classification,
+             execution_dispatch_state: final_dispatch.execution.dispatch_state,
+             job_status: final_dispatch.job_status,
+             job_id: final_dispatch.job.id,
+             submission_ref_status: final_dispatch.execution.submission_ref["status"],
              unique_submission_count: ledger_stats.unique_submission_count,
              duplicate_replay_count: ledger_stats.duplicate_replay_count
            }
@@ -107,8 +112,9 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
     })
   end
 
-  defp dispatch_execution(subject, installation_id) do
+  defp dispatch_execution(subject, tenant_id, installation_id) do
     ExecutionRecord.dispatch(%{
+      tenant_id: tenant_id,
       installation_id: installation_id,
       subject_id: subject.id,
       recipe_ref: "restart_recovery_recipe",
@@ -122,19 +128,22 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
     })
   end
 
-  defp crash_after_submission!(now, ledger) do
+  defp crash_after_submission!(execution_id, ledger) do
     parent = self()
 
     {pid, ref} =
       spawn_monitor(fn ->
-        Dispatcher.dispatch_next(
-          submit_fun: fn claimed ->
-            send(parent, {:claimed_dispatch, claimed})
-            persist_initial_acceptance!(ledger, claimed)
-            exit(:dispatch_process_crashed)
-          end,
-          actor_ref: %{kind: :dispatcher},
-          now: now
+        LowerGatewayStub.with_handlers(
+          %{
+            dispatch: fn [claimed] ->
+              send(parent, {:claimed_dispatch, claimed})
+              persist_initial_acceptance!(ledger, claimed)
+              exit(:dispatch_process_crashed)
+            end
+          },
+          fn ->
+            DispatchProbe.perform_dispatch!(execution_id)
+          end
         )
       end)
 
@@ -219,20 +228,17 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
     execution
   end
 
-  defp fetch_outbox!(execution_id) do
-    {:ok, outbox} = DispatchOutboxEntry.by_execution_id(execution_id)
-    outbox
+  defp reconcile_on_start!(installation_id, recovery_now) do
+    # credo:disable-for-next-line Credo.Check.Refactor.Apply
+    apply(ReconcileOnStart, :reconcile, [installation_id, recovery_now, []])
   end
 
-  defp runtime_scheduler_call!(function, args) when is_atom(function) and is_list(args) do
-    module = MezzanineRuntimeScheduler
-
-    with {:module, ^module} <- Code.ensure_loaded(module),
-         true <- function_exported?(module, function, length(args)) do
-      apply(module, function, args)
-    else
-      _ ->
-        raise "#{inspect(module)}.#{function}/#{length(args)} is unavailable"
-    end
+  defp normalize_lookup_acceptance!(%{
+         "submission_ref" => submission_ref,
+         "lower_receipt" => lower_receipt
+       }) do
+    %{submission_ref: submission_ref, lower_receipt: lower_receipt}
   end
+
+  defp normalize_job_state(state) when is_binary(state), do: String.to_atom(state)
 end

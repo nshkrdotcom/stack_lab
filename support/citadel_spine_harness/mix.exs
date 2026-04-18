@@ -9,6 +9,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
+      dialyzer: dialyzer(),
       docs: docs(),
       name: "StackLab Citadel Spine Harness",
       description: "Harness-only assembly package for Citadel and Jido Integration proofs"
@@ -39,12 +40,13 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:stack_lab_lab_core, path: "../lab_core"},
       {:ecto_sql, "~> 3.13"},
       {:citadel_authority_contract, path: "../../../citadel/core/authority_contract"},
-      {:citadel_core, path: "../../../citadel/core/citadel_core"},
-      {:citadel_runtime, path: "../../../citadel/core/citadel_runtime"},
+      {:citadel_governance, path: "../../../citadel/core/citadel_governance"},
+      {:citadel_kernel, path: "../../../citadel/core/citadel_kernel"},
       {:citadel_host_ingress_bridge, path: "../../../citadel/bridges/host_ingress_bridge"},
       {:citadel_invocation_bridge, path: "../../../citadel/bridges/invocation_bridge"},
       {:citadel_jido_integration_bridge,
        path: "../../../citadel/bridges/jido_integration_bridge"},
+      {:citadel_trace_bridge, path: "../../../citadel/bridges/trace_bridge"},
       {:citadel_domain_surface, path: "../../../citadel/surfaces/citadel_domain_surface"},
       {:app_kit_app_config, path: "../../../app_kit/core/app_config"},
       {:app_kit_chat_surface, path: "../../../app_kit/core/chat_surface"},
@@ -64,20 +66,33 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
        path: "../../../mezzanine/core/decision_engine", runtime: false},
       {:mezzanine_evidence_engine,
        path: "../../../mezzanine/core/evidence_engine", runtime: false},
+      {:mezzanine_archival_engine,
+       path: "../../../mezzanine/core/archival_engine", runtime: false},
+      {:mezzanine_barriers, path: "../../../mezzanine/core/barriers", runtime: false},
+      {:mezzanine_lifecycle_engine,
+       path: "../../../mezzanine/core/lifecycle_engine", runtime: false},
       {:mezzanine_object_engine, path: "../../../mezzanine/core/object_engine", runtime: false},
       {:mezzanine_execution_engine,
        path: "../../../mezzanine/core/execution_engine", runtime: false},
+      {:mezzanine_operator_engine,
+       path: "../../../mezzanine/core/operator_engine", runtime: false},
       {:mezzanine_pack_compiler, path: "../../../mezzanine/core/pack_compiler", runtime: false},
+      {:mezzanine_pack_model, path: "../../../mezzanine/core/pack_model", runtime: false},
       {:mezzanine_runtime_scheduler,
        path: "../../../mezzanine/core/runtime_scheduler", runtime: false},
       {:mezzanine_citadel_bridge, path: "../../../mezzanine/bridges/citadel_bridge"},
       {:mezzanine_integration_bridge,
        path: "../../../mezzanine/bridges/integration_bridge", runtime: false},
-      {:jido_integration_v2_contracts,
+      {:jido_integration_contracts,
        path: "../../../jido_integration/core/contracts", override: true},
+      {:jido_integration_v2_control_plane,
+       path: "../../../jido_integration/core/control_plane", runtime: false},
       {:jido_integration_v2, path: "../../../jido_integration/core/platform"},
       {:jido_integration_v2_brain_ingress, path: "../../../jido_integration/core/brain_ingress"},
+      {:jido_integration_v2_store_postgres,
+       path: "../../../jido_integration/core/store_postgres", runtime: false},
       {:jido_integration_v2_store_local, path: "../../../jido_integration/core/store_local"},
+      {:execution_plane, path: "../../../execution_plane"},
       {:outer_brain_journal, path: "../../../outer_brain/core/outer_brain_journal"},
       {:outer_brain_persistence, path: "../../../outer_brain/core/outer_brain_persistence"},
       {:outer_brain_restart_authority,
@@ -93,6 +108,23 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
     [
       main: "readme",
       extras: ["README.md"]
+    ]
+  end
+
+  defp dialyzer do
+    [
+      # The harness boots these packages manually under test, so they stay
+      # compile-only at app startup but still need PLT coverage for direct calls.
+      plt_add_apps: [
+        :jido_integration_v2_control_plane,
+        :jido_integration_v2_store_postgres,
+        :mezzanine_archival_engine,
+        :mezzanine_barriers,
+        :mezzanine_lifecycle_engine,
+        :mezzanine_operator_engine,
+        :mezzanine_pack_model,
+        :mezzanine_runtime_scheduler
+      ]
     ]
   end
 end

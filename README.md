@@ -18,13 +18,14 @@ StackLab is the proving harness monorepo for the current platform buildout.
 It exists to make single-node boot, multi-node boot, fault injection, restart
 drills, and end-to-end examples repeatable from one workspace root.
 
-The current assembled lower-stack proof is the Citadel plus Spine durable
-submission seam:
+The current proving set covers the active lower seam, the substrate dispatch
+owner, and the product-facing northbound surfaces:
 
 - `examples/single_node_roundtrip`
 - `examples/lower_facts_roundtrip`
 - `examples/outer_brain_restart_durability`
 - `examples/mezzanine_restart_recovery`
+- `examples/governed_run_roundtrip`
 - `examples/semantic_host_roundtrip`
 - `examples/typed_host_roundtrip`
 - `examples/multi_node_roundtrip`
@@ -39,8 +40,10 @@ real `outer_brain` persistence, runtime, and restart-authority packages
 against backing Postgres. The semantic host proof remains adapter-shaped today
 and does not claim that its own path runs through a real `outer_brain`
 semantic-runtime surface inside `stack_lab`. The neutral mezzanine restart
-recovery proof uses the real execution ledger, dispatch outbox, and runtime
-scheduler recovery slice against backing Postgres.
+recovery proof uses the real execution ledger, JobOutbox-backed dispatch
+worker, and runtime-scheduler recovery slice against backing Postgres. The
+governed-run proof exercises the current `app_kit -> mezzanine -> citadel ->
+jido_integration` control path without product-specific `extravaganza` code.
 
 ## Scope
 

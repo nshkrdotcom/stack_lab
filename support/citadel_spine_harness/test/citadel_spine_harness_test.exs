@@ -14,6 +14,10 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.dir?(roots.jido_integration)
     assert File.dir?(roots.mezzanine)
     assert File.dir?(roots.outer_brain)
+    assert File.dir?(roots.app_kit)
+    assert File.dir?(roots.extravaganza)
+    assert File.dir?(roots.execution_plane)
+    assert File.dir?(roots.docs)
   end
 
   test "describes the same-node proof cases as acceptance, rejection, and duplicate" do
@@ -116,7 +120,44 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.exists?(scenario.runbook)
   end
 
-  test "describes the app-kit operational-surface proof case as the Phase-4 closeout scenario" do
+  test "describes the Stage-9 orchestration recovery proof cases for scenarios 9, 16, 17, 18, 23, 26, and 27" do
+    scenario = CitadelSpineHarness.stage9_orchestration_recovery_scenario()
+
+    assert scenario.name == :stage9_orchestration_recovery
+
+    assert scenario.cases == %{
+             operator_pause_during_active_execution: %{
+               kind: :operator_pause_during_active_execution,
+               scenario: 9
+             },
+             operator_cancel_during_active_execution: %{
+               kind: :operator_cancel_during_active_execution,
+               scenario: 16
+             },
+             decision_sla_expiry: %{kind: :decision_sla_expiry, scenario: 17},
+             parallel_join_closure: %{
+               kind: :parallel_join_closure,
+               scenario: 23
+             },
+             restart_during_dispatch_ambiguity: %{
+               kind: :restart_during_dispatch_ambiguity,
+               scenario: 18
+             },
+             lower_gateway_outage_recovery: %{
+               kind: :lower_gateway_outage_recovery,
+               scenario: 26
+             },
+             startup_reconciliation_deduplication: %{
+               kind: :startup_reconciliation_deduplication,
+               scenario: 27
+             }
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
+  test "describes the app-kit operational-surface proof case including Scenario 24 leased direct read and stream invalidation" do
     scenario = CitadelSpineHarness.app_kit_operational_surface_scenario()
 
     assert scenario.name == :app_kit_operational_surface
@@ -130,7 +171,78 @@ defmodule StackLab.CitadelSpineHarnessTest do
              lower_backed_command_semantic_failure: %{
                kind: :lower_backed_command_semantic_failure
              },
+             leased_direct_read_and_stream_invalidation: %{
+               kind: :leased_direct_read_and_stream_invalidation,
+               scenario: 24
+             },
              unauthorized_lower_trace_read: %{kind: :unauthorized_lower_trace_read}
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
+  test "describes the Stage 12 load-readiness drill pack as explicit callback, shared-repo, and compactness cases" do
+    scenario = CitadelSpineHarness.stage12_load_readiness_scenario()
+
+    assert scenario.name == :stage12_load_readiness
+
+    assert scenario.cases == %{
+             same_subject_callback_storm: %{kind: :same_subject_callback_storm},
+             shared_repo_pressure_posture: %{kind: :shared_repo_pressure_posture},
+             claim_check_degradation_and_compactness: %{
+               kind: :claim_check_degradation_and_compactness
+             }
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
+  test "describes the Scenario 15 reviewable connector automation console as a second synthetic product shape" do
+    scenario = CitadelSpineHarness.reviewable_connector_automation_console_scenario()
+
+    assert scenario.name == :reviewable_connector_automation_console
+
+    assert scenario.cases == %{
+             reviewable_connector_automation_console: %{
+               kind: :reviewable_connector_automation_console,
+               scenario: 15,
+               whitepaper_use_case: :"18.2_reviewable_connector_automation"
+             }
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
+  test "describes the Scenario 25 AITrace continuity case plus the Stage 12 degradation companion case" do
+    scenario = CitadelSpineHarness.aitrace_claim_check_trace_continuity_scenario()
+
+    assert scenario.name == :aitrace_claim_check_trace_continuity
+
+    assert scenario.cases == %{
+             claim_check_trace_continuity: %{
+               kind: :claim_check_trace_continuity,
+               scenario: 25
+             },
+             claim_check_degradation: %{kind: :claim_check_degradation}
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
+  test "describes the Scenario 19 observability and trace-join continuity proof case" do
+    scenario = CitadelSpineHarness.observability_trace_join_continuity_scenario()
+
+    assert scenario.name == :observability_trace_join_continuity
+
+    assert scenario.cases == %{
+             trace_join_continuity: %{
+               kind: :trace_join_continuity,
+               scenario: 19
+             }
            }
 
     assert File.exists?(scenario.compose)
@@ -145,6 +257,22 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert scenario.cases == %{
              expense_capture_acceptance: %{kind: :expense_capture_acceptance},
              multi_pack_installation_routing: %{kind: :multi_pack_installation_routing}
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
+  test "describes the packet-reconciliation proof case as the Stage-7 boundary scenario" do
+    scenario = CitadelSpineHarness.packet_reconciliation_scenario()
+
+    assert scenario.name == :packet_reconciliation_boundaries
+
+    assert scenario.cases == %{
+             packet_ownership_freeze: %{kind: :packet_ownership_freeze},
+             stack_ir_binding_map_freeze: %{kind: :stack_ir_binding_map_freeze},
+             control_path_boundaries: %{kind: :control_path_boundaries},
+             stale_reference_absence: %{kind: :stale_reference_absence}
            }
 
     assert File.exists?(scenario.compose)

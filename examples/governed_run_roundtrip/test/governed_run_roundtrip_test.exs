@@ -27,7 +27,7 @@ defmodule StackLab.Examples.GovernedRunRoundtripTest do
 
     assert result.dispatch.recipe_ref == "expense_capture"
     assert result.dispatch.classification == :accepted
-    assert result.dispatch.outbox_status == :completed
+    assert result.dispatch.job_status == :completed
     assert result.dispatch.submission_ref_status == "accepted"
 
     assert result.transitions.on_execution_requested == "processing"

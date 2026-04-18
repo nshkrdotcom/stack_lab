@@ -2,20 +2,24 @@ defmodule StackLab.CitadelSpineHarness.MezzanineOperationalStack do
   @moduledoc false
 
   alias Ecto.Migrator
+  alias Mezzanine.Archival.Repo, as: ArchivalRepo
   alias Mezzanine.Execution.RuntimeStack
   alias Mezzanine.Pack.Registry, as: PackRegistry
   alias StackLab.CitadelSpineHarness.CompiledMigrations
   alias StackLab.CitadelSpineHarness.PostgresContainer
+
+  @extra_migration_components [{ArchivalRepo, "archival_engine"}]
+  @extra_repo_modules Enum.map(@extra_migration_components, &elem(&1, 0))
 
   @spec with_store(atom() | String.t(), (keyword() -> any())) :: any()
   def with_store(label, fun) when is_function(fun, 1) do
     container = PostgresContainer.start!("mezzanine_operational_stack_#{label}")
     repo_config = PostgresContainer.repo_config(container.port)
 
-    start_repos!(repo_config)
-
     try do
+      start_repos!(repo_config)
       migrate_schema!()
+      start_oban!()
       start_pack_registry!()
       fun.(repo_config)
     after
@@ -27,12 +31,15 @@ defmodule StackLab.CitadelSpineHarness.MezzanineOperationalStack do
   @spec stop_runtime() :: :ok
   def stop_runtime do
     stop_pack_registry()
+    stop_oban()
+    Enum.each(Enum.reverse(@extra_repo_modules), &stop_repo/1)
     Enum.each(Enum.reverse(RuntimeStack.repo_modules()), &stop_repo/1)
     :ok
   end
 
   defp migrate_schema! do
-    Enum.each(RuntimeStack.migration_components(), fn {repo, component} ->
+    Enum.each(RuntimeStack.migration_components() ++ @extra_migration_components, fn {repo,
+                                                                                      component} ->
       Migrator.run(repo, CompiledMigrations.for_path(migration_path(component)), :up,
         all: true,
         log: false
@@ -48,10 +55,13 @@ defmodule StackLab.CitadelSpineHarness.MezzanineOperationalStack do
   end
 
   defp start_repos!(repo_config) do
-    Enum.each(RuntimeStack.repo_modules(), &start_repo!(&1, repo_config))
+    Enum.each(RuntimeStack.repo_modules() ++ @extra_repo_modules, &start_repo!(&1, repo_config))
   end
 
   defp start_repo!(repo_module, repo_config) do
+    stop_repo(repo_module)
+    put_repo_config!(repo_module, repo_config)
+
     {:ok, repo_pid} = repo_module.start_link(repo_config)
     Process.unlink(repo_pid)
     repo_pid
@@ -95,5 +105,75 @@ defmodule StackLab.CitadelSpineHarness.MezzanineOperationalStack do
           :exit, _reason -> :ok
         end
     end
+  end
+
+  defp put_repo_config!(repo_module, repo_config) do
+    Application.put_env(repo_otp_app(repo_module), repo_module, repo_config)
+  end
+
+  defp repo_otp_app(repo_module) do
+    repo_module.config()
+    |> Keyword.fetch!(:otp_app)
+  end
+
+  defp start_oban! do
+    stop_oban()
+
+    oban_config = Application.fetch_env!(:mezzanine_execution_engine, Oban)
+    start_oban_instance!(oban_config)
+  end
+
+  defp stop_oban do
+    case oban_pid() do
+      nil ->
+        :ok
+
+      pid ->
+        try do
+          GenServer.stop(pid)
+        catch
+          :exit, _reason -> :ok
+        end
+
+        wait_for_oban_shutdown()
+    end
+  end
+
+  defp start_oban_instance!(oban_config) do
+    case Oban.start_link(oban_config) do
+      {:ok, pid} ->
+        Process.unlink(pid)
+        pid
+
+      {:error, {:already_started, pid}} ->
+        stop_stale_oban!(pid)
+        wait_for_oban_shutdown()
+
+        {:ok, restarted_pid} = Oban.start_link(oban_config)
+        Process.unlink(restarted_pid)
+        restarted_pid
+    end
+  end
+
+  defp stop_stale_oban!(pid) do
+    Process.exit(pid, :shutdown)
+    :ok
+  end
+
+  defp oban_pid do
+    Oban.Registry.whereis(Mezzanine.Execution.Oban)
+  end
+
+  defp wait_for_oban_shutdown do
+    Enum.reduce_while(1..50, :ok, fn _, _acc ->
+      case oban_pid() do
+        nil ->
+          {:halt, :ok}
+
+        _pid ->
+          Process.sleep(10)
+          {:cont, :ok}
+      end
+    end)
   end
 end

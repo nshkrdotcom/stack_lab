@@ -2,7 +2,7 @@ defmodule StackLab.CitadelSpineHarness.MultiNode do
   @moduledoc false
 
   alias Citadel.JidoIntegrationBridge
-  alias Citadel.Runtime.SessionDirectory
+  alias Citadel.Kernel.SessionDirectory
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
   alias StackLab.CitadelSpineHarness.RemoteSpine
   alias StackLab.CitadelSpineHarness.RemoteSupport

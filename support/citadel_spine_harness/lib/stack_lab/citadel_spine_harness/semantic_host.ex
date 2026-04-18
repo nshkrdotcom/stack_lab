@@ -7,7 +7,7 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
   alias Citadel.InvocationBridge
   alias Citadel.JidoIntegrationBridge
   alias Citadel.JidoIntegrationBridge.InvocationDownstream
-  alias Citadel.Runtime.SessionDirectory
+  alias Citadel.Kernel.SessionDirectory
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
   alias Jido.Integration.V2.StoreLocal
   alias Jido.Integration.V2.StoreLocal.Server, as: StoreLocalServer

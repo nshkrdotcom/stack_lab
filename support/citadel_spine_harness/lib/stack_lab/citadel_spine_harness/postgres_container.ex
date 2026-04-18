@@ -52,7 +52,7 @@ defmodule StackLab.CitadelSpineHarness.PostgresContainer do
       database: @database,
       username: @username,
       password: @password,
-      pool_size: 4,
+      pool_size: 10,
       stacktrace: true,
       show_sensitive_data_on_connection_error: true
     ]

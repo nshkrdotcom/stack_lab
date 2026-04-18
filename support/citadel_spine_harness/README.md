@@ -1,22 +1,30 @@
 # Citadel Spine Harness
 
-Harness-only support package for assembled `citadel -> jido_integration`
-proofs in `stack_lab`.
+Harness-only support package for assembled substrate and northbound proof work
+in `stack_lab`.
 
 This package owns:
 
-- sibling repo resolution for `stack_lab`, `citadel`, `jido_integration`, and
-  `outer_brain`
+- sibling repo resolution for `stack_lab`, `app_kit`, `extravaganza`,
+  `execution_plane`, `citadel`, `jido_integration`, `mezzanine`, `outer_brain`,
+  and the authoritative packet docs
 - the real same-node in-process transport proof
 - the real substrate-facing lower-facts readback proof
 - the real `outer_brain` restart-durability proof
+- the real `mezzanine` restart-recovery proof through the JobOutbox-backed
+  dispatch worker
+- the governed-run proof above the `app_kit` operational surface
+- the Scenario-19 observability, archived-read honesty, and trace-join
+  continuity proof across the public northbound and lower-backed surfaces
+- the Scenario-25 AITrace, claim-check, and lower-lineage continuity proof
+- the Stage-7 packet-reconciliation and no-bypass boundary proof
 - the real split-node remote transport proof
 - restart and failover drill helpers
 
 It does not move ownership out of the owner repos. Citadel stays the Brain-side
-owner, `jido_integration` stays the Spine-side owner, `outer_brain` stays the
-semantic-runtime owner, and this package only assembles them for proof work
-inside `stack_lab`.
+owner, `jido_integration` stays the lower acceptance owner, `mezzanine` stays
+the substrate-truth owner, `outer_brain` stays the semantic-runtime owner, and
+this package only assembles them for proof work inside `stack_lab`.
 
 The semantic host path in this harness is intentionally adapter-shaped. The
 real `outer_brain` durability proof is covered separately by the dedicated

@@ -18,12 +18,23 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert result.installation.installation_id in result.installation.listed_ids
 
     assert result.work.subject_id in result.work.listed_ids
+    assert result.work.pre_run_pending_obligation_ids != []
+    assert result.work.pre_run_pending_decision_ref_ids == []
+    assert result.work.pre_run_blocker_kinds == []
+    assert result.work.pre_run_next_step_kind == "start_run"
     assert result.control.state == :waiting_review
     assert result.control.run_id == result.work.detail_active_run_id
     assert result.control.review_unit_id in result.work.detail_pending_reviews
+    assert result.control.review_unit_id in result.work.detail_pending_decision_ref_ids
+    assert result.work.detail_blocker_kinds == ["review_pending"]
+    assert result.work.detail_next_step_kind == "record_review_decision"
 
-    assert result.operator.current_execution_ref == result.control.run_id
+    assert result.operator.current_run_id == result.control.run_id
     assert result.operator.chosen_action == result.operator.applied_action
+    assert result.operator.pending_obligation_ids == result.work.detail_pending_obligation_ids
+    assert result.operator.pending_decision_ref_ids == result.work.detail_pending_decision_ref_ids
+    assert result.operator.blocker_kinds == ["review_pending"]
+    assert result.operator.next_step_kind == "record_review_decision"
     assert "run_scheduled" in result.operator.timeline_kinds
 
     assert result.review.pending_ids_before == [result.control.review_unit_id]
@@ -31,6 +42,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert result.review.status_before == "pending"
     assert result.review.status_after == "accepted"
     assert result.review.action_kind == "review_accept"
+    assert result.review.blocker_kinds_after == ["operator_paused"]
+    assert result.review.next_step_kind_after == "resume_subject"
 
     assert result.trace.execution_id
     assert result.trace.trace_id
@@ -62,7 +75,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
 
     assert is_binary(result.dispatch.execution_id)
     assert result.dispatch.classification == :accepted
-    assert result.dispatch.outbox_status == :completed
+    assert result.dispatch.job_status == :completed
     assert result.dispatch.submission_status == "accepted"
     assert String.starts_with?(result.dispatch.submission_key, "sha256:")
     assert String.starts_with?(result.dispatch.submission_receipt_ref, "submission://local/")
@@ -88,7 +101,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert result.work.state == :scheduled
     assert result.dispatch.classification == :terminal_rejection
     assert result.dispatch.execution_state == :rejected
-    assert result.dispatch.outbox_status == :terminal
+    assert result.dispatch.job_status == :terminal
     assert result.dispatch.terminal_rejection_reason == "workspace_ref_unresolved"
     assert result.dispatch.rejection_family == "scope_unresolvable"
 
@@ -109,7 +122,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert result.dispatch.classification == :semantic_failure
     assert result.dispatch.execution_state == :failed
     assert result.dispatch.failure_kind == :semantic_failure
-    assert result.dispatch.outbox_status == :completed
+    assert result.dispatch.job_status == :completed
 
     assert result.recovery.work_state == "awaiting_review"
     assert result.recovery.active_run_state == "failed"
@@ -126,6 +139,47 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert "audit_fact" in result.trace.step_sources
     assert result.trace.failed_execution.dispatch_state == :failed
     assert result.trace.failed_execution.failure_kind == :semantic_failure
+  end
+
+  test "app-kit operational surface proves Scenario 24 leased direct read and stream invalidation against the live substrate" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_app_kit_operational_surface(
+               :leased_direct_read_and_stream_invalidation
+             )
+
+    assert result.case == :leased_direct_read_and_stream_invalidation
+    assert result.scenario == 24
+    assert result.tenant_id == "tenant-app-kit-leased-read-stream"
+    assert result.disconnect_window_ms == 10_000
+
+    assert result.concurrent_burst.invalidation_count == 100
+    assert result.concurrent_burst.requested_connection_count == 10
+    assert result.concurrent_burst.repo_pool_size == 10
+    assert result.concurrent_burst.contiguous_sequences?
+    assert length(Enum.uniq(result.concurrent_burst.sequence_numbers)) == 100
+
+    assert result.disconnected_stream.attached_cursor == 0
+
+    assert String.starts_with?(
+             result.disconnected_stream.reconnect_invalidation_reason,
+             "disconnect_burst_"
+           )
+
+    assert result.direct_read.submission_key
+    assert result.direct_read.submission_receipt_ref
+
+    assert result.live_stream.attached_cursor >=
+             Enum.max(result.concurrent_burst.sequence_numbers)
+
+    assert result.live_stream.invalidation_reason == "subject_paused"
+    assert result.live_stream.invalidated_after_ms <= 4_000
+    assert result.live_stream.post_pause_refusal_reason == "subject_paused"
+
+    assert result.control_write.result_status == "paused"
+    assert result.control_write.invalidated_live_leases?
+
+    assert result.post_pause_read.code == :lease_invalidated
+    assert result.post_pause_read.reason == "subject_paused"
   end
 
   test "app-kit operational surface returns an explicit authorization error for unauthorized lower-enriched trace reads" do

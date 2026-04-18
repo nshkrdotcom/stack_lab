@@ -1,0 +1,350 @@
+{
+  "audit_facts": [
+    {
+      "actor_ref": {},
+      "causation_id": null,
+      "decision_id": "0cfac95e-c73e-479f-9d52-002c10b0d126",
+      "evidence_id": "639b0897-99db-4821-8630-b62ab7422f86",
+      "execution_id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+      "fact_kind": "execution_completed",
+      "id": "c8c79a42-eb69-4171-aff9-afb2604590af",
+      "inserted_at": "2026-04-16T11:00:00.000000",
+      "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+      "occurred_at": "2026-04-16T11:00:00.000000",
+      "payload": {},
+      "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+      "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+      "updated_at": "2026-04-16T11:00:00.000000"
+    },
+    {
+      "actor_ref": {
+        "kind": "scheduler"
+      },
+      "causation_id": "cause:fbe7aa029fbee9e093efc07b32c70507",
+      "decision_id": null,
+      "evidence_id": null,
+      "execution_id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+      "fact_kind": "execution_dispatched",
+      "id": "72e0115d-3277-45e2-8a58-2fdd76691488",
+      "inserted_at": "2026-04-18T05:52:07.404132",
+      "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+      "occurred_at": "2026-04-18T05:52:07.404005",
+      "payload": {
+        "dispatch_state": "pending_dispatch",
+        "recipe_ref": "expense_capture",
+        "submission_dedupe_key": "ab411df6-213f-4644-908c-9ac4e66ab60f:e3cfc09f-fcba-41ad-af81-f907ee500323:expense_capture:1"
+      },
+      "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+      "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+      "updated_at": "2026-04-18T05:52:07.404132"
+    },
+    {
+      "actor_ref": {
+        "job_id": 1,
+        "kind": "execution_dispatch_worker",
+        "queue": "dispatch"
+      },
+      "causation_id": "execution-dispatch-worker:job:1:attempt:1",
+      "decision_id": null,
+      "evidence_id": null,
+      "execution_id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+      "fact_kind": "execution_dispatched",
+      "id": "b52de133-0947-4740-9bff-c592f365750d",
+      "inserted_at": "2026-04-18T05:52:07.432750",
+      "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+      "occurred_at": "2026-04-18T05:52:07.432578",
+      "payload": {
+        "classification": "accepted",
+        "submission_ref": {
+          "id": "submit/c4f65cdb-222e-4e9e-8636-693e23c86509",
+          "status": "accepted",
+          "submission_key": "sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676",
+          "submission_receipt_ref": "submission://local/sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676"
+        }
+      },
+      "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+      "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+      "updated_at": "2026-04-18T05:52:07.432750"
+    }
+  ],
+  "barrier_completions": [],
+  "barriers": [],
+  "captured_at": "2026-04-16T12:00:00Z",
+  "checksum": "sha256:4d3c633e3d1560ecbe434e80a4e35edd659a6765f52132d01e806ef94367e34a",
+  "decisions": [
+    {
+      "causation_id": null,
+      "decision_kind": "review",
+      "decision_value": "accept",
+      "execution_id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+      "expiry_job_id": null,
+      "id": "0cfac95e-c73e-479f-9d52-002c10b0d126",
+      "inserted_at": "2026-04-16T11:00:00.000000",
+      "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+      "lifecycle_state": "resolved",
+      "reason": null,
+      "required_by": null,
+      "resolved_at": null,
+      "row_version": 1,
+      "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+      "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+      "updated_at": "2026-04-16T11:00:00.000000"
+    }
+  ],
+  "evidence": [
+    {
+      "causation_id": null,
+      "collected_at": null,
+      "collector_ref": null,
+      "content_ref": null,
+      "evidence_kind": "artifact",
+      "execution_id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+      "id": "639b0897-99db-4821-8630-b62ab7422f86",
+      "inserted_at": "2026-04-16T11:00:00.000000",
+      "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+      "metadata": {},
+      "row_version": 1,
+      "status": "verified",
+      "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+      "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+      "updated_at": "2026-04-16T11:00:00.000000",
+      "verified_at": null
+    }
+  ],
+  "executions": [
+    {
+      "barrier_id": null,
+      "binding_snapshot": {
+        "execution_params": {
+          "timeout_ms": 300000
+        },
+        "placement_ref": "workspace_runtime"
+      },
+      "causation_id": "execution-dispatch-worker:job:1:attempt:1",
+      "compiled_pack_revision": 1,
+      "dispatch_attempt_count": 0,
+      "dispatch_envelope": {
+        "capability": "linear.issue.execute",
+        "run_request_id": "run:e3cfc09f-fcba-41ad-af81-f907ee500323"
+      },
+      "dispatch_state": "completed",
+      "failure_kind": null,
+      "id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+      "inserted_at": "2026-04-18T05:52:07.387578",
+      "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+      "intent_snapshot": {},
+      "last_dispatch_error_kind": null,
+      "last_dispatch_error_payload": {},
+      "lower_receipt": {
+        "ji_submission_key": "sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676",
+        "run_id": "run-c4f65cdb-222e-4e9e-8636-693e23c86509",
+        "state": "accepted",
+        "submission_receipt_ref": "submission://local/sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676"
+      },
+      "next_dispatch_at": null,
+      "recipe_ref": "expense_capture",
+      "row_version": 3,
+      "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+      "submission_dedupe_key": "ab411df6-213f-4644-908c-9ac4e66ab60f:e3cfc09f-fcba-41ad-af81-f907ee500323:expense_capture:1",
+      "submission_ref": {
+        "id": "submit/c4f65cdb-222e-4e9e-8636-693e23c86509",
+        "status": "accepted",
+        "submission_key": "sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676",
+        "submission_receipt_ref": "submission://local/sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676"
+      },
+      "supersedes_execution_id": null,
+      "supersession_depth": 0,
+      "supersession_reason": null,
+      "tenant_id": "tenant-observability-trace-join",
+      "terminal_rejection_reason": null,
+      "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+      "updated_at": "2026-04-16T11:00:00.000000"
+    }
+  ],
+  "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+  "manifest_ref": "archive/ab411df6-213f-4644-908c-9ac4e66ab60f/e3cfc09f-fcba-41ad-af81-f907ee500323/1772355600000000",
+  "subject": {
+    "block_reason": null,
+    "blocked_at": null,
+    "description": null,
+    "id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+    "inserted_at": "2026-04-18T05:52:05.437523",
+    "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+    "lifecycle_state": "approved",
+    "opened_at": "2026-04-18T05:52:05.437523",
+    "payload": {},
+    "schema_ref": null,
+    "schema_version": 1,
+    "source_ref": "app-kit:e3cfc09f-fcba-41ad-af81-f907ee500323",
+    "status": "completed",
+    "status_reason": null,
+    "status_updated_at": "2026-04-16T11:00:00.000000",
+    "subject_kind": "expense_request",
+    "terminal_at": "2026-03-01T09:00:00.000000",
+    "title": null,
+    "updated_at": "2026-04-16T11:00:00.000000"
+  },
+  "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+  "trace_views": {
+    "fbe7aa029fbee9e093efc07b32c70507": {
+      "audit_facts": [
+        {
+          "actor_ref": {},
+          "causation_id": null,
+          "decision_id": "0cfac95e-c73e-479f-9d52-002c10b0d126",
+          "evidence_id": "639b0897-99db-4821-8630-b62ab7422f86",
+          "execution_id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+          "fact_kind": "execution_completed",
+          "id": "c8c79a42-eb69-4171-aff9-afb2604590af",
+          "inserted_at": "2026-04-16T11:00:00.000000",
+          "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+          "occurred_at": "2026-04-16T11:00:00.000000",
+          "payload": {},
+          "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+          "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+          "updated_at": "2026-04-16T11:00:00.000000"
+        },
+        {
+          "actor_ref": {
+            "kind": "scheduler"
+          },
+          "causation_id": "cause:fbe7aa029fbee9e093efc07b32c70507",
+          "decision_id": null,
+          "evidence_id": null,
+          "execution_id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+          "fact_kind": "execution_dispatched",
+          "id": "72e0115d-3277-45e2-8a58-2fdd76691488",
+          "inserted_at": "2026-04-18T05:52:07.404132",
+          "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+          "occurred_at": "2026-04-18T05:52:07.404005",
+          "payload": {
+            "dispatch_state": "pending_dispatch",
+            "recipe_ref": "expense_capture",
+            "submission_dedupe_key": "ab411df6-213f-4644-908c-9ac4e66ab60f:e3cfc09f-fcba-41ad-af81-f907ee500323:expense_capture:1"
+          },
+          "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+          "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+          "updated_at": "2026-04-18T05:52:07.404132"
+        },
+        {
+          "actor_ref": {
+            "job_id": 1,
+            "kind": "execution_dispatch_worker",
+            "queue": "dispatch"
+          },
+          "causation_id": "execution-dispatch-worker:job:1:attempt:1",
+          "decision_id": null,
+          "evidence_id": null,
+          "execution_id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+          "fact_kind": "execution_dispatched",
+          "id": "b52de133-0947-4740-9bff-c592f365750d",
+          "inserted_at": "2026-04-18T05:52:07.432750",
+          "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+          "occurred_at": "2026-04-18T05:52:07.432578",
+          "payload": {
+            "classification": "accepted",
+            "submission_ref": {
+              "id": "submit/c4f65cdb-222e-4e9e-8636-693e23c86509",
+              "status": "accepted",
+              "submission_key": "sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676",
+              "submission_receipt_ref": "submission://local/sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676"
+            }
+          },
+          "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+          "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+          "updated_at": "2026-04-18T05:52:07.432750"
+        }
+      ],
+      "decisions": [
+        {
+          "causation_id": null,
+          "decision_kind": "review",
+          "decision_value": "accept",
+          "execution_id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+          "expiry_job_id": null,
+          "id": "0cfac95e-c73e-479f-9d52-002c10b0d126",
+          "inserted_at": "2026-04-16T11:00:00.000000",
+          "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+          "lifecycle_state": "resolved",
+          "reason": null,
+          "required_by": null,
+          "resolved_at": null,
+          "row_version": 1,
+          "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+          "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+          "updated_at": "2026-04-16T11:00:00.000000"
+        }
+      ],
+      "evidence": [
+        {
+          "causation_id": null,
+          "collected_at": null,
+          "collector_ref": null,
+          "content_ref": null,
+          "evidence_kind": "artifact",
+          "execution_id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+          "id": "639b0897-99db-4821-8630-b62ab7422f86",
+          "inserted_at": "2026-04-16T11:00:00.000000",
+          "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+          "metadata": {},
+          "row_version": 1,
+          "status": "verified",
+          "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+          "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+          "updated_at": "2026-04-16T11:00:00.000000",
+          "verified_at": null
+        }
+      ],
+      "executions": [
+        {
+          "barrier_id": null,
+          "binding_snapshot": {
+            "execution_params": {
+              "timeout_ms": 300000
+            },
+            "placement_ref": "workspace_runtime"
+          },
+          "causation_id": "execution-dispatch-worker:job:1:attempt:1",
+          "compiled_pack_revision": 1,
+          "dispatch_attempt_count": 0,
+          "dispatch_envelope": {
+            "capability": "linear.issue.execute",
+            "run_request_id": "run:e3cfc09f-fcba-41ad-af81-f907ee500323"
+          },
+          "dispatch_state": "completed",
+          "failure_kind": null,
+          "id": "c4f65cdb-222e-4e9e-8636-693e23c86509",
+          "inserted_at": "2026-04-18T05:52:07.387578",
+          "installation_id": "ab411df6-213f-4644-908c-9ac4e66ab60f",
+          "intent_snapshot": {},
+          "last_dispatch_error_kind": null,
+          "last_dispatch_error_payload": {},
+          "lower_receipt": {
+            "ji_submission_key": "sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676",
+            "run_id": "run-c4f65cdb-222e-4e9e-8636-693e23c86509",
+            "state": "accepted",
+            "submission_receipt_ref": "submission://local/sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676"
+          },
+          "next_dispatch_at": null,
+          "recipe_ref": "expense_capture",
+          "row_version": 3,
+          "subject_id": "e3cfc09f-fcba-41ad-af81-f907ee500323",
+          "submission_dedupe_key": "ab411df6-213f-4644-908c-9ac4e66ab60f:e3cfc09f-fcba-41ad-af81-f907ee500323:expense_capture:1",
+          "submission_ref": {
+            "id": "submit/c4f65cdb-222e-4e9e-8636-693e23c86509",
+            "status": "accepted",
+            "submission_key": "sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676",
+            "submission_receipt_ref": "submission://local/sha256:c9d1a3ae1bd756a440fee22b8837fdb216b1f385aee00a631f23d115eccf2676"
+          },
+          "supersedes_execution_id": null,
+          "supersession_depth": 0,
+          "supersession_reason": null,
+          "tenant_id": "tenant-observability-trace-join",
+          "terminal_rejection_reason": null,
+          "trace_id": "fbe7aa029fbee9e093efc07b32c70507",
+          "updated_at": "2026-04-16T11:00:00.000000"
+        }
+      ]
+    }
+  }
+}

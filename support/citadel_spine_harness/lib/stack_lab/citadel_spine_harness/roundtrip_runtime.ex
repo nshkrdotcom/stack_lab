@@ -10,13 +10,13 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
   alias Citadel.InvocationBridge
   alias Citadel.InvocationRequest.V2, as: InvocationRequestV2
   alias Citadel.JidoIntegrationBridge.InvocationDownstream
+  alias Citadel.Kernel.BoundaryLeaseTracker
+  alias Citadel.Kernel.KernelSnapshot
+  alias Citadel.Kernel.ServiceCatalog
+  alias Citadel.Kernel.SessionDirectory
+  alias Citadel.Kernel.SessionServer
+  alias Citadel.Kernel.SignalIngress
   alias Citadel.LocalAction
-  alias Citadel.Runtime.BoundaryLeaseTracker
-  alias Citadel.Runtime.KernelSnapshot
-  alias Citadel.Runtime.ServiceCatalog
-  alias Citadel.Runtime.SessionDirectory
-  alias Citadel.Runtime.SessionServer
-  alias Citadel.Runtime.SignalIngress
   alias Citadel.SessionOutbox
   alias Citadel.StalenessRequirements
   alias Citadel.TopologyIntent

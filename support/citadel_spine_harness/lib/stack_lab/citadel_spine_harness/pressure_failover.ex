@@ -2,7 +2,7 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
   @moduledoc false
 
   alias Citadel.JidoIntegrationBridge
-  alias Citadel.Runtime.SessionServer
+  alias Citadel.Kernel.SessionServer
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
   alias StackLab.CitadelSpineHarness.RemoteSpine
   alias StackLab.CitadelSpineHarness.RemoteSupport
