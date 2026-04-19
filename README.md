@@ -52,6 +52,11 @@ The current lower-backed read proofs require tenant-scoped lower facts and
 caller-carried lease authorization scope across the `app_kit -> mezzanine ->
 jido_integration` path, including negative checks for cross-tenant read and
 stream attachment reuse.
+Phase 3 adds product-boundary release proofs: Scenario 31 runs the AppKit
+product no-bypass scanner against `extravaganza`, Scenario 36 separately proves
+there is no direct Execution Plane bypass in product/AppKit paths, and Scenario
+42 proves a second synthetic connector-automation product shape through the
+same AppKit northbound boundary.
 
 ## Scope
 
@@ -71,6 +76,11 @@ mix ci
 Proof scenarios must not mutate committed fixtures or leave generated archive
 bundles in tracked paths. Harnesses use OS temp roots or ignored generated
 directories so a successful `mix ci` also preserves worktree hygiene.
+
+The harness consumes `AppKit.Boundary.NoBypass` directly for product-boundary
+packet reconciliation. Product no-bypass and Execution Plane hazmat no-bypass
+are separate checks and both must stay green before release-readiness claims are
+accepted.
 
 The welded `stack_lab_lab_core` artifact is tracked through the prepared bundle
 flow:
@@ -108,3 +118,9 @@ just fault net-cut
 MIT.
 
 Copyright (c) 2026 nshkrdotcom.
+
+## Temporal developer environment
+
+Temporal CLI is expected to be available as `temporal` on this developer workstation for local durable-workflow development. Current provisioning is machine-level dotfiles setup, not a repo-local dependency.
+
+TODO: make Temporal ergonomics explicit for developers by adding repo-local setup scripts, version expectations, and fallback instructions so the tool is not silently assumed from the workstation.
