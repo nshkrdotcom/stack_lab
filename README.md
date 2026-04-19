@@ -63,6 +63,10 @@ stale installation revisions under lease activation, Scenario 40 exercises
 LifecycleContinuation retry/dead-letter/operator recovery, Scenario 41 proves
 archival plus archived-trace lookup, and Scenario 43 proves duplicate-safe
 lease and worker fencing behavior.
+Scenario 34 proves the internal/operator extension authoring path: a valid
+signed bundle activates through Mezzanine config registry and invalid bundle
+schema, lifecycle hint, policy ref, platform migration, checksum, signature,
+and stale revision cases all fail before runtime activation.
 The OuterBrain restart-durability proof also carries Phase-3 semantic gateway
 coverage: provider-neutral semantic failure carriers are journaled durably,
 context adapter requests stay read-only and provenance-preserving, and restart

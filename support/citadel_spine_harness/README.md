@@ -28,6 +28,8 @@ This package owns:
 - the Scenario-43 duplicate-safe lease and worker fencing proof for competing
   owners, node-loss takeover, lower-submission idempotency, and startup
   reconciliation dedupe
+- the Scenario-34 extension authoring proof for deterministic internal/operator
+  bundle import, activation, and pre-runtime rejection gates
 - the Scenario-25 AITrace, claim-check, and lower-lineage continuity proof
 - the Stage-7 packet-reconciliation and no-bypass boundary proof
 - the Phase-3 AppKit-owned product no-bypass and direct Execution Plane
@@ -72,6 +74,12 @@ sibling AppKit repo instead of local regex-only policy. The `product` profile
 checks `extravaganza` product source for lower governed-write imports, and the
 `hazmat` profile separately checks AppKit and product paths for direct Execution
 Plane usage.
+
+Scenario 34 uses the real `Mezzanine.Authoring.Bundle` and
+`MezzanineConfigRegistry.import_authoring_bundle/2` path. It proves a valid
+checksum/signature bundle activates and that invalid policy refs, platform
+migrations, lifecycle hints, context adapter descriptors, checksum, signature,
+and stale installation revision reject before activation.
 
 ## Generated Artifact Hygiene
 

@@ -7,6 +7,7 @@ defmodule StackLab.CitadelSpineHarness do
   alias StackLab.CitadelSpineHarness.{
     AITraceClaimCheckTraceContinuity,
     AppKitOperationalSurface,
+    ExtensionAuthoring,
     GovernedRun,
     InstallationRuntimeLease,
     LowerFacts,
@@ -183,6 +184,25 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_installation_runtime_lease(:two_owner_fencing) do
     InstallationRuntimeLease.run_case(:two_owner_fencing)
+  end
+
+  @spec extension_authoring_scenario() :: map()
+  def extension_authoring_scenario do
+    %{
+      name: :extension_authoring_activation,
+      compose: LabCore.compose_file(:single),
+      runbook: "pack_activation_failure.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        activation_failure_matrix: %{kind: :activation_failure_matrix, scenario: 34}
+      }
+    }
+  end
+
+  @spec exercise_extension_authoring(:activation_failure_matrix) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_extension_authoring(:activation_failure_matrix) do
+    ExtensionAuthoring.run_case(:activation_failure_matrix)
   end
 
   @spec stage9_orchestration_recovery_scenario() :: map()
