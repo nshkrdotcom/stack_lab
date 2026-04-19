@@ -57,6 +57,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   alias Mezzanine.Objects.Repo, as: ObjectsRepo
   alias Mezzanine.OperatorCommands
   alias Mezzanine.StreamAttachHost
+  alias OuterBrain.Contracts.SemanticFailure
 
   alias Mezzanine.Pack.{
     Compiler,
@@ -766,13 +767,20 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
             env.run_result
           )
 
+        semantic_failure_carrier =
+          semantic_failure_carrier!(
+            env.tenant_id,
+            lower_dispatch.execution.trace_id,
+            lower_dispatch.execution.id
+          )
+
         {:ok, failed_execution} =
           ExecutionRecord.record_semantic_failure(lower_dispatch.execution, %{
             lower_receipt: lower_dispatch.execution.lower_receipt,
             last_dispatch_error_payload: %{
               "error" => %{
                 "kind" => "semantic_failure",
-                "reason" => "model_confused"
+                "carrier" => SemanticFailure.to_payload(semantic_failure_carrier)
               }
             },
             trace_id: lower_dispatch.execution.trace_id,
@@ -853,7 +861,14 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
            trace: %{
              trace_id: unified_trace.trace_id,
              step_sources: Enum.map(unified_trace.steps, & &1.source),
-             failed_execution: failed_execution_step
+             failed_execution:
+               Map.merge(failed_execution_step, %{
+                 semantic_failure_kind: semantic_failure_carrier_value(failed_execution, "kind"),
+                 semantic_failure_retry_class:
+                   semantic_failure_carrier_value(failed_execution, "retry_class"),
+                 semantic_failure_trace_id:
+                   semantic_failure_carrier_value(failed_execution, "request_trace_id")
+               })
            }
          }}
       end
@@ -2790,6 +2805,43 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   defp optional_map_value(map, key, default \\ nil) when is_map(map) do
     Map.get(map, key) || Map.get(map, Atom.to_string(key)) || default
   end
+
+  defp semantic_failure_carrier!(tenant_id, trace_id, execution_id) do
+    {:ok, failure} =
+      SemanticFailure.new(%{
+        kind: :semantic_insufficient_context,
+        tenant_id: tenant_id,
+        semantic_session_id: "app-kit-operational-semantic-failure",
+        causal_unit_id: execution_id,
+        request_trace_id: trace_id,
+        provenance: [%{"surface" => "stack_lab.app_kit_operational_surface"}],
+        operator_message: "The lower-backed semantic command needs additional context."
+      })
+
+    failure
+  end
+
+  defp semantic_failure_carrier_value(failed_execution, key) do
+    failed_execution
+    |> map_value(:last_dispatch_error_payload)
+    |> map_value("error")
+    |> map_value("carrier")
+    |> map_value(key)
+  end
+
+  defp map_value(map, key) when is_map(map) do
+    Map.get(map, key) || Map.get(map, to_string(key)) || atom_key_value(map, key)
+  end
+
+  defp map_value(_value, _key), do: nil
+
+  defp atom_key_value(map, key) when is_binary(key) do
+    Map.get(map, String.to_existing_atom(key))
+  rescue
+    ArgumentError -> nil
+  end
+
+  defp atom_key_value(_map, _key), do: nil
 
   defp normalize_runtime_class(value) when value in [:direct, :session, :stream], do: value
   defp normalize_runtime_class("direct"), do: :direct

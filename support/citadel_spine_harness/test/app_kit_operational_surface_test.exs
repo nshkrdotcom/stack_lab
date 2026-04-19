@@ -139,6 +139,9 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert "audit_fact" in result.trace.step_sources
     assert result.trace.failed_execution.dispatch_state == :failed
     assert result.trace.failed_execution.failure_kind == :semantic_failure
+    assert result.trace.failed_execution.semantic_failure_kind == "semantic_insufficient_context"
+    assert result.trace.failed_execution.semantic_failure_retry_class == "clarification_required"
+    assert result.trace.failed_execution.semantic_failure_trace_id == result.trace.trace_id
   end
 
   test "app-kit operational surface proves Scenario 24 leased direct read and stream invalidation against the live substrate" do

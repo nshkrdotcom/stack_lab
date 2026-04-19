@@ -93,6 +93,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
        path: "../../../jido_integration/core/store_postgres", runtime: false},
       {:jido_integration_v2_store_local, path: "../../../jido_integration/core/store_local"},
       {:execution_plane, path: "../../../execution_plane"},
+      {:outer_brain_contracts, path: "../../../outer_brain/core/outer_brain_contracts"},
       {:outer_brain_journal, path: "../../../outer_brain/core/outer_brain_journal"},
       {:outer_brain_prompting, path: "../../../outer_brain/core/outer_brain_prompting"},
       {:outer_brain_persistence, path: "../../../outer_brain/core/outer_brain_persistence"},

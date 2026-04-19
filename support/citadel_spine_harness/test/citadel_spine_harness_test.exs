@@ -87,11 +87,45 @@ defmodule StackLab.CitadelSpineHarnessTest do
 
     assert scenario.cases == %{
              pending_recovery_after_restart: %{kind: :pending_recovery_after_restart},
-             final_reply_after_restart: %{kind: :final_reply_after_restart}
+             final_reply_after_restart: %{kind: :final_reply_after_restart},
+             semantic_failure_carrier_after_restart: %{
+               kind: :semantic_failure_carrier_after_restart
+             },
+             duplicate_publication_suppressed_after_restart: %{
+               kind: :duplicate_publication_suppressed_after_restart
+             }
            }
 
     assert File.exists?(scenario.compose)
     assert File.exists?(scenario.runbook)
+  end
+
+  test "outer-brain durability scenario proves semantic failure carriers survive restart" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_outer_brain_durability(
+               :semantic_failure_carrier_after_restart
+             )
+
+    assert result.case == :semantic_failure_carrier_after_restart
+    assert result.durable.semantic_failure_kind == :semantic_insufficient_context
+    assert result.durable.semantic_failure_retry_class == :clarification_required
+    assert result.after_restart.semantic_failure_kinds == [:semantic_insufficient_context]
+    assert result.after_restart.semantic_failure_retry_classes == [:clarification_required]
+    assert result.after_restart.semantic_failure_trace_ids == ["trace-semantic-failure"]
+  end
+
+  test "outer-brain durability scenario suppresses duplicate reply publication after restart" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_outer_brain_durability(
+               :duplicate_publication_suppressed_after_restart
+             )
+
+    assert result.case == :duplicate_publication_suppressed_after_restart
+    assert result.durable.initial_publication_id =~ "publication-"
+    assert result.durable.replayed_publication_id == result.durable.initial_publication_id
+    assert result.after_restart.publication_ids == [result.durable.initial_publication_id]
+    assert result.after_restart.publication_bodies == ["Done after replay"]
+    assert result.after_restart.next_action == {:noop, :final_reply_published}
   end
 
   test "describes the mezzanine restart-recovery proof case as a Stage-2 durable substrate scenario" do

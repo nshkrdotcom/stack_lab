@@ -120,7 +120,13 @@ defmodule StackLab.CitadelSpineHarness do
       repo_roots: repo_roots(),
       cases: %{
         pending_recovery_after_restart: %{kind: :pending_recovery_after_restart},
-        final_reply_after_restart: %{kind: :final_reply_after_restart}
+        final_reply_after_restart: %{kind: :final_reply_after_restart},
+        semantic_failure_carrier_after_restart: %{
+          kind: :semantic_failure_carrier_after_restart
+        },
+        duplicate_publication_suppressed_after_restart: %{
+          kind: :duplicate_publication_suppressed_after_restart
+        }
       }
     }
   end
@@ -128,9 +134,16 @@ defmodule StackLab.CitadelSpineHarness do
   @spec exercise_outer_brain_durability(
           :pending_recovery_after_restart
           | :final_reply_after_restart
+          | :semantic_failure_carrier_after_restart
+          | :duplicate_publication_suppressed_after_restart
         ) :: {:ok, map()} | {:error, term()}
   def exercise_outer_brain_durability(case_name)
-      when case_name in [:pending_recovery_after_restart, :final_reply_after_restart] do
+      when case_name in [
+             :pending_recovery_after_restart,
+             :final_reply_after_restart,
+             :semantic_failure_carrier_after_restart,
+             :duplicate_publication_suppressed_after_restart
+           ] do
     OuterBrainDurability.run_case(case_name)
   end
 

@@ -2,6 +2,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
   @moduledoc false
 
   alias Ecto.Adapters.SQL
+  alias OuterBrain.Contracts.SemanticFailure
 
   alias OuterBrain.Journal.Tables.{
     RecoveryTaskRecord,
@@ -14,10 +15,21 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
   alias OuterBrain.Runtime.{LeaseRegistry, SessionOwner}
   alias StackLab.CitadelSpineHarness.PostgresContainer
 
-  @spec run_case(:pending_recovery_after_restart | :final_reply_after_restart) ::
+  @case_names [
+    :pending_recovery_after_restart,
+    :final_reply_after_restart,
+    :semantic_failure_carrier_after_restart,
+    :duplicate_publication_suppressed_after_restart
+  ]
+
+  @spec run_case(
+          :pending_recovery_after_restart
+          | :final_reply_after_restart
+          | :semantic_failure_carrier_after_restart
+          | :duplicate_publication_suppressed_after_restart
+        ) ::
           {:ok, map()}
-  def run_case(case_name)
-      when case_name in [:pending_recovery_after_restart, :final_reply_after_restart] do
+  def run_case(case_name) when case_name in @case_names do
     with_store(case_name, fn repo_config ->
       session_id = "outer-brain-session-#{case_name}"
       causal_unit_id = "outer-brain-causal-#{case_name}"
@@ -54,7 +66,10 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
 
         try do
           persisted_lease = fetch_current_lease!(session_id)
+          replay_record = replay_after_restart!(case_name, causal_unit_id)
           persisted_entries = Store.journal_entries(session_id, repo: Repo)
+          persisted_failures = Store.semantic_failure_entries(session_id, repo: Repo)
+          persisted_publications = Store.reply_publications(causal_unit_id, repo: Repo)
 
           analysis =
             RestartScan.reconstruct(
@@ -79,10 +94,15 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
                journal_entry_ids: Enum.map(persisted_entries, & &1.entry_id),
                journal_entry_types: Enum.map(persisted_entries, & &1.entry_type),
                publication_phase: analysis.publication_phase,
+               publication_ids: Enum.map(persisted_publications, & &1.publication_id),
+               publication_bodies: Enum.map(persisted_publications, & &1.body),
+               semantic_failure_kinds: Enum.map(persisted_failures, & &1.kind),
+               semantic_failure_retry_classes: Enum.map(persisted_failures, & &1.retry_class),
+               semantic_failure_trace_ids: Enum.map(persisted_failures, & &1.request_trace_id),
                pending_recovery_tasks: analysis.pending_recovery_tasks,
                next_action: analysis.next_action
              },
-             durable: case_record
+             durable: Map.merge(case_record, replay_record)
            }}
         after
           stop_registry(restarted_registry)
@@ -126,6 +146,59 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
       publication_phase: publication.phase
     }
   end
+
+  defp persist_case_record!(
+         :semantic_failure_carrier_after_restart,
+         session_id,
+         causal_unit_id
+       ) do
+    {:ok, failure} =
+      Store.record_semantic_failure(
+        semantic_failure(session_id, causal_unit_id),
+        repo: Repo,
+        recorded_at: DateTime.from_unix!(1_800_002_006)
+      )
+
+    %{
+      semantic_failure_kind: failure.kind,
+      semantic_failure_retry_class: failure.retry_class,
+      semantic_failure_trace_id: failure.request_trace_id
+    }
+  end
+
+  defp persist_case_record!(
+         :duplicate_publication_suppressed_after_restart,
+         _session_id,
+         causal_unit_id
+       ) do
+    {:ok, publication} =
+      Store.record_reply_publication(
+        reply_publication_record(causal_unit_id, :final, "Done"),
+        repo: Repo
+      )
+
+    %{
+      initial_publication_id: publication.publication_id,
+      publication_phase: publication.phase
+    }
+  end
+
+  defp replay_after_restart!(:duplicate_publication_suppressed_after_restart, causal_unit_id) do
+    {:ok, publication} =
+      Store.record_reply_publication(
+        reply_publication_record(
+          causal_unit_id,
+          :final,
+          "Done after replay",
+          publication_id: "publication-replayed-#{causal_unit_id}-final"
+        ),
+        repo: Repo
+      )
+
+    %{replayed_publication_id: publication.publication_id}
+  end
+
+  defp replay_after_restart!(_case_name, _causal_unit_id), do: %{}
 
   defp with_store(case_name, fun) when is_function(fun, 1) do
     container = PostgresContainer.start!("outer_brain_restart_durability_#{case_name}")
@@ -214,10 +287,11 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
     task
   end
 
-  defp reply_publication_record(causal_unit_id, phase, body) do
+  defp reply_publication_record(causal_unit_id, phase, body, opts \\ []) do
     {:ok, publication} =
       ReplyPublicationRecord.new(%{
-        publication_id: "publication-#{causal_unit_id}-#{phase}",
+        publication_id:
+          Keyword.get(opts, :publication_id, "publication-#{causal_unit_id}-#{phase}"),
         causal_unit_id: causal_unit_id,
         phase: phase,
         state: :published,
@@ -226,6 +300,21 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
       })
 
     publication
+  end
+
+  defp semantic_failure(session_id, causal_unit_id) do
+    {:ok, failure} =
+      SemanticFailure.new(%{
+        kind: :semantic_insufficient_context,
+        tenant_id: "tenant-outer-brain-durability",
+        semantic_session_id: session_id,
+        causal_unit_id: causal_unit_id,
+        request_trace_id: "trace-semantic-failure",
+        provenance: [%{"surface" => "stack_lab.outer_brain_durability"}],
+        operator_message: "The semantic runtime needs more context before dispatch."
+      })
+
+    failure
   end
 
   defp schema_statements do

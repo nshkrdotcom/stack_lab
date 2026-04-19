@@ -11,6 +11,8 @@ This package owns:
 - the real same-node in-process transport proof
 - the real substrate-facing lower-facts readback proof
 - the real `outer_brain` restart-durability proof
+- the Phase-3 Outer Brain semantic-failure carrier, durable journal, and
+  duplicate-publication suppression proofs
 - the real `mezzanine` restart-recovery proof through the JobOutbox-backed
   dispatch worker
 - the governed-run proof above the `app_kit` operational surface
@@ -34,6 +36,12 @@ this package only assembles them for proof work inside `stack_lab`.
 The semantic host path in this harness is intentionally adapter-shaped. The
 real `outer_brain` durability proof is covered separately by the dedicated
 restart-durability scenario.
+
+That durability scenario now includes semantic failure carrier replay and
+reply-publication dedupe checks. It records `OuterBrain.Contracts.SemanticFailure`
+through the durable `OuterBrain.Persistence.Store`, restarts the repo/session
+view, reconstructs restart authority, and proves replay cannot create a second
+user-visible publication row for the same dedupe key.
 
 The lower-backed AppKit operational proof now enters Citadel through
 `Mezzanine.Citadel.SubstrateIngress` and the pure

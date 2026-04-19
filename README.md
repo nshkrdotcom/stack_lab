@@ -57,6 +57,10 @@ product no-bypass scanner against `extravaganza`, Scenario 36 separately proves
 there is no direct Execution Plane bypass in product/AppKit paths, and Scenario
 42 proves a second synthetic connector-automation product shape through the
 same AppKit northbound boundary.
+The OuterBrain restart-durability proof also carries Phase-3 semantic gateway
+coverage: provider-neutral semantic failure carriers are journaled durably,
+context adapter requests stay read-only and provenance-preserving, and restart
+replay is deduped by reply-publication key.
 
 ## Scope
 
