@@ -57,6 +57,12 @@ product no-bypass scanner against `extravaganza`, Scenario 36 separately proves
 there is no direct Execution Plane bypass in product/AppKit paths, and Scenario
 42 proves a second synthetic connector-automation product shape through the
 same AppKit northbound boundary.
+Phase 3 also adds the M6 release-readiness proofs: Scenario 38 reconstructs
+unified traces from all required hot and archived pivots, Scenario 39 rejects
+stale installation revisions under lease activation, Scenario 40 exercises
+LifecycleContinuation retry/dead-letter/operator recovery, Scenario 41 proves
+archival plus archived-trace lookup, and Scenario 43 proves duplicate-safe
+lease and worker fencing behavior.
 The OuterBrain restart-durability proof also carries Phase-3 semantic gateway
 coverage: provider-neutral semantic failure carriers are journaled durably,
 context adapter requests stay read-only and provenance-preserving, and restart

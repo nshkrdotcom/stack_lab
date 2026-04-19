@@ -174,7 +174,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
          case: :authorized_mezzanine_readback,
          operation: result.operation,
          source: result.source,
-         freshness: result.freshness,
+         staleness_class: result.staleness_class,
          operator_actionable?: result.operator_actionable?,
          lineage: result.lineage,
          run: %{

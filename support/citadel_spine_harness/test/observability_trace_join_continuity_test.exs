@@ -5,7 +5,7 @@ defmodule StackLab.CitadelSpineHarness.ObservabilityTraceJoinContinuityTest do
   alias Citadel.ObservabilityContract.Telemetry, as: CitadelTelemetry
   alias StackLab.CitadelSpineHarness
 
-  test "Scenario 19 proves live and archived trace join continuity under one Stage 11 trace contract" do
+  test "Scenarios 19, 38, and 41 prove live trace joins, archived pivot reconstruction, and staleness labels" do
     assert {:ok, result} =
              CitadelSpineHarness.exercise_observability_trace_join_continuity(
                :trace_join_continuity
@@ -62,6 +62,30 @@ defmodule StackLab.CitadelSpineHarness.ObservabilityTraceJoinContinuityTest do
     assert "decision_record" in result.archival.step_sources
     assert "evidence_record" in result.archival.step_sources
     refute "lower_run_status" in result.archival.step_sources
+    assert result.archival.staleness_classes == ["authoritative_archived"]
+    assert result.archival.wrong_installation_pivot_error == :not_found
+
+    assert Enum.sort(Map.keys(result.archival.pivot_traces)) == [
+             :artifact_id,
+             :attempt_id,
+             :decision_id,
+             :execution_id,
+             :manifest_ref,
+             :run_id,
+             :subject_id,
+             :trace_id
+           ]
+
+    Enum.each(result.archival.pivot_traces, fn {pivot, trace} ->
+      assert trace.trace_id == result.trace_id
+      assert trace.archived_manifest_ref == result.archival.manifest_ref
+      assert trace.archive_pivot == Atom.to_string(pivot)
+      assert trace.staleness_classes == ["authoritative_archived"]
+      assert "audit_fact" in trace.step_sources
+      assert "execution_record" in trace.step_sources
+      assert "decision_record" in trace.step_sources
+      assert "evidence_record" in trace.step_sources
+    end)
 
     assert length(result.telemetry.app_kit_unified_trace) == 2
 

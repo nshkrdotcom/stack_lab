@@ -38,6 +38,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     WorkSurface
   }
 
+  alias Mezzanine.AppKitBridge.OperatorQueryService
   alias Mezzanine.AppKitBridge.SemanticFailureRecoveryService
 
   alias Mezzanine.Archival.Scheduler
@@ -576,12 +577,13 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
           trace_id = lower_dispatch.execution.trace_id
           execution_id = lower_dispatch.execution.id
 
-          enrich_subject_trace_graph!(
-            env.installation_ref.id,
-            env.subject_ref.id,
-            execution_id,
-            trace_id
-          )
+          trace_graph =
+            enrich_subject_trace_graph!(
+              env.installation_ref.id,
+              env.subject_ref.id,
+              execution_id,
+              trace_id
+            )
 
           {:ok, execution_ref} =
             ExecutionRef.new(%{
@@ -637,6 +639,21 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
               trace_opts
             )
 
+          archived_pivot_traces =
+            archived_pivot_summaries!(
+              env.installation_ref.id,
+              %{
+                trace_id: trace_id,
+                subject_id: env.subject_ref.id,
+                execution_id: execution_id,
+                decision_id: trace_graph.decision_id,
+                run_id: "run-#{execution_id}",
+                attempt_id: "attempt-#{execution_id}",
+                artifact_id: "artifact-#{execution_id}",
+                manifest_ref: archival_result.manifest_ref
+              }
+            )
+
           archived_lower_fetches = collect_lower_fetch_messages!()
           Process.sleep(50)
           telemetry_events = collect_observability_telemetry!()
@@ -671,9 +688,21 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
                trace_id: archived_trace.trace_id,
                archived_manifest_ref: archived_trace.metadata.archived_manifest_ref,
                step_sources: Enum.map(archived_trace.steps, & &1.source),
+               staleness_classes:
+                 archived_trace.steps
+                 |> Enum.map(& &1.staleness_class)
+                 |> Enum.uniq()
+                 |> Enum.sort(),
                join_keys: archived_trace.join_keys,
                live_lower_fetches: live_lower_fetches,
-               archived_lower_fetches: archived_lower_fetches
+               archived_lower_fetches: archived_lower_fetches,
+               pivot_traces: archived_pivot_traces,
+               wrong_installation_pivot_error:
+                 archived_pivot_error!(
+                   Ecto.UUID.generate(),
+                   :trace_id,
+                   trace_id
+                 )
              }
            }}
         after
@@ -1991,7 +2020,10 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         "state" => "accepted",
         "ji_submission_key" => acceptance.submission_key,
         "submission_receipt_ref" => acceptance.submission_receipt_ref,
-        "run_id" => "run-#{claimed.execution_id}"
+        "run_id" => "run-#{claimed.execution_id}",
+        "attempt_id" => "attempt-#{claimed.execution_id}",
+        "artifact_id" => "artifact-#{claimed.execution_id}",
+        "artifact_ids" => ["artifact-#{claimed.execution_id}"]
       }
     }
   end
@@ -2385,7 +2417,54 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       ]
     )
 
-    :ok
+    %{
+      decision_id: decision_id,
+      evidence_id: evidence_id,
+      audit_fact_id: audit_fact_id
+    }
+  end
+
+  defp archived_pivot_summaries!(installation_id, pivots) when is_map(pivots) do
+    Map.new(pivots, fn {pivot, pivot_id} ->
+      {:ok, trace} =
+        OperatorQueryService.get_archived_unified_trace_by_pivot(%{
+          installation_id: installation_id,
+          pivot: pivot,
+          pivot_id: pivot_id
+        })
+
+      {pivot,
+       %{
+         trace_id: trace.trace_id,
+         archived_manifest_ref: trace.metadata.archived_manifest_ref,
+         archive_pivot: trace.metadata.archive_pivot,
+         step_sources:
+           trace.steps
+           |> Enum.map(& &1.source)
+           |> Enum.map(&to_string/1),
+         staleness_classes:
+           trace.steps
+           |> Enum.map(& &1.staleness_class)
+           |> Enum.map(&to_string/1)
+           |> Enum.uniq()
+           |> Enum.sort(),
+         join_keys: trace.join_keys
+       }}
+    end)
+  end
+
+  defp archived_pivot_error!(installation_id, pivot, pivot_id) do
+    case OperatorQueryService.get_archived_unified_trace_by_pivot(%{
+           installation_id: installation_id,
+           pivot: pivot,
+           pivot_id: pivot_id
+         }) do
+      {:error, reason} ->
+        reason
+
+      {:ok, trace} ->
+        raise "expected archived pivot lookup to fail closed, got: #{inspect(trace)}"
+    end
   end
 
   defp emit_execution_plane_backfill!(trace_id, tenant_id) do

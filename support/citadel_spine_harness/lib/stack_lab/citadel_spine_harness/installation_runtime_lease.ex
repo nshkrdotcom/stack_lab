@@ -127,6 +127,22 @@ defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLease do
       {:ok, persisted_invoice} =
         runtime_scheduler_call!(:fetch_installation_lease, [invoice_installation.id])
 
+      {:error, {:stale_revision, stale_revision}} =
+        runtime_scheduler_call!(
+          :acquire_installation_lease,
+          [
+            lease!(
+              expense_installation.id,
+              "scheduler-c",
+              "lease:expense:c",
+              3,
+              expense_installation.compiled_pack_revision - 1,
+              later
+            ),
+            later
+          ]
+        )
+
       {:ok,
        %{
          case: :two_owner_fencing,
@@ -151,6 +167,12 @@ defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLease do
          takeover: %{
            status: :acquired,
            lease: lease_summary(expense_takeover)
+         },
+         stale_revision: %{
+           status: :stale_revision,
+           attempted_revision: stale_revision.attempted_revision,
+           current_revision: stale_revision.current_revision,
+           fence: fence_summary(stale_revision.fence)
          },
          persisted: %{
            expense: lease_summary(persisted_expense),

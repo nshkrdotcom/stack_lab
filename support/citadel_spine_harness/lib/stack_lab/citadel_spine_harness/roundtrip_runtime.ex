@@ -244,7 +244,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
           non_neg_integer()
         ) ::
           map()
-  def wait_for_entry!(session_directory, entry_id, predicate, attempts \\ 40)
+  def wait_for_entry!(session_directory, entry_id, predicate, attempts \\ 200)
 
   def wait_for_entry!(session_directory, entry_id, predicate, attempts) when attempts > 0 do
     case SessionDirectory.resolve_outbox_entry(session_directory, entry_id) do

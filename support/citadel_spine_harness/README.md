@@ -18,6 +18,16 @@ This package owns:
 - the governed-run proof above the `app_kit` operational surface
 - the Scenario-19 observability, archived-read honesty, and trace-join
   continuity proof across the public northbound and lower-backed surfaces
+- the Scenario-38 and Scenario-41 archived unified-trace reconstruction proof
+  across trace, subject, execution, decision, run, attempt, artifact, and
+  manifest pivots with phase-3 staleness labels
+- the Scenario-39 installation revision and runtime lease proof for
+  attempted/current revision diagnostics and mixed-node fail-closed behavior
+- the Scenario-40 lifecycle continuation proof for transient retry,
+  deterministic dead-letter, operator retry, and operator waive flows
+- the Scenario-43 duplicate-safe lease and worker fencing proof for competing
+  owners, node-loss takeover, lower-submission idempotency, and startup
+  reconciliation dedupe
 - the Scenario-25 AITrace, claim-check, and lower-lineage continuity proof
 - the Stage-7 packet-reconciliation and no-bypass boundary proof
 - the Phase-3 AppKit-owned product no-bypass and direct Execution Plane
