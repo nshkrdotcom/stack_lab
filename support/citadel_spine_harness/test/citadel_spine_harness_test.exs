@@ -328,6 +328,10 @@ defmodule StackLab.CitadelSpineHarnessTest do
              },
              direct_execution_plane_bypass_absence: %{
                kind: :direct_execution_plane_bypass_absence
+             },
+             phase3_runbook_drift: %{
+               kind: :phase3_runbook_drift,
+               scenario: 35
              }
            }
 

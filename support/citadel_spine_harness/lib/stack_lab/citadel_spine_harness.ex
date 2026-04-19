@@ -33,6 +33,10 @@ defmodule StackLab.CitadelSpineHarness do
                "../j/jido_brainstorm/nshkrdotcom/docs/20260416/ecosystem_buildout_phase2",
                @repo_parent
              )
+  @phase3_docs_root Path.expand(
+                      "../j/jido_brainstorm/nshkrdotcom/docs/20260418/ecosystem_buildout_phase3",
+                      @repo_parent
+                    )
 
   @type repo_roots :: %{
           required(:stack_lab) => String.t(),
@@ -43,7 +47,8 @@ defmodule StackLab.CitadelSpineHarness do
           required(:app_kit) => String.t(),
           required(:extravaganza) => String.t(),
           required(:execution_plane) => String.t(),
-          required(:docs) => String.t()
+          required(:docs) => String.t(),
+          required(:phase3_docs) => String.t()
         }
 
   @spec repo_roots() :: repo_roots()
@@ -57,7 +62,8 @@ defmodule StackLab.CitadelSpineHarness do
       app_kit: Path.expand("../app_kit", @stack_lab_root),
       extravaganza: Path.expand("../extravaganza", @stack_lab_root),
       execution_plane: Path.expand("../execution_plane", @stack_lab_root),
-      docs: @docs_root
+      docs: @docs_root,
+      phase3_docs: @phase3_docs_root
     }
   end
 
@@ -467,7 +473,8 @@ defmodule StackLab.CitadelSpineHarness do
         substrate_origin_no_host_session_path: %{kind: :substrate_origin_no_host_session_path},
         direct_execution_plane_bypass_absence: %{
           kind: :direct_execution_plane_bypass_absence
-        }
+        },
+        phase3_runbook_drift: %{kind: :phase3_runbook_drift, scenario: 35}
       }
     }
   end
@@ -479,6 +486,7 @@ defmodule StackLab.CitadelSpineHarness do
           | :stale_reference_absence
           | :substrate_origin_no_host_session_path
           | :direct_execution_plane_bypass_absence
+          | :phase3_runbook_drift
         ) :: {:ok, map()} | {:error, term()}
   def exercise_packet_reconciliation(case_name)
       when case_name in [
@@ -487,7 +495,8 @@ defmodule StackLab.CitadelSpineHarness do
              :control_path_boundaries,
              :stale_reference_absence,
              :substrate_origin_no_host_session_path,
-             :direct_execution_plane_bypass_absence
+             :direct_execution_plane_bypass_absence,
+             :phase3_runbook_drift
            ] do
     PacketReconciliation.run_case(case_name)
   end

@@ -67,6 +67,10 @@ Scenario 34 proves the internal/operator extension authoring path: a valid
 signed bundle activates through Mezzanine config registry and invalid bundle
 schema, lifecycle hint, policy ref, platform migration, checksum, signature,
 and stale revision cases all fail before runtime activation.
+Scenario 35 proves operational runbook drift cannot close silently: the harness
+checks that every Phase-3 scenario 29-43 names an indexed runbook filename,
+that every indexed runbook exists, and that no required runbook remains in
+placeholder `[DESIGNED]` state.
 The OuterBrain restart-durability proof also carries Phase-3 semantic gateway
 coverage: provider-neutral semantic failure carriers are journaled durably,
 context adapter requests stay read-only and provenance-preserving, and restart
@@ -95,6 +99,8 @@ The harness consumes `AppKit.Boundary.NoBypass` directly for product-boundary
 packet reconciliation. Product no-bypass and Execution Plane hazmat no-bypass
 are separate checks and both must stay green before release-readiness claims are
 accepted.
+Runbook drift is also executable: `CitadelSpineHarness.exercise_packet_reconciliation(:phase3_runbook_drift)`
+must stay green before any Phase-3 release-readiness closeout.
 
 The welded `stack_lab_lab_core` artifact is tracked through the prepared bundle
 flow:

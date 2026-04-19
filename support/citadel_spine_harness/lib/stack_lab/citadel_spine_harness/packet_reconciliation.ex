@@ -44,6 +44,7 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
           | :stale_reference_absence
           | :substrate_origin_no_host_session_path
           | :direct_execution_plane_bypass_absence
+          | :phase3_runbook_drift
         ) ::
           {:ok, map()}
   def run_case(:packet_ownership_freeze) do
@@ -329,6 +330,55 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
      }}
   end
 
+  def run_case(:phase3_runbook_drift) do
+    docs_root = CitadelSpineHarness.repo_roots().phase3_docs
+    runbooks_root = Path.join(docs_root, "runbooks")
+    stack_lab_spec = Path.join(docs_root, "stack_lab/STACK_LAB_SPEC.md")
+
+    required_runbooks =
+      docs_root
+      |> required_runbooks()
+      |> Enum.sort()
+
+    scenario_runbooks =
+      stack_lab_spec
+      |> phase3_scenario_runbooks()
+      |> Enum.sort_by(& &1.scenario)
+
+    missing_runbooks =
+      required_runbooks
+      |> Enum.reject(&File.exists?(Path.join(runbooks_root, &1)))
+
+    missing_scenario_runbooks =
+      scenario_runbooks
+      |> Enum.reject(&(&1.runbook in required_runbooks))
+
+    placeholder_runbooks =
+      required_runbooks
+      |> Enum.filter(&placeholder_runbook?(Path.join(runbooks_root, &1)))
+
+    if missing_runbooks != [] do
+      raise "missing required runbooks: #{inspect(missing_runbooks)}"
+    end
+
+    if missing_scenario_runbooks != [] do
+      raise "scenario runbooks are not in required index: #{inspect(missing_scenario_runbooks)}"
+    end
+
+    if placeholder_runbooks != [] do
+      raise "runbooks still contain placeholder content: #{inspect(placeholder_runbooks)}"
+    end
+
+    {:ok,
+     %{
+       case: :phase3_runbook_drift,
+       scenario_range: 29..43,
+       runbooks_checked: length(required_runbooks),
+       scenarios_checked: length(scenario_runbooks),
+       placeholder_runbooks: placeholder_runbooks
+     }}
+  end
+
   defp assert_contains!(path, required_fragments) do
     contents = File.read!(path)
 
@@ -375,5 +425,40 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
     scanner = Function.capture(no_bypass_module(roots), :scan, 1)
 
     scanner.(opts)
+  end
+
+  defp required_runbooks(docs_root) do
+    docs_root
+    |> Path.join("runbooks/README.md")
+    |> File.read!()
+    |> then(&Regex.scan(~r/- `([^`]+\.md)`/, &1))
+    |> Enum.map(fn [_, runbook] -> runbook end)
+  end
+
+  defp phase3_scenario_runbooks(stack_lab_spec) do
+    stack_lab_spec
+    |> File.read!()
+    |> String.split(~r/^### Scenario /m, trim: true)
+    |> Enum.flat_map(&scenario_runbook/1)
+  end
+
+  defp scenario_runbook(section) do
+    with [_, scenario] <- Regex.run(~r/^(\d+)\./, section),
+         scenario_number <- String.to_integer(scenario),
+         true <- scenario_number in 29..43,
+         [_, runbook] <- Regex.run(~r/Runbook:\n\n- `([^`]+\.md)`/, section) do
+      [%{scenario: scenario_number, runbook: runbook}]
+    else
+      _ -> []
+    end
+  end
+
+  defp placeholder_runbook?(path) do
+    contents = File.read!(path)
+
+    String.contains?(contents, "Status: `[DESIGNED]`") or
+      String.contains?(contents, "## Required Content During Implementation") or
+      not String.contains?(contents, "## Operator Question") or
+      not String.contains?(contents, "## Proof")
   end
 end

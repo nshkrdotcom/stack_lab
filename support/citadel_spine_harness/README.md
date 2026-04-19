@@ -30,6 +30,8 @@ This package owns:
   reconciliation dedupe
 - the Scenario-34 extension authoring proof for deterministic internal/operator
   bundle import, activation, and pre-runtime rejection gates
+- the Scenario-35 runbook drift proof that every Phase-3 release scenario maps
+  to an indexed, built operator runbook
 - the Scenario-25 AITrace, claim-check, and lower-lineage continuity proof
 - the Stage-7 packet-reconciliation and no-bypass boundary proof
 - the Phase-3 AppKit-owned product no-bypass and direct Execution Plane
@@ -80,6 +82,12 @@ Scenario 34 uses the real `Mezzanine.Authoring.Bundle` and
 checksum/signature bundle activates and that invalid policy refs, platform
 migrations, lifecycle hints, context adapter descriptors, checksum, signature,
 and stale installation revision reject before activation.
+
+Scenario 35 uses `PacketReconciliation.run_case(:phase3_runbook_drift)` against
+the Phase-3 packet under
+`nshkrdotcom/docs/20260418/ecosystem_buildout_phase3`. It verifies the
+runbook index, Scenario 29-43 runbook references in `STACK_LAB_SPEC.md`, and
+absence of placeholder runbook content.
 
 ## Generated Artifact Hygiene
 

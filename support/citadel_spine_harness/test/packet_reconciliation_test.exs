@@ -95,4 +95,15 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliationTest do
              "app_kit_operational_surface.ex"
            )
   end
+
+  test "gates Phase 3 runbook and scenario drift" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_packet_reconciliation(:phase3_runbook_drift)
+
+    assert result.case == :phase3_runbook_drift
+    assert result.scenario_range == 29..43
+    assert result.runbooks_checked >= 20
+    assert result.scenarios_checked == 15
+    assert result.placeholder_runbooks == []
+  end
 end
