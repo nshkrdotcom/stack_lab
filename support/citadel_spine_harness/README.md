@@ -18,6 +18,9 @@ This package owns:
   continuity proof across the public northbound and lower-backed surfaces
 - the Scenario-25 AITrace, claim-check, and lower-lineage continuity proof
 - the Stage-7 packet-reconciliation and no-bypass boundary proof
+- the Phase-3 AppKit-owned product no-bypass and direct Execution Plane
+  no-bypass scanner proofs
+- the Scenario-42 second product shape proof for connector automation
 - the Phase-3 substrate-origin no-session absence proof for the active
   lower-backed AppKit operational path
 - the real split-node remote transport proof
@@ -45,6 +48,12 @@ read authorization end to end. Harness stubs require
 `Mezzanine.Leasing.AuthorizationScope`, and the scenario assertions prove that
 submission receipt, run, attempt, event, artifact, trace, read-lease, and
 stream-attach pivots cannot be reused across tenants.
+
+Product-boundary packet reconciliation uses `AppKit.Boundary.NoBypass` from the
+sibling AppKit repo instead of local regex-only policy. The `product` profile
+checks `extravaganza` product source for lower governed-write imports, and the
+`hazmat` profile separately checks AppKit and product paths for direct Execution
+Plane usage.
 
 ## Generated Artifact Hygiene
 

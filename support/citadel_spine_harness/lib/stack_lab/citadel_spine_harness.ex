@@ -385,7 +385,7 @@ defmodule StackLab.CitadelSpineHarness do
       cases: %{
         reviewable_connector_automation_console: %{
           kind: :reviewable_connector_automation_console,
-          scenario: 15,
+          scenario: 42,
           whitepaper_use_case: :"18.2_reviewable_connector_automation"
         }
       }
@@ -431,7 +431,10 @@ defmodule StackLab.CitadelSpineHarness do
         stack_ir_binding_map_freeze: %{kind: :stack_ir_binding_map_freeze},
         control_path_boundaries: %{kind: :control_path_boundaries},
         stale_reference_absence: %{kind: :stale_reference_absence},
-        substrate_origin_no_host_session_path: %{kind: :substrate_origin_no_host_session_path}
+        substrate_origin_no_host_session_path: %{kind: :substrate_origin_no_host_session_path},
+        direct_execution_plane_bypass_absence: %{
+          kind: :direct_execution_plane_bypass_absence
+        }
       }
     }
   end
@@ -442,6 +445,7 @@ defmodule StackLab.CitadelSpineHarness do
           | :control_path_boundaries
           | :stale_reference_absence
           | :substrate_origin_no_host_session_path
+          | :direct_execution_plane_bypass_absence
         ) :: {:ok, map()} | {:error, term()}
   def exercise_packet_reconciliation(case_name)
       when case_name in [
@@ -449,7 +453,8 @@ defmodule StackLab.CitadelSpineHarness do
              :stack_ir_binding_map_freeze,
              :control_path_boundaries,
              :stale_reference_absence,
-             :substrate_origin_no_host_session_path
+             :substrate_origin_no_host_session_path,
+             :direct_execution_plane_bypass_absence
            ] do
     PacketReconciliation.run_case(case_name)
   end

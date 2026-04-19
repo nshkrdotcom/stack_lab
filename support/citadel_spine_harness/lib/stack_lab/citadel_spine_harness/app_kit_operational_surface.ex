@@ -1034,7 +1034,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         {:ok,
          %{
            case: :reviewable_connector_automation_console,
-           scenario: 15,
+           scenario: 42,
            tenant_id: env.tenant_id,
            whitepaper_use_case: :"18.2_reviewable_connector_automation",
            synthetic_shape: %{

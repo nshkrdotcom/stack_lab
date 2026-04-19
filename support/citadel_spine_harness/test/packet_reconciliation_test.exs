@@ -35,6 +35,19 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliationTest do
              CitadelSpineHarness.exercise_packet_reconciliation(:control_path_boundaries)
 
     assert result.case == :control_path_boundaries
+    assert result.scanner == :app_kit_no_bypass
+    assert result.checked_files.extravaganza > 0
+    assert result.checked_files.app_kit > 0
+  end
+
+  test "proves product and AppKit paths do not directly write to Execution Plane" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_packet_reconciliation(
+               :direct_execution_plane_bypass_absence
+             )
+
+    assert result.case == :direct_execution_plane_bypass_absence
+    assert result.scanner == :app_kit_no_bypass
     assert result.checked_files.extravaganza > 0
     assert result.checked_files.app_kit > 0
   end

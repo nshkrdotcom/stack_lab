@@ -3,14 +3,14 @@ defmodule StackLab.CitadelSpineHarness.ReviewableConnectorAutomationConsoleTest 
 
   alias StackLab.CitadelSpineHarness
 
-  test "Scenario 15 proves a second synthetic product shape for reviewable connector automation" do
+  test "Scenario 42 proves a second synthetic product shape for reviewable connector automation" do
     assert {:ok, result} =
              CitadelSpineHarness.exercise_reviewable_connector_automation_console(
                :reviewable_connector_automation_console
              )
 
     assert result.case == :reviewable_connector_automation_console
-    assert result.scenario == 15
+    assert result.scenario == 42
     assert result.tenant_id == "tenant-reviewable-connector-automation"
     assert result.whitepaper_use_case == :"18.2_reviewable_connector_automation"
 

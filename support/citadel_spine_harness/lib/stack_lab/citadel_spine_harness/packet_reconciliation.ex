@@ -10,14 +10,6 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
   @aitrace_doc "v4/0023_aitrace_identity_and_claim_check_contract.md"
   @trace_doc "v4/0026_trace_identity_contract.md"
 
-  @extravaganza_bypass_patterns [
-    ~r/\bCitadel\./,
-    ~r/\bJido\.Integration\b/,
-    ~r/\bExecutionPlane\b/,
-    ~r/\bHostIngress\b/,
-    ~r/\bInvocationBridge\b/
-  ]
-
   @app_kit_bypass_patterns [
     ~r/\bJido\.Integration\b/,
     ~r/\bExecutionPlane\b/,
@@ -51,6 +43,7 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
           | :control_path_boundaries
           | :stale_reference_absence
           | :substrate_origin_no_host_session_path
+          | :direct_execution_plane_bypass_absence
         ) ::
           {:ok, map()}
   def run_case(:packet_ownership_freeze) do
@@ -226,13 +219,14 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
   def run_case(:control_path_boundaries) do
     roots = CitadelSpineHarness.repo_roots()
 
-    extravaganza_files =
-      scan_absence!(
-        [
-          Path.join(roots.extravaganza, "apps/extravaganza_core/lib/**/*.ex"),
-          Path.join(roots.extravaganza, "apps/extravaganza_web/lib/**/*.ex")
-        ],
-        @extravaganza_bypass_patterns
+    {:ok, extravaganza_report} =
+      run_no_bypass_scan(roots,
+        root: roots.extravaganza,
+        profiles: [:product],
+        include: [
+          "apps/extravaganza_core/lib/**/*.ex",
+          "apps/extravaganza_web/lib/**/*.ex"
+        ]
       )
 
     app_kit_files =
@@ -249,8 +243,9 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
     {:ok,
      %{
        case: :control_path_boundaries,
+       scanner: :app_kit_no_bypass,
        checked_files: %{
-         extravaganza: length(extravaganza_files),
+         extravaganza: extravaganza_report.checked_files,
          app_kit: length(app_kit_files)
        }
      }}
@@ -299,6 +294,41 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
      }}
   end
 
+  def run_case(:direct_execution_plane_bypass_absence) do
+    roots = CitadelSpineHarness.repo_roots()
+
+    {:ok, extravaganza_report} =
+      run_no_bypass_scan(roots,
+        root: roots.extravaganza,
+        profiles: [:hazmat],
+        include: [
+          "apps/extravaganza_core/lib/**/*.ex",
+          "apps/extravaganza_web/lib/**/*.ex"
+        ]
+      )
+
+    {:ok, app_kit_report} =
+      run_no_bypass_scan(roots,
+        root: roots.app_kit,
+        profiles: [:hazmat],
+        include: [
+          "core/**/*.ex",
+          "bridges/**/*.ex",
+          "examples/**/*.ex"
+        ]
+      )
+
+    {:ok,
+     %{
+       case: :direct_execution_plane_bypass_absence,
+       scanner: :app_kit_no_bypass,
+       checked_files: %{
+         extravaganza: extravaganza_report.checked_files,
+         app_kit: app_kit_report.checked_files
+       }
+     }}
+  end
+
   defp assert_contains!(path, required_fragments) do
     contents = File.read!(path)
 
@@ -331,5 +361,19 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
         raise "#{path} still matches banned pattern #{inspect(banned_pattern)}"
       end
     end)
+  end
+
+  defp no_bypass_module(roots) do
+    unless Code.ensure_loaded?(AppKit.Boundary.NoBypass) do
+      Code.require_file(Path.join(roots.app_kit, "lib/app_kit/boundary/no_bypass.ex"))
+    end
+
+    AppKit.Boundary.NoBypass
+  end
+
+  defp run_no_bypass_scan(roots, opts) do
+    scanner = Function.capture(no_bypass_module(roots), :scan, 1)
+
+    scanner.(opts)
   end
 end

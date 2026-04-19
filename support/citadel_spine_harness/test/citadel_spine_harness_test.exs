@@ -215,7 +215,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.exists?(scenario.runbook)
   end
 
-  test "describes the Scenario 15 reviewable connector automation console as a second synthetic product shape" do
+  test "describes the Scenario 42 reviewable connector automation console as a second synthetic product shape" do
     scenario = CitadelSpineHarness.reviewable_connector_automation_console_scenario()
 
     assert scenario.name == :reviewable_connector_automation_console
@@ -223,7 +223,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert scenario.cases == %{
              reviewable_connector_automation_console: %{
                kind: :reviewable_connector_automation_console,
-               scenario: 15,
+               scenario: 42,
                whitepaper_use_case: :"18.2_reviewable_connector_automation"
              }
            }
@@ -291,6 +291,9 @@ defmodule StackLab.CitadelSpineHarnessTest do
              stale_reference_absence: %{kind: :stale_reference_absence},
              substrate_origin_no_host_session_path: %{
                kind: :substrate_origin_no_host_session_path
+             },
+             direct_execution_plane_bypass_absence: %{
+               kind: :direct_execution_plane_bypass_absence
              }
            }
 
