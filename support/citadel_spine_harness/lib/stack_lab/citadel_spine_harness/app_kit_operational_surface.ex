@@ -1594,10 +1594,21 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         actor_ref: %{id: "ops_lead", kind: :human},
         tenant_ref: %{id: tenant_id},
         installation_ref: installation_ref,
-        metadata: metadata
+        metadata: revision_epoch_metadata(metadata, installation_ref)
       })
 
     context
+  end
+
+  defp revision_epoch_metadata(metadata, nil), do: metadata
+
+  defp revision_epoch_metadata(metadata, installation_ref) do
+    revision = Map.get(installation_ref, :compiled_pack_revision) || 1
+
+    metadata
+    |> Map.put_new(:installation_revision, revision)
+    |> Map.put_new(:activation_epoch, 1)
+    |> Map.put_new(:lease_epoch, 1)
   end
 
   defp choose_operator_action(actions, preferred_action_kind \\ "pause") do

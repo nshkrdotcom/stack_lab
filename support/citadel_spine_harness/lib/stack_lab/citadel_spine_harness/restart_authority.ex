@@ -93,12 +93,14 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
 
         try do
           :ok =
-            TransportRuntime.put!(transport_config(self(), replacement_remote.remote_node))
+            TransportRuntime.put!(
+              transport_config(self(), replacement_remote.remote_node, timeout_ms: 20_000)
+            )
 
           Process.sleep(25)
           :ok = SessionServer.replay_pending(env.session_server)
 
-          transport = await_transport_result!()
+          transport = await_transport_result!(20_000)
 
           resolved =
             RoundtripRuntime.wait_for_entry!(
@@ -189,7 +191,7 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
     %{
       listener: listener,
       remote_node: remote_node,
-      timeout_ms: 5_000,
+      timeout_ms: Keyword.get(opts, :timeout_ms, 5_000),
       delay_ms: Keyword.get(opts, :delay_ms),
       brain_ingress_opts: [
         submission_ledger: Jido.Integration.V2.StoreLocal.SubmissionLedger,
@@ -201,11 +203,15 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
   end
 
   defp await_transport_result! do
-    deadline_ms = System.monotonic_time(:millisecond) + 5_000
-    await_transport_result!(deadline_ms)
+    await_transport_result!(5_000)
   end
 
-  defp await_transport_result!(deadline_ms) do
+  defp await_transport_result!(timeout_ms) when is_integer(timeout_ms) and timeout_ms > 0 do
+    deadline_ms = System.monotonic_time(:millisecond) + timeout_ms
+    do_await_transport_result!(deadline_ms)
+  end
+
+  defp do_await_transport_result!(deadline_ms) do
     timeout_ms = max(deadline_ms - System.monotonic_time(:millisecond), 0)
 
     receive do
@@ -213,7 +219,7 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
         %{acceptance: payload.acceptance}
 
       {:stack_lab_brain_ingress_result, %{result: :error, reason: :transport_unreachable}} ->
-        await_transport_result!(deadline_ms)
+        do_await_transport_result!(deadline_ms)
 
       {:stack_lab_brain_ingress_result, %{result: :error, reason: reason}} ->
         raise "unexpected transport error during restart drill: #{inspect(reason)}"
