@@ -52,6 +52,10 @@ The current lower-backed read proofs require tenant-scoped lower facts and
 caller-carried lease authorization scope across the `app_kit -> mezzanine ->
 jido_integration` path, including negative checks for cross-tenant read and
 stream attachment reuse.
+Phase 5 adds Scenario 201 for Mezzanine Temporal/Postgres projection drift:
+the harness proves compact Temporal describe/query evidence, workflow-start
+outbox retirement posture, dispatch-state reduction, and fanout/fanin close
+semantics without exporting raw workflow history.
 Phase 3 adds product-boundary release proofs: Scenario 31 runs the AppKit
 product no-bypass scanner against `extravaganza`, Scenario 36 separately proves
 there is no direct Execution Plane bypass in product/AppKit paths, and Scenario

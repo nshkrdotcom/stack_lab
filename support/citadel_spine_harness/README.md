@@ -39,6 +39,9 @@ This package owns:
 - the Scenario-42 second product shape proof for connector automation
 - the Phase-3 substrate-origin no-session absence proof for the active
   lower-backed AppKit operational path
+- the Phase-5 Scenario-201 Temporal/Postgres projection-drift proof for compact
+  describe/query evidence, workflow-start outbox retirement posture,
+  dispatch-state reduction, and fanout/fanin close semantics
 - the real split-node remote transport proof
 - restart and failover drill helpers
 

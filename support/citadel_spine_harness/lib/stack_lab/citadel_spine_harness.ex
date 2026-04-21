@@ -22,6 +22,7 @@ defmodule StackLab.CitadelSpineHarness do
     SemanticHost,
     Stage12LoadReadiness,
     Stage9OrchestrationRecovery,
+    TemporalPostgresProjectionDrift,
     TypedHost
   }
 
@@ -262,6 +263,28 @@ defmodule StackLab.CitadelSpineHarness do
              :startup_reconciliation_deduplication
            ] do
     Stage9OrchestrationRecovery.run_case(case_name)
+  end
+
+  @spec temporal_postgres_projection_drift_scenario() :: map()
+  def temporal_postgres_projection_drift_scenario do
+    %{
+      name: :temporal_postgres_projection_drift,
+      compose: LabCore.compose_file(:single),
+      runbook: "temporal_postgres_projection_drift.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        temporal_postgres_projection_drift: %{
+          kind: :temporal_postgres_projection_drift,
+          scenario: 201
+        }
+      }
+    }
+  end
+
+  @spec exercise_temporal_postgres_projection_drift(:temporal_postgres_projection_drift) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_temporal_postgres_projection_drift(:temporal_postgres_projection_drift) do
+    TemporalPostgresProjectionDrift.run_case(:temporal_postgres_projection_drift)
   end
 
   @spec aitrace_claim_check_trace_continuity_scenario() :: map()

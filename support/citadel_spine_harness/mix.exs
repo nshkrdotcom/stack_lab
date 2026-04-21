@@ -9,6 +9,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
+      xref: xref(),
       dialyzer: dialyzer(),
       docs: docs(),
       name: "StackLab Citadel Spine Harness",
@@ -80,6 +81,8 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:mezzanine_pack_model, path: "../../../mezzanine/core/pack_model", runtime: false},
       {:mezzanine_runtime_scheduler,
        path: "../../../mezzanine/core/runtime_scheduler", runtime: false},
+      {:mezzanine_workflow_runtime,
+       path: "../../../mezzanine/core/workflow_runtime", runtime: false},
       {:mezzanine_citadel_bridge, path: "../../../mezzanine/bridges/citadel_bridge"},
       {:mezzanine_integration_bridge,
        path: "../../../mezzanine/bridges/integration_bridge", runtime: false},
@@ -106,6 +109,21 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
     ]
   end
 
+  defp xref do
+    [
+      # Legacy harness fixtures retain direct probes for the retired Mezzanine
+      # Oban workers; current proofs assert their Temporal replacements.
+      exclude: [
+        {Mezzanine.DecisionExpiryWorker, :perform, 1},
+        {Mezzanine.ExecutionCancelWorker, :perform, 1},
+        {Mezzanine.ExecutionDispatchWorker, :perform, 1},
+        {Mezzanine.ExecutionReceiptWorker, :perform, 1},
+        {Mezzanine.ExecutionReconcileWorker, :perform, 1},
+        {Mezzanine.JoinAdvanceWorker, :perform, 1}
+      ]
+    ]
+  end
+
   defp docs do
     [
       main: "readme",
@@ -125,7 +143,8 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
         :mezzanine_lifecycle_engine,
         :mezzanine_operator_engine,
         :mezzanine_pack_model,
-        :mezzanine_runtime_scheduler
+        :mezzanine_runtime_scheduler,
+        :mezzanine_workflow_runtime
       ]
     ]
   end
