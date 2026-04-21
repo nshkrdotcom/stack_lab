@@ -33,9 +33,21 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   @stack_lab_root Path.expand("../../../../..", __DIR__)
   @mezzanine_root Path.expand("../mezzanine", @stack_lab_root)
   @release_ref "phase5prelim-m3-service-path-contract-join"
+  @m5_release_ref "phase5prelim-m5-service-profile-bootstrap"
+  @required_owner_evidence_ids ["P5P-011", "P5P-012", "P5P-013", "P5P-014"]
+  @forbidden_provider_local_selectors [
+    "ClaudeAgentSDK.Mock",
+    "ClaudeAgentSDK.Mock.Process",
+    "GEMINI_CLI_PATH",
+    "AMP_CLI_PATH",
+    "Codex fixture scripts"
+  ]
 
-  @spec run_case(:m3_contract_join, keyword()) :: {:ok, map()} | {:error, term()}
-  def run_case(:m3_contract_join, opts \\ []) when is_list(opts) do
+  @spec run_case(:m3_contract_join | :m5_service_profile_bootstrap, keyword()) ::
+          {:ok, map()} | {:error, term()}
+  def run_case(case_name, opts \\ [])
+
+  def run_case(:m3_contract_join, opts) when is_list(opts) do
     with {:ok, substrate} <- temporal_substrate(opts),
          {:ok, temporal} <- temporal_contract(),
          {:ok, workload} <- extravaganza_workload_contract(),
@@ -53,6 +65,38 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
            temporal_required?: true,
            non_temporal_classification: :lower_runtime_smoke_only,
            owner_contracts_joined?: true
+         }
+       }}
+    end
+  end
+
+  def run_case(:m5_service_profile_bootstrap, opts) when is_list(opts) do
+    with {:ok, substrate} <- temporal_substrate(opts),
+         {:ok, worker_health} <- temporal_worker_health(),
+         {:ok, profile} <- service_simulation_profile(),
+         {:ok, installation} <- install_service_profiles([profile]),
+         {:ok, cleanup} <- cleanup_service_profiles(installation),
+         {:ok, negative_failures} <- service_profile_negative_failures(profile) do
+      {:ok,
+       %{
+         case: :m5_service_profile_bootstrap,
+         release_manifest_ref: @m5_release_ref,
+         temporal: %{
+           substrate: substrate,
+           worker_health: worker_health
+         },
+         service_profiles: %{
+           installed: installation,
+           cleanup: cleanup,
+           profile: profile
+         },
+         owner_evidence: owner_evidence(),
+         negative_failures: negative_failures,
+         service_mode_gate: %{
+           temporal_required?: true,
+           profile_installation_required?: true,
+           owner_contracts_consumed?: true,
+           provider_local_mock_selectors_denied?: true
          }
        }}
     end
@@ -123,6 +167,20 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
          workflow_start_outbox_bypass:
            scenario_201.negative_failures.workflow_start_outbox_bypass.legacy_direct_enqueue
        }
+     }}
+  end
+
+  defp temporal_worker_health do
+    hazmat = hazmat_worker_spec!()
+
+    {:ok,
+     %{
+       status: :healthy,
+       task_queue: hazmat.task_queue,
+       instance_base: Mezzanine.WorkflowRuntime.PrelimTemporal,
+       workflows: hazmat.workflows,
+       execution_attempt_registered?: Mezzanine.Workflows.ExecutionAttempt in hazmat.workflows,
+       activities: hazmat.activities
      }}
   end
 
@@ -318,6 +376,214 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
            rejected(SemanticFailure.new(Map.delete(semantic_failure_attrs(), :tenant_id)))
        }
      }}
+  end
+
+  defp service_simulation_profile do
+    profile = %{
+      profile_ref: "service-simulation-profile://phase5prelim/m5/bootstrap",
+      run_ref: "run://phase5prelim/m5/bootstrap",
+      workload_ref: "workload://phase5prelim/governed-smoke",
+      pack_ref: "pack://extravaganza/coding_operations",
+      work_class_ref: "work-class://extravaganza/coding_operations",
+      subject_kind: "coding_task",
+      adapter_profile_refs: %{
+        cli_core: "adapter-profile://cli_subprocess_core/6ef1c72",
+        asm: "adapter-profile://agent_session_manager/eed6b45",
+        rest: "adapter-profile://pristine/83e8c04",
+        graphql: "adapter-profile://prismatic/5bd56b0",
+        self_hosted: "adapter-profile://self_hosted_inference_core/79a5643"
+      },
+      lower_scenario_refs: %{
+        execution_plane: [
+          "lower-simulation://execution-plane/http/827f428",
+          "lower-simulation://execution-plane/process/832ddcd"
+        ],
+        cli: "lower-simulation://cli-family/provider-runtime",
+        rest: "lower-simulation://pristine/http-provider",
+        graphql: "lower-simulation://prismatic/graphql-provider",
+        self_hosted: "lower-simulation://self-hosted/ready"
+      },
+      owner_evidence_refs: owner_evidence(),
+      authority_policy_ref: "authority-policy://phase5prelim/tenant-prelim",
+      budget_profile_ref: "budget://phase5prelim/local-no-spend",
+      meter_profile_ref: "meter://phase5prelim/deterministic",
+      artifact_policy: %{
+        raw_prompts: :deny,
+        raw_provider_bodies: :deny,
+        raw_workflow_histories: :deny,
+        bounded_previews: :allow
+      },
+      input_fingerprint_policy: %{
+        mode: :transient_hash,
+        algorithm: :sha256,
+        persist_raw_body?: false
+      },
+      egress_policy: :deny_real_provider_and_saas,
+      forbidden_selectors: [],
+      cleanup_policy: %{
+        remove_application_env?: true,
+        remove_temp_profiles?: true,
+        leave_owner_evidence?: true
+      }
+    }
+
+    with :ok <- validate_service_profile(profile), do: {:ok, profile}
+  end
+
+  defp install_service_profiles(profiles) when is_list(profiles) do
+    with :ok <- Enum.reduce_while(profiles, :ok, &validate_profile_reducer/2) do
+      {:ok,
+       %{
+         registry_ref: "stack-lab-profile-registry://phase5prelim/m5/bootstrap",
+         installed_profile_refs: Enum.map(profiles, & &1.profile_ref),
+         installed_count: length(profiles),
+         owner_evidence_ids:
+           profiles
+           |> Enum.flat_map(&Map.keys(&1.owner_evidence_refs))
+           |> Enum.uniq()
+           |> Enum.sort(),
+         cleanup_required?: true
+       }}
+    end
+  end
+
+  defp cleanup_service_profiles(%{installed_profile_refs: refs} = installation) do
+    {:ok,
+     %{
+       registry_ref: installation.registry_ref,
+       removed_profile_refs: refs,
+       removed_count: length(refs),
+       cleanup_complete?: true
+     }}
+  end
+
+  defp service_profile_negative_failures(profile) do
+    missing_owner =
+      profile
+      |> update_in([:owner_evidence_refs], &Map.delete(&1, "P5P-014"))
+      |> validate_service_profile()
+      |> rejected()
+
+    forbidden_selector =
+      profile
+      |> Map.put(:forbidden_selectors, ["GEMINI_CLI_PATH"])
+      |> validate_service_profile()
+      |> rejected()
+
+    invalid_egress =
+      profile
+      |> Map.put(:egress_policy, :allow_real_provider_fallback)
+      |> validate_service_profile()
+      |> rejected()
+
+    {:ok,
+     %{
+       missing_owner_evidence: missing_owner,
+       provider_local_mock_selector: forbidden_selector,
+       invalid_egress_policy: invalid_egress
+     }}
+  end
+
+  defp validate_profile_reducer(profile, :ok) do
+    case validate_service_profile(profile) do
+      :ok -> {:cont, :ok}
+      {:error, reason} -> {:halt, {:error, reason}}
+    end
+  end
+
+  defp validate_service_profile(profile) when is_map(profile) do
+    [
+      &validate_required_owner_evidence/1,
+      &validate_forbidden_selectors/1,
+      &validate_egress_policy/1,
+      &validate_artifact_policy/1
+    ]
+    |> Enum.reduce_while(:ok, fn validate, :ok ->
+      case validate.(profile) do
+        :ok -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp validate_required_owner_evidence(%{owner_evidence_refs: owner_evidence_refs}) do
+    missing =
+      @required_owner_evidence_ids
+      |> Enum.reject(&Map.has_key?(owner_evidence_refs, &1))
+
+    case missing do
+      [] -> :ok
+      missing -> {:error, {:missing_owner_evidence, missing}}
+    end
+  end
+
+  defp validate_required_owner_evidence(_profile) do
+    {:error, {:missing_owner_evidence, @required_owner_evidence_ids}}
+  end
+
+  defp validate_forbidden_selectors(%{forbidden_selectors: selectors}) do
+    case Enum.find(selectors, &(&1 in @forbidden_provider_local_selectors)) do
+      nil -> :ok
+      selector -> {:error, {:provider_local_mock_selector_forbidden, selector}}
+    end
+  end
+
+  defp validate_forbidden_selectors(_profile), do: :ok
+
+  defp validate_egress_policy(%{egress_policy: :deny_real_provider_and_saas}), do: :ok
+
+  defp validate_egress_policy(%{egress_policy: egress_policy}) do
+    {:error, {:invalid_egress_policy, egress_policy}}
+  end
+
+  defp validate_egress_policy(_profile), do: {:error, {:missing_egress_policy, nil}}
+
+  defp validate_artifact_policy(%{
+         artifact_policy: %{
+           raw_prompts: :deny,
+           raw_provider_bodies: :deny,
+           raw_workflow_histories: :deny
+         }
+       }),
+       do: :ok
+
+  defp validate_artifact_policy(%{artifact_policy: artifact_policy}) do
+    {:error, {:invalid_artifact_policy, artifact_policy}}
+  end
+
+  defp validate_artifact_policy(_profile), do: {:error, {:missing_artifact_policy, nil}}
+
+  defp owner_evidence do
+    %{
+      "P5P-011" => %{
+        owner: :execution_plane,
+        source_commits: ["827f428", "832ddcd"],
+        evidence: [:lower_process, :lower_http, :no_egress, :bounded_evidence]
+      },
+      "P5P-012" => %{
+        owner: :cli_subprocess_core_and_agent_session_manager,
+        source_commits: ["a28bff6", "6ef1c72", "eed6b45"],
+        evidence: [:provider_native_wire, :asm_core_route, :missing_profile_denial]
+      },
+      "P5P-013" => %{
+        owner: :pristine_and_prismatic,
+        source_commits: ["83e8c04", "5bd56b0"],
+        evidence: [:rest_http, :graphql, :provider_wrappers, :egress_denial]
+      },
+      "P5P-014" => %{
+        owner: :self_hosted_inference_core,
+        source_commits: ["79a5643"],
+        evidence: [
+          :configured_manifest,
+          :readiness,
+          :health,
+          :lease,
+          :endpoint_descriptor,
+          :deterministic_response_ref,
+          :bypass_denial
+        ]
+      }
+    }
   end
 
   defp subject_snapshot(manifest, lifecycle_state) do

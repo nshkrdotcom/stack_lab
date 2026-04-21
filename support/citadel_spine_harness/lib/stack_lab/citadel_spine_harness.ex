@@ -303,15 +303,29 @@ defmodule StackLab.CitadelSpineHarness do
           kind: :m3_contract_join,
           phase: "5PRELIM",
           milestone: "M3"
+        },
+        m5_service_profile_bootstrap: %{
+          kind: :m5_service_profile_bootstrap,
+          phase: "5PRELIM",
+          milestone: "M5"
         }
       }
     }
   end
 
-  @spec exercise_prelim_service_mode(:m3_contract_join, keyword()) ::
+  @spec exercise_prelim_service_mode(
+          :m3_contract_join | :m5_service_profile_bootstrap,
+          keyword()
+        ) ::
           {:ok, map()} | {:error, term()}
-  def exercise_prelim_service_mode(:m3_contract_join, opts \\ []) when is_list(opts) do
+  def exercise_prelim_service_mode(case_name, opts \\ [])
+
+  def exercise_prelim_service_mode(:m3_contract_join, opts) when is_list(opts) do
     PrelimServiceMode.run_case(:m3_contract_join, opts)
+  end
+
+  def exercise_prelim_service_mode(:m5_service_profile_bootstrap, opts) when is_list(opts) do
+    PrelimServiceMode.run_case(:m5_service_profile_bootstrap, opts)
   end
 
   @spec multi_writer_state_audit_scenario() :: map()

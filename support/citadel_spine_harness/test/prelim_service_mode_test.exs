@@ -15,6 +15,11 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
                kind: :m3_contract_join,
                phase: "5PRELIM",
                milestone: "M3"
+             },
+             m5_service_profile_bootstrap: %{
+               kind: :m5_service_profile_bootstrap,
+               phase: "5PRELIM",
+               milestone: "M5"
              }
            }
   end
@@ -94,10 +99,89 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
              :unexpected_acceptance
   end
 
+  test "M5 service profile bootstrap installs owner-backed profiles and cleans up" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_prelim_service_mode(
+               :m5_service_profile_bootstrap,
+               temporal_runner: &serving_temporal/3
+             )
+
+    assert result.case == :m5_service_profile_bootstrap
+    assert result.release_manifest_ref == "phase5prelim-m5-service-profile-bootstrap"
+    assert result.service_mode_gate.temporal_required?
+    assert result.service_mode_gate.profile_installation_required?
+    assert result.service_mode_gate.owner_contracts_consumed?
+    assert result.service_mode_gate.provider_local_mock_selectors_denied?
+
+    assert result.temporal.substrate.status == :serving
+    assert result.temporal.worker_health.status == :healthy
+    assert result.temporal.worker_health.task_queue == "mezzanine.hazmat"
+    assert result.temporal.worker_health.execution_attempt_registered?
+
+    profile = result.service_profiles.profile
+    assert profile.profile_ref == "service-simulation-profile://phase5prelim/m5/bootstrap"
+    assert profile.egress_policy == :deny_real_provider_and_saas
+    assert profile.artifact_policy.raw_prompts == :deny
+    assert profile.input_fingerprint_policy.mode == :transient_hash
+
+    assert profile.adapter_profile_refs.cli_core ==
+             "adapter-profile://cli_subprocess_core/6ef1c72"
+
+    assert profile.adapter_profile_refs.asm == "adapter-profile://agent_session_manager/eed6b45"
+    assert profile.adapter_profile_refs.rest == "adapter-profile://pristine/83e8c04"
+    assert profile.adapter_profile_refs.graphql == "adapter-profile://prismatic/5bd56b0"
+
+    assert profile.adapter_profile_refs.self_hosted ==
+             "adapter-profile://self_hosted_inference_core/79a5643"
+
+    assert Enum.sort(Map.keys(result.owner_evidence)) == [
+             "P5P-011",
+             "P5P-012",
+             "P5P-013",
+             "P5P-014"
+           ]
+
+    assert result.owner_evidence["P5P-014"].source_commits == ["79a5643"]
+    assert "6ef1c72" in result.owner_evidence["P5P-012"].source_commits
+
+    assert result.service_profiles.installed.installed_count == 1
+
+    assert result.service_profiles.installed.owner_evidence_ids == [
+             "P5P-011",
+             "P5P-012",
+             "P5P-013",
+             "P5P-014"
+           ]
+
+    assert result.service_profiles.cleanup.removed_count == 1
+    assert result.service_profiles.cleanup.cleanup_complete?
+
+    assert result.negative_failures.missing_owner_evidence ==
+             {:missing_owner_evidence, ["P5P-014"]}
+
+    assert result.negative_failures.provider_local_mock_selector ==
+             {:provider_local_mock_selector_forbidden, "GEMINI_CLI_PATH"}
+
+    assert result.negative_failures.invalid_egress_policy ==
+             {:invalid_egress_policy, :allow_real_provider_fallback}
+  end
+
   test "M3 contract join fails closed when Temporal substrate is not serving" do
     assert {:error, {:temporal_substrate_not_serving, output}} =
              CitadelSpineHarness.exercise_prelim_service_mode(
                :m3_contract_join,
+               temporal_runner: fn "just", ["dev-status"], _opts ->
+                 {"mezzanine-temporal-dev.service inactive", 0}
+               end
+             )
+
+    assert output =~ "inactive"
+  end
+
+  test "M5 service profile bootstrap fails closed when Temporal substrate is not serving" do
+    assert {:error, {:temporal_substrate_not_serving, output}} =
+             CitadelSpineHarness.exercise_prelim_service_mode(
+               :m5_service_profile_bootstrap,
                temporal_runner: fn "just", ["dev-status"], _opts ->
                  {"mezzanine-temporal-dev.service inactive", 0}
                end
