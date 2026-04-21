@@ -17,6 +17,7 @@ defmodule StackLab.CitadelSpineHarness do
     MultiWriterStateAudit,
     OuterBrainDurability,
     PacketReconciliation,
+    PrelimServiceMode,
     PressureFailover,
     RestartAuthority,
     SameNode,
@@ -288,6 +289,29 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_temporal_postgres_projection_drift(:temporal_postgres_projection_drift) do
     TemporalPostgresProjectionDrift.run_case(:temporal_postgres_projection_drift)
+  end
+
+  @spec prelim_service_mode_scenario() :: map()
+  def prelim_service_mode_scenario do
+    %{
+      name: :phase5prelim_service_mode_contract_join,
+      compose: LabCore.compose_file(:single),
+      runbook: "phase5prelim_service_mode_contract_join.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        m3_contract_join: %{
+          kind: :m3_contract_join,
+          phase: "5PRELIM",
+          milestone: "M3"
+        }
+      }
+    }
+  end
+
+  @spec exercise_prelim_service_mode(:m3_contract_join, keyword()) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_prelim_service_mode(:m3_contract_join, opts \\ []) when is_list(opts) do
+    PrelimServiceMode.run_case(:m3_contract_join, opts)
   end
 
   @spec multi_writer_state_audit_scenario() :: map()
