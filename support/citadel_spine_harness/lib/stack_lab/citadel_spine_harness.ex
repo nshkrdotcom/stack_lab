@@ -14,6 +14,7 @@ defmodule StackLab.CitadelSpineHarness do
     MemoryBindingsThroughExistingSeams,
     MezzanineRestartRecovery,
     MultiNode,
+    MultiWriterStateAudit,
     OuterBrainDurability,
     PacketReconciliation,
     PressureFailover,
@@ -43,6 +44,7 @@ defmodule StackLab.CitadelSpineHarness do
           required(:stack_lab) => String.t(),
           required(:citadel) => String.t(),
           required(:jido_integration) => String.t(),
+          required(:jido_hive) => String.t(),
           required(:mezzanine) => String.t(),
           required(:outer_brain) => String.t(),
           required(:app_kit) => String.t(),
@@ -58,6 +60,7 @@ defmodule StackLab.CitadelSpineHarness do
       stack_lab: @stack_lab_root,
       citadel: Path.expand("../citadel", @stack_lab_root),
       jido_integration: Path.expand("../jido_integration", @stack_lab_root),
+      jido_hive: Path.expand("../jido_hive", @stack_lab_root),
       mezzanine: Path.expand("../mezzanine", @stack_lab_root),
       outer_brain: Path.expand("../outer_brain", @stack_lab_root),
       app_kit: Path.expand("../app_kit", @stack_lab_root),
@@ -285,6 +288,28 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_temporal_postgres_projection_drift(:temporal_postgres_projection_drift) do
     TemporalPostgresProjectionDrift.run_case(:temporal_postgres_projection_drift)
+  end
+
+  @spec multi_writer_state_audit_scenario() :: map()
+  def multi_writer_state_audit_scenario do
+    %{
+      name: :multi_writer_state_audit,
+      compose: LabCore.compose_file(:single),
+      runbook: "multi_writer_state_audit.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        multi_writer_state_audit: %{
+          kind: :multi_writer_state_audit,
+          scenario: "203B"
+        }
+      }
+    }
+  end
+
+  @spec exercise_multi_writer_state_audit(:multi_writer_state_audit) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_multi_writer_state_audit(:multi_writer_state_audit) do
+    MultiWriterStateAudit.run_case(:multi_writer_state_audit)
   end
 
   @spec aitrace_claim_check_trace_continuity_scenario() :: map()

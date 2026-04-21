@@ -56,6 +56,11 @@ Phase 5 adds Scenario 201 for Mezzanine Temporal/Postgres projection drift:
 the harness proves compact Temporal describe/query evidence, workflow-start
 outbox retirement posture, dispatch-state reduction, and fanout/fanin close
 semantics without exporting raw workflow history.
+Phase 5 also adds Scenario 203B for the multi-writer state audit profile: the
+harness classifies Jido Hive room truth, room event logs, participant presence,
+client/worker local state, and context-graph projections into explicit writer
+modes, while rejecting OT/CRDT or projection-as-truth claims that lack a source
+owner and merge mechanics.
 Phase 3 adds product-boundary release proofs: Scenario 31 runs the AppKit
 product no-bypass scanner against `extravaganza`, Scenario 36 separately proves
 there is no direct Execution Plane bypass in product/AppKit paths, and Scenario

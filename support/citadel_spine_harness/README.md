@@ -42,6 +42,10 @@ This package owns:
 - the Phase-5 Scenario-201 Temporal/Postgres projection-drift proof for compact
   describe/query evidence, workflow-start outbox retirement posture,
   dispatch-state reduction, and fanout/fanin close semantics
+- the Phase-5 Scenario-203B multi-writer state audit proof for Jido Hive
+  canonical room truth, room event logs, client/worker local state, derived
+  projections, and explicit rejection of OT/CRDT or projection-as-truth claims
+  without source-owned merge mechanics
 - the real split-node remote transport proof
 - restart and failover drill helpers
 
