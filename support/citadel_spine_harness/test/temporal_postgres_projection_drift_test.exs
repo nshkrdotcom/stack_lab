@@ -50,11 +50,13 @@ defmodule StackLab.CitadelSpineHarness.TemporalPostgresProjectionDriftTest do
              :accepted_active
            ]
 
-    assert result.positive_path.dispatch_state_reduction.legacy_aliases.dispatching_retry ==
-             :in_flight
+    assert result.positive_path.dispatch_state_reduction.legacy_aliases == %{}
 
-    assert result.positive_path.dispatch_state_reduction.legacy_aliases.running ==
-             :accepted_active
+    assert result.positive_path.dispatch_state_reduction.reader_policy ==
+             :canonical_active_states_only_after_live_rows_drain
+
+    assert result.positive_path.dispatch_state_reduction.drain_gate ==
+             :closed_by_m2am_strict_greenfield_source_scan
   end
 
   test "scenario 201 negative fixtures cover every required drift stop condition" do
@@ -106,11 +108,12 @@ defmodule StackLab.CitadelSpineHarness.TemporalPostgresProjectionDriftTest do
     assert result.negative_failures.workflow_start_outbox_bypass.started_state_authority ==
              :delivery_evidence_only
 
-    assert Enum.all?(result.negative_failures.unreduced_dispatch_states, fn
-             {_legacy_state, evidence} ->
-               evidence.writable? == false and
-                 evidence.safe_action == :read_through_alias_until_live_rows_drain
-           end)
+    assert result.negative_failures.unreduced_dispatch_states == %{
+             legacy_aliases: %{},
+             writable?: false,
+             drain_gate: :closed_by_m2am_strict_greenfield_source_scan,
+             safe_action: :fail_closed_after_strict_greenfield_cutover
+           }
   end
 
   test "scenario 201 fanout/fanin evidence keeps one close decision under duplicate and late completions" do

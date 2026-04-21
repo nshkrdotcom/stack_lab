@@ -159,7 +159,8 @@ defmodule StackLab.CitadelSpineHarness.TemporalPostgresProjectionDrift do
       legacy_aliases: reduction.legacy_aliases,
       evidence_fields: reduction.evidence_fields,
       new_legacy_writes_allowed?: reduction.new_legacy_writes_allowed?,
-      reader_policy: reduction.reader_policy
+      reader_policy: reduction.reader_policy,
+      drain_gate: reduction.drain_gate
     }
   end
 
@@ -217,16 +218,12 @@ defmodule StackLab.CitadelSpineHarness.TemporalPostgresProjectionDrift do
   defp unreduced_dispatch_state_evidence do
     reduction = ProjectionReconciliation.dispatch_state_reduction_profile()
 
-    reduction.legacy_aliases
-    |> Enum.map(fn {legacy_state, alias_state} ->
-      {legacy_state,
-       %{
-         read_alias: alias_state,
-         writable?: reduction.new_legacy_writes_allowed?,
-         safe_action: :read_through_alias_until_live_rows_drain
-       }}
-    end)
-    |> Map.new()
+    %{
+      legacy_aliases: reduction.legacy_aliases,
+      writable?: reduction.new_legacy_writes_allowed?,
+      drain_gate: reduction.drain_gate,
+      safe_action: :fail_closed_after_strict_greenfield_cutover
+    }
   end
 
   defp fanout_fanin_positive_evidence do

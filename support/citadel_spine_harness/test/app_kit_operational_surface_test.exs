@@ -102,12 +102,13 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert result.dispatch.classification == :terminal_rejection
     assert result.dispatch.execution_state == :rejected
     assert result.dispatch.job_status == :terminal
-    assert result.dispatch.terminal_rejection_reason == "workspace_ref_unresolved"
+    assert result.dispatch.terminal_rejection_reason == "terminal_rejection"
+    assert result.dispatch.rejection_reason == "workspace_ref_unresolved"
     assert result.dispatch.rejection_family == "scope_unresolvable"
 
     assert "execution_record" in result.trace.step_sources
     assert result.trace.rejected_execution.dispatch_state == :rejected
-    assert result.trace.rejected_execution.terminal_rejection_reason == "workspace_ref_unresolved"
+    assert result.trace.rejected_execution.terminal_rejection_reason == "terminal_rejection"
   end
 
   test "app-kit operational surface routes one normalized semantic failure into deterministic operator recovery" do

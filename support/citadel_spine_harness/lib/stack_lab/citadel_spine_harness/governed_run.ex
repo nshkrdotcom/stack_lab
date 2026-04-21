@@ -335,12 +335,17 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
       source_ref: source_ref,
       subject_kind: subject_kind,
       lifecycle_state: "submitted",
+      schema_ref: subject_schema_ref(subject_kind),
+      schema_version: 1,
       payload: payload,
       trace_id: trace_id,
       causation_id: causation_id,
       actor_ref: %{kind: :intake}
     })
   end
+
+  defp subject_schema_ref(subject_kind),
+    do: "mezzanine.subject.#{subject_kind}.payload.v1"
 
   defp dispatch_execution(subject, installation, recipe_ref, capability) do
     ExecutionRecord.dispatch(%{

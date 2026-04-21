@@ -8,7 +8,15 @@ defmodule StackLab.CitadelSpineHarness.Phase3M6ReleaseReadinessTest do
   alias StackLab.CitadelSpineHarness.MezzanineOperationalStack
 
   @now ~U[2026-04-18 19:00:00Z]
-  @future ~U[2026-04-20 19:00:00Z]
+
+  defmodule ContinuationDispatcher do
+    @moduledoc false
+
+    def dispatch_lifecycle_continuation(continuation, _target) do
+      handler = Process.get({__MODULE__, :handler}, fn _continuation -> :ok end)
+      handler.(continuation)
+    end
+  end
 
   test "Scenario 39 proves stale installation revisions fail closed during lease ownership changes" do
     assert {:ok, result} =
@@ -34,7 +42,7 @@ defmodule StackLab.CitadelSpineHarness.Phase3M6ReleaseReadinessTest do
       transient = continuation_fixture!("transient")
 
       assert {:ok, retry_scheduled} =
-               LifecycleContinuation.process(transient.continuation_id,
+               process_continuation(transient.continuation_id,
                  now: @now,
                  handler: fn _continuation -> {:error, :lock_timeout} end,
                  backoff_ms: 1_000
@@ -46,7 +54,7 @@ defmodule StackLab.CitadelSpineHarness.Phase3M6ReleaseReadinessTest do
       invalid = continuation_fixture!("invalid")
 
       assert {:ok, dead_lettered} =
-               LifecycleContinuation.process(invalid.continuation_id,
+               process_continuation(invalid.continuation_id,
                  now: @now,
                  handler: fn _continuation -> {:error, {:invalid_transition, "bad-target"}} end
                )
@@ -71,25 +79,26 @@ defmodule StackLab.CitadelSpineHarness.Phase3M6ReleaseReadinessTest do
 
       assert retry_action.status == :completed
       assert retry_action.metadata.status == :pending
+      retry_due_at = DateTime.add(retry_action.metadata.next_attempt_at, 1, :second)
 
       assert {:ok, completed} =
-               LifecycleContinuation.process(dead_lettered.continuation_id,
-                 now: @future,
+               process_continuation(dead_lettered.continuation_id,
+                 now: retry_due_at,
                  handler: fn _continuation -> :ok end
                )
 
       assert completed.status == :completed
 
       assert {:ok, :already_completed} =
-               LifecycleContinuation.process(completed.continuation_id,
-                 now: DateTime.add(@future, 1, :second),
+               process_continuation(completed.continuation_id,
+                 now: DateTime.add(retry_due_at, 1, :second),
                  handler: fn _continuation -> flunk("completed continuation processed twice") end
                )
 
       waived = continuation_fixture!("waived")
 
       assert {:ok, waived_dead_letter} =
-               LifecycleContinuation.process(waived.continuation_id,
+               process_continuation(waived.continuation_id,
                  now: @now,
                  handler: fn _continuation -> {:error, :invalid_transition} end
                )
@@ -122,7 +131,7 @@ defmodule StackLab.CitadelSpineHarness.Phase3M6ReleaseReadinessTest do
     assert result.lower_dispatch_ambiguity.duplicate_replay_count == 1
 
     assert result.startup_reconciliation.launcher_count == 3
-    assert result.startup_reconciliation.reconcile_job_count == 1
+    assert result.startup_reconciliation.reconcile_handoff_count == 1
     assert length(result.startup_reconciliation.summary_execution_ids) == 3
 
     assert result.pool_pressure.all_queries_succeeded?
@@ -142,9 +151,32 @@ defmodule StackLab.CitadelSpineHarness.Phase3M6ReleaseReadinessTest do
         next_attempt_at: @now,
         trace_id: "trace-phase3-m6-#{suffix}",
         status: :pending,
-        actor_ref: %{"kind" => "stack_lab"}
+        actor_ref: %{"kind" => "stack_lab"},
+        metadata: %{
+          "continuation_target" => %{
+            "kind" => "owner_command",
+            "owner" => "lifecycle_evaluator",
+            "command" => "continue_lifecycle",
+            "idempotency_key" => "phase3-m6-continuation-#{suffix}"
+          },
+          "causation_id" => "cause-phase3-m6-#{suffix}"
+        }
       })
 
     continuation
+  end
+
+  defp process_continuation(continuation_id, opts) do
+    {handler, opts} = Keyword.pop!(opts, :handler)
+    Process.put({ContinuationDispatcher, :handler}, handler)
+
+    try do
+      LifecycleContinuation.process(
+        continuation_id,
+        Keyword.put(opts, :dispatcher, ContinuationDispatcher)
+      )
+    after
+      Process.delete({ContinuationDispatcher, :handler})
+    end
   end
 end

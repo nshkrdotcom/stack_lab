@@ -110,18 +110,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
   end
 
   defp xref do
-    [
-      # Legacy harness fixtures retain direct probes for the retired Mezzanine
-      # Oban workers; current proofs assert their Temporal replacements.
-      exclude: [
-        {Mezzanine.DecisionExpiryWorker, :perform, 1},
-        {Mezzanine.ExecutionCancelWorker, :perform, 1},
-        {Mezzanine.ExecutionDispatchWorker, :perform, 1},
-        {Mezzanine.ExecutionReceiptWorker, :perform, 1},
-        {Mezzanine.ExecutionReconcileWorker, :perform, 1},
-        {Mezzanine.JoinAdvanceWorker, :perform, 1}
-      ]
-    ]
+    [exclude: []]
   end
 
   defp docs do

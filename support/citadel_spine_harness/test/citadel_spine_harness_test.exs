@@ -134,7 +134,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert scenario.name == :mezzanine_restart_recovery
 
     assert scenario.cases == %{
-             dispatching_retry_after_restart: %{kind: :dispatching_retry_after_restart}
+             temporal_replay_after_restart: %{kind: :temporal_replay_after_restart}
            }
 
     assert File.exists?(scenario.compose)

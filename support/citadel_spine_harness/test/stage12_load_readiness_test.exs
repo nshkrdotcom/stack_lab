@@ -13,7 +13,7 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadinessTest do
     assert result.callback_storm.completion_row_count == 2
     assert result.callback_storm.duplicate_callback_count == 2
     assert result.callback_storm.duplicate_short_circuit_count == 2
-    assert result.callback_storm.join_job_count == 1
+    assert result.callback_storm.join_workflow_count == 1
     assert result.callback_storm.join_transition_count == 1
     assert result.callback_storm.trace_explainable?
   end
@@ -27,9 +27,9 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadinessTest do
     assert result.pool_pressure.repo_pool_size == 10
     assert result.pool_pressure.all_queries_succeeded?
     assert result.pool_pressure.checkout_timeout_count == 0
-    assert result.pause_saturation.paused_dispatch_job_count == 10_000
+    assert result.pause_saturation.paused_temporal_handoff_count == 10_000
     assert result.pause_saturation.peer_dispatch_ok?
-    assert result.pause_saturation.dispatch_schedule_restored?
+    assert result.pause_saturation.temporal_handoff_schedule_restored?
 
     assert result.lower_dispatch_ambiguity.recovered_count == 1
     assert result.lower_dispatch_ambiguity.unique_submission_count == 1
@@ -40,7 +40,7 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadinessTest do
     assert length(result.lower_gateway_outage.probe_results) == 3
 
     assert result.startup_reconciliation.launcher_count == 3
-    assert result.startup_reconciliation.reconcile_job_count == 1
+    assert result.startup_reconciliation.reconcile_handoff_count == 1
     assert length(result.startup_reconciliation.summary_execution_ids) == 3
 
     assert result.leased_stream_invalidation.invalidation_count == 100
@@ -57,7 +57,7 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadinessTest do
 
     assert result.adr_0008.keep_shared_repo_joboutbox?
     assert result.adr_0008.measured_evidence.checkout_timeout_count == 0
-    assert result.adr_0008.measured_evidence.observed_job_rows == 10_000
+    assert result.adr_0008.measured_evidence.observed_handoff_rows == 10_000
   end
 
   test "Stage 12 keeps claim-check degradation, hot-row compactness, and archived reads explicit" do

@@ -9,7 +9,7 @@ defmodule StackLab.Examples.MezzanineRestartRecoveryTest do
     assert scenario.name == :mezzanine_restart_recovery
 
     assert scenario.cases == %{
-             dispatching_retry_after_restart: %{kind: :dispatching_retry_after_restart}
+             temporal_replay_after_restart: %{kind: :temporal_replay_after_restart}
            }
 
     assert File.exists?(scenario.compose)
@@ -18,19 +18,19 @@ defmodule StackLab.Examples.MezzanineRestartRecoveryTest do
 
   test "dispatch work is recovered after restart and replayed without duplication" do
     assert {:ok, result} =
-             MezzanineRestartRecovery.exercise(:dispatching_retry_after_restart)
+             MezzanineRestartRecovery.exercise(:temporal_replay_after_restart)
 
-    assert result.case == :dispatching_retry_after_restart
-    assert result.before_restart.execution_dispatch_state == :dispatching
-    assert result.before_restart.job_status == :missing_after_crash
+    assert result.case == :temporal_replay_after_restart
+    assert result.before_restart.execution_dispatch_state == :in_flight
+    assert result.before_restart.handoff_status == :missing_after_crash
     assert result.after_restart.recovered_count == 1
-    assert result.after_restart.execution_dispatch_state == :dispatching_retry
-    assert result.after_restart.job_status == :scheduled
+    assert result.after_restart.execution_dispatch_state == :in_flight
+    assert result.after_restart.handoff_status == :available
     assert result.after_restart.dispatch_attempt_count == 1
     assert result.final.classification == :accepted
-    assert result.final.execution_dispatch_state == :awaiting_receipt
-    assert result.final.job_status == :completed
-    refute result.final.job_id == result.before_restart.job_id
+    assert result.final.execution_dispatch_state == :accepted_active
+    assert result.final.handoff_status == :completed
+    refute result.final.temporal_handoff_ref == result.before_restart.temporal_handoff_ref
     assert result.final.submission_ref_status == "duplicate"
     assert result.final.unique_submission_count == 1
     assert result.final.duplicate_replay_count == 1

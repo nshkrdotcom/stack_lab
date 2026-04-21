@@ -29,9 +29,9 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadiness do
            subject_state: result.worker_integration.subject_after_join.lifecycle_state,
            barrier_status: result.worker_integration.barrier_after_join.status,
            completion_row_count: result.worker_integration.completion_row_count,
-           duplicate_callback_count: length(result.worker_integration.duplicate_receipt_results),
+           duplicate_callback_count: length(result.worker_integration.duplicate_signal_results),
            duplicate_short_circuit_count: result.atomic_close.duplicate_progress_count,
-           join_job_count: length(result.worker_integration.join_job_ids),
+           join_workflow_count: length(result.worker_integration.join_workflow_refs),
            join_transition_count: result.worker_integration.join_transition_count,
            trace_explainable?:
              result.worker_integration.join_transition_count == 1 and
@@ -64,9 +64,9 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadiness do
        case: :shared_repo_pressure_posture,
        pool_pressure: pool_pressure,
        pause_saturation: %{
-         paused_dispatch_job_count: pause.saturation.paused_dispatch_job_count,
+         paused_temporal_handoff_count: pause.saturation.paused_temporal_handoff_count,
          peer_dispatch_ok?: pause.saturation.peer_dispatch.worker_result == :ok,
-         dispatch_schedule_restored?: pause.resume.dispatch_schedule_restored?
+         temporal_handoff_schedule_restored?: pause.resume.temporal_handoff_schedule_restored?
        },
        lower_dispatch_ambiguity: %{
          recovered_count: ambiguity.recovered_count,
@@ -80,7 +80,7 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadiness do
        },
        startup_reconciliation: %{
          launcher_count: startup.launcher_count,
-         reconcile_job_count: length(startup.reconcile_job_ids),
+         reconcile_handoff_count: length(startup.reconcile_handoff_refs),
          summary_execution_ids: startup.summary_execution_ids
        },
        leased_stream_invalidation: %{
@@ -105,7 +105,7 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadiness do
            queue_time_event_count: pool_pressure.queue_time_event_count,
            max_queue_time_ms: pool_pressure.max_queue_time_ms,
            checkout_timeout_count: pool_pressure.checkout_timeout_count,
-           observed_job_rows: pause.saturation.paused_dispatch_job_count
+           observed_handoff_rows: pause.saturation.paused_temporal_handoff_count
          },
          unmeasured_reopen_triggers: [
            "single tenant exceeds 1,000 executions per minute sustained",

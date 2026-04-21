@@ -21,7 +21,6 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
   alias Mezzanine.ConfigRegistry.PackRegistration
   alias Mezzanine.Execution.ExecutionRecord
   alias Mezzanine.Execution.Repo, as: ExecutionRepo
-  alias Mezzanine.ExecutionReceiptWorker
   alias Mezzanine.LifecycleEvaluator
   alias Mezzanine.Objects.Repo, as: ObjectsRepo
 
@@ -503,7 +502,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
     {:ok, lifecycle_result} = LifecycleEvaluator.advance(subject_id)
     {:ok, execution} = Ash.get(ExecutionRecord, lifecycle_result.execution_id)
 
-    {:ok, awaiting_receipt_execution} =
+    {:ok, accepted_execution} =
       ExecutionRecord.record_accepted(execution, %{
         submission_ref: %{"id" => "sub-stage14-memory-inference"},
         lower_receipt: %{"state" => "accepted", "run_id" => "run-stage14-memory-inference"},
@@ -530,9 +529,9 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
       "observed_at" => "2026-04-16T04:05:00Z"
     }
 
-    :ok = perform_receipt(awaiting_receipt_execution.id, outcome)
+    :ok = perform_receipt(accepted_execution.id, outcome)
 
-    {:ok, failed_execution} = Ash.get(ExecutionRecord, awaiting_receipt_execution.id)
+    {:ok, failed_execution} = Ash.get(ExecutionRecord, accepted_execution.id)
 
     %{
       dispatch: %{
@@ -548,7 +547,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
             "ownership",
             "external_system_ref"
           ]),
-        dispatch_job_count: dispatch_job_count(failed_execution.id)
+        workflow_handoff_count: workflow_handoff_count(failed_execution.id)
       },
       outcome: %{
         dispatch_state: failed_execution.dispatch_state,
@@ -602,6 +601,14 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
     }
 
     :ok = perform_receipt(awaiting_first_execution.id, semantic_failure_outcome)
+
+    {:ok, _retry_result} =
+      LifecycleEvaluator.advance(
+        subject_id,
+        supersedes_execution_id: awaiting_first_execution.id,
+        supersession_reason: :retry_semantic,
+        causation_id: "cause-stage14-memory-subject-retry"
+      )
 
     [failed_execution_id, retry_execution_id] = subject_execution_ids(subject_id)
 
@@ -982,20 +989,73 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
   end
 
   defp perform_receipt(execution_id, outcome) do
-    ExecutionReceiptWorker.perform(%Oban.Job{
-      id: 42,
-      attempt: 1,
-      queue: "receipt",
-      args: %{"execution_id" => execution_id, "outcome" => outcome}
-    })
+    {:ok, execution} = Ash.get(ExecutionRecord, execution_id)
+
+    attrs = outcome_attrs(execution, outcome)
+
+    result =
+      case outcome["status"] do
+        "ok" ->
+          ExecutionRecord.record_completed(execution, attrs)
+
+        "cancelled" ->
+          ExecutionRecord.record_cancelled_outcome(execution, attrs)
+
+        "error" ->
+          ExecutionRecord.record_failed_outcome(
+            execution,
+            Map.put(attrs, :failure_kind, failure_kind(outcome))
+          )
+      end
+
+    with {:ok, recorded_execution} <- result,
+         {:ok, _advance_result} <- advance_after_receipt(recorded_execution, outcome) do
+      :ok
+    end
   end
 
-  defp dispatch_job_count(execution_id) do
-    ExecutionRepo.all(Oban.Job)
-    |> Enum.count(fn job ->
-      job.worker == Oban.Worker.to_string(Mezzanine.ExecutionDispatchWorker) and
-        job.args["execution_id"] == execution_id
-    end)
+  defp advance_after_receipt(recorded_execution, %{"status" => "ok"}) do
+    LifecycleEvaluator.advance(
+      recorded_execution.subject_id,
+      trigger: {:execution_completed, recorded_execution.recipe_ref},
+      execution_id: recorded_execution.id,
+      causation_id: "lifecycle-receipt:#{recorded_execution.id}:completed"
+    )
+  end
+
+  defp advance_after_receipt(recorded_execution, %{"status" => "error"} = outcome) do
+    LifecycleEvaluator.advance(
+      recorded_execution.subject_id,
+      trigger: {:execution_failed, recorded_execution.recipe_ref, failure_kind(outcome)},
+      execution_id: recorded_execution.id,
+      causation_id: "lifecycle-receipt:#{recorded_execution.id}:failed"
+    )
+  end
+
+  defp advance_after_receipt(recorded_execution, _outcome) do
+    LifecycleEvaluator.advance(recorded_execution.subject_id)
+  end
+
+  defp outcome_attrs(execution, outcome) do
+    %{
+      receipt_id: Map.fetch!(outcome, "receipt_id"),
+      lower_receipt: Map.get(outcome, "lower_receipt", %{}),
+      normalized_outcome: Map.get(outcome, "normalized_outcome", %{}),
+      trace_id: execution.trace_id,
+      causation_id: "temporal-receipt:#{execution.id}:#{Map.fetch!(outcome, "receipt_id")}",
+      actor_ref: %{kind: :temporal_activity}
+    }
+  end
+
+  defp failure_kind(%{"failure_kind" => "semantic_failure"}), do: :semantic_failure
+  defp failure_kind(%{"failure_kind" => "infrastructure_error"}), do: :infrastructure_error
+  defp failure_kind(_outcome), do: :infrastructure_error
+
+  defp workflow_handoff_count(execution_id) do
+    case ExecutionRecord.enqueue_dispatch(execution_id) do
+      {:ok, %{provider: :temporal_workflow}} -> 1
+      _other -> 0
+    end
   end
 
   defp subject_execution_ids(subject_id) do

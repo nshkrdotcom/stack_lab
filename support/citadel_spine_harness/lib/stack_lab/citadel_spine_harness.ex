@@ -166,15 +166,15 @@ defmodule StackLab.CitadelSpineHarness do
       runbook: LabCore.runbook(:up_single),
       repo_roots: repo_roots(),
       cases: %{
-        dispatching_retry_after_restart: %{kind: :dispatching_retry_after_restart}
+        temporal_replay_after_restart: %{kind: :temporal_replay_after_restart}
       }
     }
   end
 
-  @spec exercise_mezzanine_restart_recovery(:dispatching_retry_after_restart) ::
+  @spec exercise_mezzanine_restart_recovery(:temporal_replay_after_restart) ::
           {:ok, map()} | {:error, term()}
-  def exercise_mezzanine_restart_recovery(:dispatching_retry_after_restart) do
-    MezzanineRestartRecovery.run_case(:dispatching_retry_after_restart)
+  def exercise_mezzanine_restart_recovery(:temporal_replay_after_restart) do
+    MezzanineRestartRecovery.run_case(:temporal_replay_after_restart)
   end
 
   @spec installation_runtime_lease_scenario() :: map()

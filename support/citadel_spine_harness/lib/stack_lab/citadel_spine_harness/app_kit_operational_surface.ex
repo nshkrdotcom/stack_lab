@@ -766,6 +766,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
              execution_state: lower_dispatch.execution.dispatch_state,
              job_status: lower_dispatch.job_status,
              terminal_rejection_reason: lower_dispatch.execution.terminal_rejection_reason,
+             rejection_reason: rejection_reason(lower_dispatch.rejection),
              rejection_family:
                if lower_dispatch.rejection do
                  to_string(lower_dispatch.rejection.rejection_family)
@@ -2161,6 +2162,15 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     classification=#{inspect(classification)}
     transport_result=#{inspect(transport_result)}
     """
+  end
+
+  defp rejection_reason(nil), do: nil
+
+  defp rejection_reason(rejection) do
+    case Map.get(rejection, :reason_code) do
+      nil -> nil
+      reason -> to_string(reason)
+    end
   end
 
   defp lower_receipt_proof!(

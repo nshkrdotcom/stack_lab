@@ -40,7 +40,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeamsTest do
     assert result.inference.dispatch.placement_ref == "memory_reasoner"
     assert result.inference.dispatch.descriptor_attachment == "mezzanine.execution_recipe"
     assert result.inference.dispatch.external_system_ref == "hindsight.primary"
-    assert result.inference.dispatch.dispatch_job_count == 1
+    assert result.inference.dispatch.workflow_handoff_count == 1
 
     assert result.inference.outcome.dispatch_state == :failed
     assert result.inference.outcome.failure_kind == :semantic_failure
