@@ -603,6 +603,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
         %{}
         |> maybe_put("tenant_id", tenant_id)
         |> maybe_put("authority_scope", authority_scope)
+        |> maybe_put("trace_id", "trace/#{signal_id}")
+        |> maybe_put("canonical_idempotency_key", "idem:v1:scenario203:#{signal_id}")
     })
   end
 

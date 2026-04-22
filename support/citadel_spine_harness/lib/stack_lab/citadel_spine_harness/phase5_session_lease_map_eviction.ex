@@ -353,7 +353,12 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
       subject_ref: SubjectRef.new!(%{kind: :run, id: subject_id, metadata: %{}}),
       evidence_refs: [],
       governance_refs: [],
-      extensions: %{"tenant_id" => tenant_id, "authority_scope" => authority_scope}
+      extensions: %{
+        "tenant_id" => tenant_id,
+        "authority_scope" => authority_scope,
+        "trace_id" => "trace/#{signal_id}",
+        "canonical_idempotency_key" => "idem:v1:scenario203a:#{signal_id}"
+      }
     })
   end
 

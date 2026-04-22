@@ -19,6 +19,7 @@ defmodule StackLab.CitadelSpineHarness do
     PacketReconciliation,
     Phase5ArtifactReferenceBoundary,
     Phase5BeamHotPathLoad,
+    Phase5LineageContextMissing,
     Phase5SessionLeaseMapEviction,
     PrelimEvidenceReport,
     PrelimServiceMode,
@@ -579,6 +580,28 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()}
   def exercise_phase5_artifact_reference_boundary(:payload_boundary_fault_matrix) do
     Phase5ArtifactReferenceBoundary.run_case(:payload_boundary_fault_matrix)
+  end
+
+  @spec phase5_lineage_context_missing_scenario() :: map()
+  def phase5_lineage_context_missing_scenario do
+    %{
+      name: :phase5_lineage_context_missing,
+      compose: LabCore.compose_file(:single),
+      runbook: "lineage_context_missing.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        lineage_context_missing: %{
+          kind: :lineage_context_missing,
+          scenario: 208
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_lineage_context_missing(:lineage_context_missing) ::
+          {:ok, map()}
+  def exercise_phase5_lineage_context_missing(:lineage_context_missing) do
+    Phase5LineageContextMissing.run_case(:lineage_context_missing)
   end
 
   @spec phase5_session_lease_map_eviction_scenario() :: map()
