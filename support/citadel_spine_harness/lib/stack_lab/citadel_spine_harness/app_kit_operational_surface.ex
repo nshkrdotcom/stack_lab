@@ -1827,6 +1827,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
           id: dump_uuid!(Ecto.UUID.generate()),
           trace_id: trace_id,
           causation_id: execution_id,
+          tenant_id: installation.tenant_id,
           installation_id: installation_id,
           subject_id: subject_id,
           execution_id: execution_id,

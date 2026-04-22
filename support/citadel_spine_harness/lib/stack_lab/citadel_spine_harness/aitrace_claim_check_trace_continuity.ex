@@ -425,7 +425,8 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
       LaneSupport.build_lineage("scenario25",
         tenant_id: "tenant-scenario-25",
         trace_id: trace_id,
-        request_id: request_id
+        request_id: request_id,
+        idempotency_key: "scenario25-idempotency-#{request_id}"
       )
 
     envelope =

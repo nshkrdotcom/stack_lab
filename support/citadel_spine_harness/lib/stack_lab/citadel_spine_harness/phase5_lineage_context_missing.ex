@@ -311,6 +311,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5LineageContextMissing do
       ExecutionLineage.new!(%{
         trace_id: lineage.trace_id,
         causation_id: lineage.causation_id,
+        tenant_id: lineage.tenant_id,
         installation_id: lineage.installation_id,
         subject_id: lineage.subject_id,
         execution_id: lineage.execution_id,

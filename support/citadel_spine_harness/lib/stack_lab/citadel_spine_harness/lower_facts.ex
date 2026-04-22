@@ -539,6 +539,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
        ) do
     ExecutionLineage.new!(%{
       trace_id: "trace-#{token}",
+      tenant_id: "tenant-lower-facts",
       installation_id: "inst-lower-facts",
       subject_id: "subject-#{token}",
       execution_id: "execution-#{token}",
