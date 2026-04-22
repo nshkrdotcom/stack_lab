@@ -129,12 +129,30 @@ defmodule StackLab.CitadelSpineHarness.Phase5LineageContextMissingTest do
     refute result.positive.aitrace.mandatory_runtime_backend?
 
     ledger = result.positive.causal_reconstruction_ledger
+    assert ledger.product_or_operator_request_ref == "operator-request/scenario-208"
+    assert ledger.tenant_id == result.tenant_id
+    assert ledger.authority_decision_ref == "authority-decision/scenario-208"
     assert ledger.trace_id == result.trace_id
+    assert ledger.causation_id == "operator-request/scenario-208"
     assert ledger.canonical_idempotency_key == result.canonical_idempotency_key
     assert ledger.source_ordering_anchor == "cursor/208"
     assert ledger.idempotency_alias_map_ref == "Mezzanine.IdempotencyCorrelationEvidence.v1"
+    assert ledger.workflow_ref == "workflow-scenario-208"
+
+    assert String.starts_with?(
+             ledger.lower_submission_ref,
+             "idem:v1:lower_submission:"
+           )
+
     assert ledger.execution_plane_route_ref == "route-scenario-208"
+    assert ledger.signal_ingress_accepted_ref == result.positive.signal_ingress.accepted_ref
+    assert ledger.audit_lineage_lookup == result.positive.execution_lineage_store.public_lookup
+
+    assert ledger.semantic_failure_journal_entry_id ==
+             result.positive.semantic_failure.journal_entry_id
+
     assert String.starts_with?(ledger.aitrace_export_ref, "aitrace://stack_lab/scenario208/")
+    assert ledger.release_manifest_ref == "phase5-v7-m5-lineage-context-missing"
     assert ledger.preserved_behavior == :lineage_context_reconstructable
 
     assert result.negative_failures.missing_trace.reason == :missing_lineage_fields
