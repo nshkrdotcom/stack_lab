@@ -17,6 +17,7 @@ defmodule StackLab.CitadelSpineHarness do
     MultiWriterStateAudit,
     OuterBrainDurability,
     PacketReconciliation,
+    Phase5BeamHotPathLoad,
     PrelimEvidenceReport,
     PrelimServiceMode,
     PressureFailover,
@@ -508,6 +509,40 @@ defmodule StackLab.CitadelSpineHarness do
              :claim_check_degradation_and_compactness
            ] do
     Stage12LoadReadiness.run_case(case_name)
+  end
+
+  @spec phase5_beam_hot_path_load_scenario() :: map()
+  def phase5_beam_hot_path_load_scenario do
+    %{
+      name: :phase5_beam_hot_path_load,
+      compose: LabCore.compose_file(:single),
+      runbook: "beam_hot_path_load.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        snapshot_publish_read_sustained: %{
+          kind: :snapshot_publish_read_sustained,
+          scenario: 202,
+          minimum_duration_ms: 15_000
+        },
+        partitioned_signal_ingress_sustained: %{
+          kind: :partitioned_signal_ingress_sustained,
+          scenario: 203,
+          minimum_duration_ms: 30_000
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_beam_hot_path_load(
+          :snapshot_publish_read_sustained
+          | :partitioned_signal_ingress_sustained
+        ) :: {:ok, map()}
+  def exercise_phase5_beam_hot_path_load(case_name)
+      when case_name in [
+             :snapshot_publish_read_sustained,
+             :partitioned_signal_ingress_sustained
+           ] do
+    Phase5BeamHotPathLoad.run_case(case_name)
   end
 
   @spec memory_bindings_through_existing_seams_scenario() :: map()
