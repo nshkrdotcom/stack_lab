@@ -30,6 +30,11 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
                kind: :m5_pressure_and_negatives,
                phase: "5PRELIM",
                milestone: "M5"
+             },
+             m6_evidence_report: %{
+               kind: :m6_evidence_report,
+               phase: "5PRELIM",
+               milestone: "M6"
              }
            }
   end
@@ -356,6 +361,89 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
     assert result.negative_failures.missing_semantic_boundary == :missing_semantic_boundary
   end
 
+  test "M6 evidence report validates service-mode refs and privacy boundaries" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_prelim_service_mode(
+               :m6_evidence_report,
+               temporal_runner: &serving_temporal/3
+             )
+
+    assert result.case == :m6_evidence_report
+    assert result.release_manifest_ref == "phase5prelim-m6-evidence-report"
+    assert result.schema_ref == "contracts/prelim_evidence_report.schema.json"
+    assert result.validation.status == :passed
+
+    report = result.report
+
+    assert report.schema == "phase5prelim_evidence_report.v1"
+    assert report.packet == "ecosystem_buildout_phase5PRELIM"
+    assert report.substrate.temporal_required
+
+    assert "workflow://Mezzanine.Workflows.ExecutionAttempt" in report.substrate.worker_health_refs
+
+    assert report.workload_profile.subject_kind == "coding_task"
+    assert report.workload_profile.tenant_count == 3
+    assert report.workload_profile.agent_count == 12
+    assert report.workload_profile.runs_per_agent == 2
+    assert report.workload_profile.max_concurrency == 6
+    assert report.workload_profile.review_gate_ref == "operator_review"
+
+    assert Enum.find(report.scenario_results, &(&1.scenario_id == "P5P-009"))
+    assert Enum.all?(report.scenario_results, &(&1.status == "passed"))
+    assert Enum.all?(report.scenario_results, &(&1.positive_evidence_ref != ""))
+    assert Enum.all?(report.scenario_results, &(&1.negative_evidence_ref != ""))
+
+    assert length(report.authority.tenant_refs) == 3
+    assert "authority-decision-prelim" in report.authority.authority_decision_refs
+
+    assert Enum.any?(
+             report.authority.authorization_scope_refs,
+             &String.starts_with?(&1, "authorization-scope://tenant-prelim-pressure-")
+           )
+
+    assert "budget://phase5prelim/local-no-spend" in report.authority.budget_refs
+    assert "Mezzanine.Workflows.ExecutionAttempt" in report.temporal.workflow_type_refs
+    assert "mezzanine.hazmat" in report.temporal.task_queue_refs
+
+    assert "semantic://prelim/turn-1" in report.semantic_gateway.context_provenance_refs
+    assert "claim://semantic/input/prelim" in report.semantic_gateway.payload_boundary_refs
+
+    assert report.provider_simulation.input_fingerprint_policy == "transient_hash"
+    assert report.provider_simulation.egress_denied
+
+    assert "fixture-scope://claude_agent_sdk/package-local-only" in report.provider_simulation.provider_sdk_fixture_scope_refs
+
+    assert "fixture-scope://codex_sdk/package-local-only" in report.provider_simulation.provider_sdk_fixture_scope_refs
+
+    assert report.observability.aitrace_refs == [
+             "aitrace://scenario-19/observability-trace-join-continuity",
+             "aitrace://scenario-25/claim-check-trace-continuity"
+           ]
+
+    assert report.privacy.raw_payload_scan_result == "passed"
+
+    assert report.privacy.suppression_visibility_refs == [
+             "suppression://prelim/semantic-failure"
+           ]
+
+    assert report.privacy.privacy_redaction_fixture_refs == ["fixture://privacy/prelim"]
+
+    assert result.negative_failures.missing_temporal ==
+             {:missing_required_refs, [:temporal, :workflow_type_refs]}
+
+    assert result.negative_failures.missing_authority ==
+             {:missing_required_refs, [:authority, :authorization_scope_refs]}
+
+    assert result.negative_failures.missing_semantic ==
+             {:missing_required_refs, [:semantic_gateway, :context_provenance_refs]}
+
+    assert result.negative_failures.missing_negative_evidence ==
+             {:missing_required_refs, [:negative_evidence_ref]}
+
+    assert result.negative_failures.raw_payload_leak ==
+             {:raw_payload_leak, [:privacy, :artifact_refs, 0]}
+  end
+
   test "M3 contract join fails closed when Temporal substrate is not serving" do
     assert {:error, {:temporal_substrate_not_serving, output}} =
              CitadelSpineHarness.exercise_prelim_service_mode(
@@ -396,6 +484,18 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
     assert {:error, {:temporal_substrate_not_serving, output}} =
              CitadelSpineHarness.exercise_prelim_service_mode(
                :m5_pressure_and_negatives,
+               temporal_runner: fn "just", ["dev-status"], _opts ->
+                 {"mezzanine-temporal-dev.service inactive", 0}
+               end
+             )
+
+    assert output =~ "inactive"
+  end
+
+  test "M6 evidence report fails closed when Temporal substrate is not serving" do
+    assert {:error, {:temporal_substrate_not_serving, output}} =
+             CitadelSpineHarness.exercise_prelim_service_mode(
+               :m6_evidence_report,
                temporal_runner: fn "just", ["dev-status"], _opts ->
                  {"mezzanine-temporal-dev.service inactive", 0}
                end
