@@ -25,6 +25,11 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
                kind: :m5_governed_smoke,
                phase: "5PRELIM",
                milestone: "M5"
+             },
+             m5_pressure_and_negatives: %{
+               kind: :m5_pressure_and_negatives,
+               phase: "5PRELIM",
+               milestone: "M5"
              }
            }
   end
@@ -263,6 +268,94 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
              {:invalid_subject_kind, "expense_request"}
   end
 
+  test "M5 pressure and negatives records bounded local pressure without provider spend" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_prelim_service_mode(
+               :m5_pressure_and_negatives,
+               temporal_runner: &serving_temporal/3
+             )
+
+    assert result.case == :m5_pressure_and_negatives
+    assert result.release_manifest_ref == "phase5prelim-m5-pressure-and-negatives"
+
+    assert result.service_mode_gate.temporal_required?
+    assert result.service_mode_gate.bounded_pressure_required?
+    assert result.service_mode_gate.max_concurrency_enforced?
+    assert result.service_mode_gate.no_slo_claim?
+    assert result.service_mode_gate.no_real_provider_spend?
+    assert result.service_mode_gate.fault_matrix_required?
+    assert result.service_mode_gate.tenant_authority_no_bypass_required?
+    assert result.service_mode_gate.owner_contracts_consumed?
+
+    pressure = result.pressure
+
+    assert pressure.run_shape.tenant_count == 3
+    assert pressure.run_shape.agents_per_tenant == 4
+    assert pressure.run_shape.agent_count == 12
+    assert pressure.run_shape.work_items_per_agent == 2
+    assert pressure.run_shape.work_item_count == 24
+    assert pressure.run_shape.max_concurrency == 6
+    assert pressure.run_shape.no_slo_claim?
+
+    assert pressure.dispatch_window.scheduler == :bounded_async_stream
+    assert pressure.dispatch_window.admitted_work_items == 24
+    assert pressure.dispatch_window.max_in_flight == 6
+    refute pressure.dispatch_window.slo_claim?
+
+    assert pressure.cost.total_cost_units == 0
+    assert pressure.cost.no_real_provider_spend?
+    assert pressure.cost.no_real_saas_writes?
+
+    assert pressure.owner_path_refs.semantic_ref == "semantic://prelim/turn-1"
+
+    assert String.starts_with?(
+             pressure.owner_path_refs.authorization_scope_ref,
+             "authorization-scope://"
+           )
+
+    work_items =
+      pressure.tenants
+      |> Enum.flat_map(& &1.agents)
+      |> Enum.flat_map(& &1.work_items)
+
+    assert length(pressure.tenants) == 3
+    assert length(work_items) == 24
+    assert Enum.all?(work_items, &(&1.subject_kind == "coding_task"))
+    assert Enum.all?(work_items, &(&1.cost_units == 0))
+    refute Enum.any?(work_items, & &1.provider_egress_allowed?)
+
+    assert Enum.all?(
+             work_items,
+             &String.starts_with?(&1.authorization_scope_ref, "authorization-scope://")
+           )
+
+    assert Enum.all?(work_items, &String.starts_with?(&1.lower_submission_ref, "submission://"))
+
+    matrix = result.budget_cost_fault_matrix
+
+    assert matrix.budget.budget_ref == "budget://phase5prelim/local-no-spend"
+    assert matrix.budget.total_cost_units == 0
+    assert :runtime_admission in matrix.budget.enforcement_points
+    refute matrix.cost.real_provider_spend?
+    assert matrix.cost.provider_billable_units == 0
+
+    assert Enum.map(matrix.faults, & &1.fault_class) |> Enum.sort() ==
+             [:malformed_response, :partial_response, :rate_limit, :timeout, :unavailable_meter]
+
+    assert Enum.all?(matrix.faults, &(&1.injected_at == :configured_adapter_boundary))
+    refute Enum.any?(matrix.faults, & &1.lower_side_effects?)
+
+    assert result.negative_failures.cross_tenant_lower_read == :unauthorized_lower_read
+    refute result.negative_failures.missing_authority_tenant == :unexpected_acceptance
+    refute result.negative_failures.missing_authorization_scope == :unexpected_acceptance
+    refute result.negative_failures.missing_lower_tenant_scope == :unexpected_acceptance
+    assert result.negative_failures.missing_budget_ref == :missing_budget_ref
+    assert result.negative_failures.max_concurrency_breach == {:max_concurrency_exceeded, 7}
+    assert result.negative_failures.real_provider_spend == :real_provider_spend_allowed
+    assert result.negative_failures.direct_lower_shortcut == :direct_lower_shortcut
+    assert result.negative_failures.missing_semantic_boundary == :missing_semantic_boundary
+  end
+
   test "M3 contract join fails closed when Temporal substrate is not serving" do
     assert {:error, {:temporal_substrate_not_serving, output}} =
              CitadelSpineHarness.exercise_prelim_service_mode(
@@ -291,6 +384,18 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
     assert {:error, {:temporal_substrate_not_serving, output}} =
              CitadelSpineHarness.exercise_prelim_service_mode(
                :m5_governed_smoke,
+               temporal_runner: fn "just", ["dev-status"], _opts ->
+                 {"mezzanine-temporal-dev.service inactive", 0}
+               end
+             )
+
+    assert output =~ "inactive"
+  end
+
+  test "M5 pressure and negatives fails closed when Temporal substrate is not serving" do
+    assert {:error, {:temporal_substrate_not_serving, output}} =
+             CitadelSpineHarness.exercise_prelim_service_mode(
+               :m5_pressure_and_negatives,
                temporal_runner: fn "just", ["dev-status"], _opts ->
                  {"mezzanine-temporal-dev.service inactive", 0}
                end

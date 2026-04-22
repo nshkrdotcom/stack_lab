@@ -313,13 +313,21 @@ defmodule StackLab.CitadelSpineHarness do
           kind: :m5_governed_smoke,
           phase: "5PRELIM",
           milestone: "M5"
+        },
+        m5_pressure_and_negatives: %{
+          kind: :m5_pressure_and_negatives,
+          phase: "5PRELIM",
+          milestone: "M5"
         }
       }
     }
   end
 
   @spec exercise_prelim_service_mode(
-          :m3_contract_join | :m5_service_profile_bootstrap | :m5_governed_smoke,
+          :m3_contract_join
+          | :m5_service_profile_bootstrap
+          | :m5_governed_smoke
+          | :m5_pressure_and_negatives,
           keyword()
         ) ::
           {:ok, map()} | {:error, term()}
@@ -335,6 +343,10 @@ defmodule StackLab.CitadelSpineHarness do
 
   def exercise_prelim_service_mode(:m5_governed_smoke, opts) when is_list(opts) do
     PrelimServiceMode.run_case(:m5_governed_smoke, opts)
+  end
+
+  def exercise_prelim_service_mode(:m5_pressure_and_negatives, opts) when is_list(opts) do
+    PrelimServiceMode.run_case(:m5_pressure_and_negatives, opts)
   end
 
   @spec multi_writer_state_audit_scenario() :: map()

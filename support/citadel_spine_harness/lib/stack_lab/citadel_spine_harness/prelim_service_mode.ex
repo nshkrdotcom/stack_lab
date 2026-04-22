@@ -35,7 +35,22 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   @mezzanine_root Path.expand("../mezzanine", @stack_lab_root)
   @release_ref "phase5prelim-m3-service-path-contract-join"
   @m5_release_ref "phase5prelim-m5-service-profile-bootstrap"
+  @m5_smoke_release_ref "phase5prelim-m5-governed-smoke"
+  @m5_pressure_release_ref "phase5prelim-m5-pressure-and-negatives"
   @required_owner_evidence_ids ["P5P-011", "P5P-012", "P5P-013", "P5P-014"]
+  @pressure_tenant_count 3
+  @pressure_agents_per_tenant 4
+  @pressure_work_items_per_agent 2
+  @pressure_max_concurrency 6
+  @pressure_work_item_count @pressure_tenant_count * @pressure_agents_per_tenant *
+                              @pressure_work_items_per_agent
+  @pressure_fault_classes [
+    :timeout,
+    :malformed_response,
+    :partial_response,
+    :rate_limit,
+    :unavailable_meter
+  ]
   @forbidden_provider_local_selectors [
     "ClaudeAgentSDK.Mock",
     "ClaudeAgentSDK.Mock.Process",
@@ -45,7 +60,10 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   ]
 
   @spec run_case(
-          :m3_contract_join | :m5_service_profile_bootstrap | :m5_governed_smoke,
+          :m3_contract_join
+          | :m5_service_profile_bootstrap
+          | :m5_governed_smoke
+          | :m5_pressure_and_negatives,
           keyword()
         ) ::
           {:ok, map()} | {:error, term()}
@@ -123,7 +141,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
       {:ok,
        %{
          case: :m5_governed_smoke,
-         release_manifest_ref: "phase5prelim-m5-governed-smoke",
+         release_manifest_ref: @m5_smoke_release_ref,
          temporal: %{
            substrate: substrate,
            worker_health: worker_health
@@ -142,6 +160,60 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
            review_gate_required?: true,
            lower_trace_required?: true,
            semantic_hop_required?: true,
+           owner_contracts_consumed?: true
+         }
+       }}
+    end
+  end
+
+  def run_case(:m5_pressure_and_negatives, opts) when is_list(opts) do
+    with {:ok, substrate} <- temporal_substrate(opts),
+         {:ok, worker_health} <- temporal_worker_health(),
+         {:ok, profile} <- service_simulation_profile(),
+         {:ok, installation} <- install_service_profiles([profile]),
+         {:ok, workload} <- extravaganza_workload_contract(),
+         {:ok, authority} <- authority_contract(),
+         {:ok, semantic} <- semantic_contract(),
+         {:ok, appkit_smoke} <-
+           AppKitOperationalSurface.run_case(:reviewable_connector_automation_console),
+         {:ok, smoke_evidence} <-
+           governed_smoke_evidence(profile, workload, authority, semantic, appkit_smoke),
+         {:ok, pressure_evidence} <-
+           bounded_pressure_evidence(profile, workload, authority, semantic, smoke_evidence),
+         {:ok, fault_matrix} <- budget_cost_fault_matrix(profile, authority),
+         {:ok, negative_failures} <-
+           pressure_and_bypass_negative_failures(
+             pressure_evidence,
+             fault_matrix,
+             authority,
+             semantic
+           ),
+         {:ok, cleanup} <- cleanup_service_profiles(installation) do
+      {:ok,
+       %{
+         case: :m5_pressure_and_negatives,
+         release_manifest_ref: @m5_pressure_release_ref,
+         temporal: %{
+           substrate: substrate,
+           worker_health: worker_health
+         },
+         service_profiles: %{
+           installed: installation,
+           cleanup: cleanup,
+           profile: profile
+         },
+         pressure: pressure_evidence,
+         budget_cost_fault_matrix: fault_matrix,
+         owner_evidence: owner_evidence(),
+         negative_failures: negative_failures,
+         service_mode_gate: %{
+           temporal_required?: true,
+           bounded_pressure_required?: true,
+           max_concurrency_enforced?: true,
+           no_slo_claim?: true,
+           no_real_provider_spend?: true,
+           fault_matrix_required?: true,
+           tenant_authority_no_bypass_required?: true,
            owner_contracts_consumed?: true
          }
        }}
@@ -648,6 +720,298 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   end
 
   defp validate_governed_smoke(_evidence), do: {:error, :invalid_governed_smoke_evidence}
+
+  defp bounded_pressure_evidence(profile, workload, authority, semantic, smoke_evidence) do
+    tenants =
+      for tenant_idx <- 1..@pressure_tenant_count do
+        pressure_tenant(tenant_idx, profile, workload, authority, semantic, smoke_evidence)
+      end
+
+    work_items = tenants |> Enum.flat_map(& &1.agents) |> Enum.flat_map(& &1.work_items)
+    agent_count = tenants |> Enum.flat_map(& &1.agents) |> length()
+
+    evidence = %{
+      profile_ref: profile.profile_ref,
+      smoke_template_ref: smoke_evidence.agent_execution.submission_receipt_ref,
+      run_shape: %{
+        tenant_count: length(tenants),
+        agents_per_tenant: @pressure_agents_per_tenant,
+        agent_count: agent_count,
+        work_items_per_agent: @pressure_work_items_per_agent,
+        work_item_count: length(work_items),
+        max_concurrency: @pressure_max_concurrency,
+        no_slo_claim?: true
+      },
+      workload_profile: %{
+        workload_ref: profile.workload_ref,
+        pack_ref: profile.pack_ref,
+        work_class_ref: profile.work_class_ref,
+        subject_kind: workload.pack.subject_kind,
+        lifecycle_after_execution: workload.lifecycle.after_execution_completed,
+        lifecycle_after_review: workload.lifecycle.after_review_accept,
+        review_gate: workload.lifecycle.review_gate
+      },
+      tenants: tenants,
+      dispatch_window: %{
+        scheduler: :bounded_async_stream,
+        admitted_work_items: length(work_items),
+        max_in_flight: @pressure_max_concurrency,
+        measured_baseline_kind: :local_provisional,
+        slo_claim?: false
+      },
+      cost: %{
+        budget_ref: profile.budget_profile_ref,
+        meter_ref: profile.meter_profile_ref,
+        total_cost_units: 0,
+        no_real_provider_spend?: true,
+        no_real_saas_writes?: true
+      },
+      owner_path_refs: %{
+        authority_decision_ref: authority.authority_decision.decision_id,
+        authorization_scope_ref:
+          "authorization-scope://#{authority.authorization_scope.tenant_id}/#{authority.authorization_scope.execution_id}",
+        semantic_ref: semantic.context_provenance.semantic_ref,
+        semantic_failure_ref: semantic.semantic_failure.trace_id,
+        lower_template_ref: smoke_evidence.agent_execution.submission_receipt_ref
+      }
+    }
+
+    with :ok <- validate_bounded_pressure(evidence), do: {:ok, evidence}
+  end
+
+  defp pressure_tenant(tenant_idx, profile, workload, authority, semantic, smoke_evidence) do
+    tenant_ref = "tenant-prelim-pressure-#{tenant_idx}"
+
+    %{
+      tenant_ref: tenant_ref,
+      authority_decision_ref: authority.authority_decision.decision_id,
+      semantic_ref: semantic.context_provenance.semantic_ref,
+      agents:
+        for agent_idx <- 1..@pressure_agents_per_tenant do
+          pressure_agent(
+            tenant_ref,
+            tenant_idx,
+            agent_idx,
+            profile,
+            workload,
+            smoke_evidence
+          )
+        end
+    }
+  end
+
+  defp pressure_agent(tenant_ref, tenant_idx, agent_idx, profile, workload, smoke_evidence) do
+    agent_ref = "agent://phase5prelim/pressure/t#{tenant_idx}/a#{agent_idx}"
+
+    %{
+      agent_ref: agent_ref,
+      route_ref: profile.adapter_profile_refs.asm,
+      provider_family: :cli,
+      work_items:
+        for item_idx <- 1..@pressure_work_items_per_agent do
+          pressure_work_item(
+            tenant_ref,
+            tenant_idx,
+            agent_idx,
+            item_idx,
+            workload,
+            smoke_evidence
+          )
+        end
+    }
+  end
+
+  defp pressure_work_item(tenant_ref, tenant_idx, agent_idx, item_idx, workload, smoke_evidence) do
+    item_ref = "work://phase5prelim/pressure/t#{tenant_idx}/a#{agent_idx}/i#{item_idx}"
+    execution_ref = "execution://phase5prelim/pressure/t#{tenant_idx}/a#{agent_idx}/i#{item_idx}"
+
+    %{
+      work_item_ref: item_ref,
+      tenant_ref: tenant_ref,
+      subject_kind: workload.pack.subject_kind,
+      source_kind: "linear",
+      lifecycle_after_execution: workload.lifecycle.after_execution_completed,
+      lifecycle_after_review: workload.lifecycle.after_review_accept,
+      execution_ref: execution_ref,
+      authorization_scope_ref: "authorization-scope://#{tenant_ref}/#{execution_ref}",
+      trace_ref: "trace://phase5prelim/pressure/t#{tenant_idx}/a#{agent_idx}/i#{item_idx}",
+      lower_submission_ref:
+        "submission://phase5prelim/pressure/t#{tenant_idx}/a#{agent_idx}/i#{item_idx}",
+      lower_template_ref: smoke_evidence.agent_execution.submission_receipt_ref,
+      provider_egress_allowed?: false,
+      cost_units: 0,
+      review_gate: :operator_review
+    }
+  end
+
+  defp validate_bounded_pressure(%{
+         run_shape: %{
+           tenant_count: @pressure_tenant_count,
+           agent_count: agent_count,
+           work_item_count: @pressure_work_item_count,
+           max_concurrency: max_concurrency,
+           no_slo_claim?: true
+         },
+         cost: %{
+           total_cost_units: 0,
+           no_real_provider_spend?: true,
+           no_real_saas_writes?: true
+         },
+         tenants: tenants
+       })
+       when agent_count == @pressure_tenant_count * @pressure_agents_per_tenant and
+              max_concurrency <= @pressure_max_concurrency and is_list(tenants) do
+    work_items = tenants |> Enum.flat_map(& &1.agents) |> Enum.flat_map(& &1.work_items)
+
+    cond do
+      Enum.any?(work_items, & &1.provider_egress_allowed?) ->
+        {:error, :real_provider_egress_allowed}
+
+      Enum.any?(work_items, &(&1.subject_kind != "coding_task")) ->
+        {:error, :non_coding_pressure_subject}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp validate_bounded_pressure(%{run_shape: %{max_concurrency: max_concurrency}})
+       when max_concurrency > @pressure_max_concurrency do
+    {:error, {:max_concurrency_exceeded, max_concurrency}}
+  end
+
+  defp validate_bounded_pressure(%{cost: %{no_real_provider_spend?: false}}) do
+    {:error, :real_provider_spend_allowed}
+  end
+
+  defp validate_bounded_pressure(_evidence), do: {:error, :invalid_pressure_evidence}
+
+  defp budget_cost_fault_matrix(profile, authority) do
+    matrix = %{
+      budget: %{
+        budget_ref: profile.budget_profile_ref,
+        authority_decision_ref: authority.authority_decision.decision_id,
+        admission: :accepted,
+        total_cost_units: 0,
+        enforcement_points: [
+          :preflight,
+          :tool_result_append,
+          :stream_tick,
+          :runtime_admission,
+          :post_run_reconcile
+        ]
+      },
+      cost: %{
+        meter_ref: profile.meter_profile_ref,
+        unit: :deterministic_local_unit,
+        provider_billable_units: 0,
+        real_provider_spend?: false
+      },
+      faults:
+        Enum.map(@pressure_fault_classes, fn fault_class ->
+          %{
+            fault_class: fault_class,
+            owner_adapter: fault_owner_adapter(fault_class),
+            injected_at: :configured_adapter_boundary,
+            safe_action: safe_fault_action(fault_class),
+            lower_side_effects?: false
+          }
+        end)
+    }
+
+    with :ok <- validate_fault_matrix(matrix), do: {:ok, matrix}
+  end
+
+  defp fault_owner_adapter(:timeout), do: :execution_plane_process
+  defp fault_owner_adapter(:malformed_response), do: :cli_subprocess_core
+  defp fault_owner_adapter(:partial_response), do: :pristine
+  defp fault_owner_adapter(:rate_limit), do: :prismatic
+  defp fault_owner_adapter(:unavailable_meter), do: :self_hosted_inference_core
+
+  defp safe_fault_action(:timeout), do: :retry_with_backoff
+  defp safe_fault_action(:malformed_response), do: :terminal_provider_error
+  defp safe_fault_action(:partial_response), do: :request_replay_or_reject
+  defp safe_fault_action(:rate_limit), do: :defer_until_budget_window
+  defp safe_fault_action(:unavailable_meter), do: :deny_before_dispatch
+
+  defp validate_fault_matrix(%{
+         budget: %{budget_ref: budget_ref, total_cost_units: 0},
+         cost: %{real_provider_spend?: false},
+         faults: faults
+       })
+       when is_binary(budget_ref) and is_list(faults) do
+    fault_classes = Enum.map(faults, & &1.fault_class) |> Enum.sort()
+
+    if fault_classes == Enum.sort(@pressure_fault_classes) and
+         Enum.all?(faults, &(&1.lower_side_effects? == false)) do
+      :ok
+    else
+      {:error, {:invalid_fault_matrix, fault_classes}}
+    end
+  end
+
+  defp validate_fault_matrix(%{budget: %{budget_ref: nil}}), do: {:error, :missing_budget_ref}
+  defp validate_fault_matrix(_matrix), do: {:error, :invalid_fault_matrix}
+
+  defp pressure_and_bypass_negative_failures(pressure, fault_matrix, authority, semantic) do
+    max_concurrency_breach =
+      pressure
+      |> put_in([:run_shape, :max_concurrency], @pressure_max_concurrency + 1)
+      |> validate_bounded_pressure()
+      |> rejected()
+
+    real_provider_spend =
+      pressure
+      |> put_in([:cost, :no_real_provider_spend?], false)
+      |> validate_bounded_pressure()
+      |> rejected()
+
+    missing_budget =
+      fault_matrix
+      |> put_in([:budget, :budget_ref], nil)
+      |> validate_fault_matrix()
+      |> rejected()
+
+    direct_lower_shortcut =
+      %{
+        authority_scope_ref:
+          "authorization-scope://#{authority.authorization_scope.tenant_id}/#{authority.authorization_scope.execution_id}",
+        semantic_ref: semantic.context_provenance.semantic_ref,
+        lower_access: :direct_lower_shortcut
+      }
+      |> validate_owner_path_access()
+      |> rejected()
+
+    missing_semantic_boundary =
+      %{
+        authority_scope_ref:
+          "authorization-scope://#{authority.authorization_scope.tenant_id}/#{authority.authorization_scope.execution_id}",
+        semantic_ref: nil,
+        lower_access: :via_owner_path
+      }
+      |> validate_owner_path_access()
+      |> rejected()
+
+    {:ok,
+     %{
+       cross_tenant_lower_read: authority.lower_read.unauthorized_error,
+       missing_authority_tenant: authority.negative_failures.missing_authority_tenant,
+       missing_authorization_scope: authority.negative_failures.missing_mezzanine_scope_tenant,
+       missing_lower_tenant_scope: authority.negative_failures.missing_lower_scope_tenant,
+       missing_budget_ref: missing_budget,
+       max_concurrency_breach: max_concurrency_breach,
+       real_provider_spend: real_provider_spend,
+       direct_lower_shortcut: direct_lower_shortcut,
+       missing_semantic_boundary: missing_semantic_boundary
+     }}
+  end
+
+  defp validate_owner_path_access(%{semantic_ref: nil}), do: {:error, :missing_semantic_boundary}
+
+  defp validate_owner_path_access(%{lower_access: :direct_lower_shortcut}),
+    do: {:error, :direct_lower_shortcut}
+
+  defp validate_owner_path_access(_access), do: {:error, :invalid_owner_path_access}
 
   defp validate_profile_reducer(profile, :ok) do
     case validate_service_profile(profile) do
