@@ -21,6 +21,7 @@ defmodule StackLab.CitadelSpineHarness do
     Phase5BeamHotPathLoad,
     Phase5LineageContextMissing,
     Phase5SessionLeaseMapEviction,
+    Phase5VersionSkewMalformedPacket,
     PrelimEvidenceReport,
     PrelimServiceMode,
     PressureFailover,
@@ -602,6 +603,28 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()}
   def exercise_phase5_lineage_context_missing(:lineage_context_missing) do
     Phase5LineageContextMissing.run_case(:lineage_context_missing)
+  end
+
+  @spec phase5_version_skew_malformed_packet_scenario() :: map()
+  def phase5_version_skew_malformed_packet_scenario do
+    %{
+      name: :phase5_version_skew_malformed_packet,
+      compose: LabCore.compose_file(:single),
+      runbook: "version_skew_malformed_packet.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        contract_chaos: %{
+          kind: :contract_chaos,
+          scenario: 209
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_version_skew_malformed_packet(:contract_chaos) ::
+          {:ok, map()}
+  def exercise_phase5_version_skew_malformed_packet(:contract_chaos) do
+    Phase5VersionSkewMalformedPacket.run_case(:contract_chaos)
   end
 
   @spec phase5_session_lease_map_eviction_scenario() :: map()

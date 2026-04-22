@@ -61,6 +61,11 @@ harness classifies Jido Hive room truth, room event logs, participant presence,
 client/worker local state, and context-graph projections into explicit writer
 modes, while rejecting OT/CRDT or projection-as-truth claims that lack a source
 owner and merge mechanics.
+Phase 5 Scenario 209 proves Milestone-7 version-skew and contract-chaos
+handling: Citadel invocation requests accept V2 only, malformed/downgraded/
+future schema versions and stale schema hashes fail closed, Mezzanine workflow
+signals require explicit registered signal versions, and BrainIngress has no
+current workflow-bound old-shape intake path without an active-workflow pin.
 Phase 3 adds product-boundary release proofs: Scenario 31 runs the AppKit
 product no-bypass scanner against `extravaganza`, Scenario 36 separately proves
 there is no direct Execution Plane bypass in product/AppKit paths, and Scenario

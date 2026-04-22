@@ -46,6 +46,10 @@ This package owns:
   canonical room truth, room event logs, client/worker local state, derived
   projections, and explicit rejection of OT/CRDT or projection-as-truth claims
   without source-owned merge mechanics
+- the Phase-5 Scenario-209 version-skew and contract-chaos proof for Citadel
+  invocation-request V2-only acceptance, malformed/downgraded/future
+  schema-version rejection, stale schema-hash rejection, explicit Mezzanine
+  workflow signal versions, and BrainIngress active-workflow pin applicability
 - the real split-node remote transport proof
 - restart and failover drill helpers
 
