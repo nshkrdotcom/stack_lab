@@ -264,7 +264,9 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
         large_result = record_large_inference(trace_id)
         orphan_result = stage_duplicate_orphan(trace_id)
         execution_plane_result = execution_plane_lineage(trace_id, execution_id)
-        aitrace_result = publish_aitrace_trace(trace_id, tenant_id, execution_id)
+
+        aitrace_result =
+          publish_aitrace_trace(trace_id, tenant_id, execution_id, execution_plane_result)
 
         {:ok,
          %{
@@ -451,11 +453,12 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
       envelope_trace_id: envelope.trace_id,
       route_trace_id: route.lineage.trace_id,
       request_id: lineage.request_id,
+      idempotency_key: lineage.idempotency_key,
       boundary_session_id: lineage.boundary_session_id
     }
   end
 
-  defp publish_aitrace_trace(trace_id, tenant_id, request_id) do
+  defp publish_aitrace_trace(trace_id, tenant_id, request_id, execution_lineage) do
     envelope =
       TraceEnvelope.new!(%{
         trace_envelope_id: "scenario25-#{System.unique_integer([:positive])}",
@@ -479,7 +482,11 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
         finished_at: nil,
         status: "ok",
         attributes: %{"scenario" => "25"},
-        extensions: %{}
+        extensions: %{
+          "canonical_idempotency_key" => execution_lineage.idempotency_key,
+          "platform_envelope_id" => request_id,
+          "route_boundary_session_id" => execution_lineage.boundary_session_id
+        }
       })
 
     :ok = TraceBridge.publish_trace(envelope)
@@ -491,9 +498,20 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
         5_000 -> raise "did not observe AITrace export"
       end
 
+    span = hd(exported_trace.spans)
+
     %{
       trace_id: exported_trace.trace_id,
-      span_count: length(exported_trace.spans)
+      trace_id_source: exported_trace.trace_id_source,
+      span_count: length(exported_trace.spans),
+      span_id: span.span_id,
+      span_id_source: span.span_id_source,
+      start_time: span.start_time,
+      start_wall_time: span.start_wall_time,
+      clock_domain: span.clock_domain,
+      lineage: exported_trace.metadata.lineage,
+      aitrace_context: exported_trace.metadata.aitrace_context,
+      platform_envelope_field_map: exported_trace.metadata.platform_envelope_field_map
     }
   end
 
