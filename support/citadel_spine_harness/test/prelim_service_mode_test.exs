@@ -20,6 +20,11 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
                kind: :m5_service_profile_bootstrap,
                phase: "5PRELIM",
                milestone: "M5"
+             },
+             m5_governed_smoke: %{
+               kind: :m5_governed_smoke,
+               phase: "5PRELIM",
+               milestone: "M5"
              }
            }
   end
@@ -166,6 +171,98 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
              {:invalid_egress_policy, :allow_real_provider_fallback}
   end
 
+  test "M5 governed smoke workload drives one coding task through owner paths" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_prelim_service_mode(
+               :m5_governed_smoke,
+               temporal_runner: &serving_temporal/3
+             )
+
+    assert result.case == :m5_governed_smoke
+    assert result.release_manifest_ref == "phase5prelim-m5-governed-smoke"
+
+    assert result.service_mode_gate.temporal_required?
+    assert result.service_mode_gate.governed_subject_required?
+    assert result.service_mode_gate.review_gate_required?
+    assert result.service_mode_gate.lower_trace_required?
+    assert result.service_mode_gate.semantic_hop_required?
+    assert result.service_mode_gate.owner_contracts_consumed?
+
+    assert result.temporal.substrate.status == :serving
+    assert result.temporal.substrate.checked_by == "just dev-status"
+    assert result.temporal.worker_health.status == :healthy
+
+    assert result.temporal.worker_health.instance_base ==
+             Mezzanine.WorkflowRuntime.PrelimTemporal
+
+    assert Mezzanine.Workflows.ExecutionAttempt in result.temporal.worker_health.workflows
+    assert result.temporal.worker_health.execution_attempt_registered?
+
+    assert result.service_profiles.installed.installed_count == 1
+    assert result.service_profiles.cleanup.cleanup_complete?
+
+    assert result.service_profiles.profile.profile_ref ==
+             "service-simulation-profile://phase5prelim/m5/bootstrap"
+
+    smoke = result.governed_smoke
+
+    assert smoke.run_shape.tenant_count == 1
+    assert smoke.run_shape.agent_count == 1
+    assert smoke.run_shape.work_item_count == 1
+    assert smoke.run_shape.max_concurrency == 1
+    assert smoke.run_shape.no_slo_claim?
+
+    assert smoke.workload_profile.profile_ref ==
+             "service-simulation-profile://phase5prelim/m5/bootstrap"
+
+    assert smoke.workload_profile.subject_kind == "coding_task"
+    assert smoke.workload_profile.lifecycle_after_execution == "awaiting_review"
+    assert smoke.workload_profile.lifecycle_after_review == "completed"
+
+    assert smoke.governed_subject.source_kind == "linear"
+    assert smoke.governed_subject.subject_kind == "coding_task"
+    assert smoke.governed_subject.lifecycle_state_before_pause == "awaiting_review"
+    assert smoke.governed_subject.lifecycle_state_after_review == "awaiting_review"
+
+    assert is_binary(smoke.agent_execution.run_ref)
+    assert is_binary(smoke.agent_execution.execution_ref)
+    assert String.starts_with?(smoke.agent_execution.submission_receipt_ref, "submission://")
+    assert "lower_run_status" in smoke.agent_execution.trace_step_sources
+
+    assert smoke.review_gate.status_before == "pending"
+    assert smoke.review_gate.status_after == "accepted"
+    assert smoke.review_gate.action_kind == "review_accept"
+    assert smoke.review_gate.decision_ref in smoke.review_gate.pending_ids_before
+    refute smoke.review_gate.decision_ref in smoke.review_gate.pending_ids_after
+
+    assert smoke.lower_access.no_real_provider_spend?
+    assert smoke.lower_access.post_pause_read.code == :lease_invalidated
+    assert smoke.lower_access.post_pause_read.reason == "subject_paused"
+    assert smoke.lower_access.post_pause_stream.code == :lease_invalidated
+    assert smoke.lower_access.post_pause_stream.reason == "subject_paused"
+
+    assert smoke.owner_path_refs.appkit_tenant_ref == "tenant-reviewable-connector-automation"
+
+    assert String.starts_with?(
+             smoke.owner_path_refs.authorization_scope_ref,
+             "authorization-scope://"
+           )
+
+    assert smoke.owner_path_refs.semantic_ref == "semantic://prelim/turn-1"
+    assert is_binary(smoke.owner_path_refs.semantic_failure_ref)
+
+    assert smoke.owner_path_refs.lower_submission_ref ==
+             smoke.agent_execution.submission_receipt_ref
+
+    assert result.negative_failures.missing_review_gate == :invalid_governed_smoke_evidence
+
+    assert result.negative_failures.missing_lower_trace ==
+             {:missing_trace_source, "lower_run_status"}
+
+    assert result.negative_failures.non_coding_subject ==
+             {:invalid_subject_kind, "expense_request"}
+  end
+
   test "M3 contract join fails closed when Temporal substrate is not serving" do
     assert {:error, {:temporal_substrate_not_serving, output}} =
              CitadelSpineHarness.exercise_prelim_service_mode(
@@ -182,6 +279,18 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
     assert {:error, {:temporal_substrate_not_serving, output}} =
              CitadelSpineHarness.exercise_prelim_service_mode(
                :m5_service_profile_bootstrap,
+               temporal_runner: fn "just", ["dev-status"], _opts ->
+                 {"mezzanine-temporal-dev.service inactive", 0}
+               end
+             )
+
+    assert output =~ "inactive"
+  end
+
+  test "M5 governed smoke fails closed when Temporal substrate is not serving" do
+    assert {:error, {:temporal_substrate_not_serving, output}} =
+             CitadelSpineHarness.exercise_prelim_service_mode(
+               :m5_governed_smoke,
                temporal_runner: fn "just", ["dev-status"], _opts ->
                  {"mezzanine-temporal-dev.service inactive", 0}
                end

@@ -25,6 +25,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   }
 
   alias StackLab.CitadelSpineHarness.{
+    AppKitOperationalSurface,
     LowerFacts,
     OuterBrainDurability,
     TemporalPostgresProjectionDrift
@@ -43,7 +44,10 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
     "Codex fixture scripts"
   ]
 
-  @spec run_case(:m3_contract_join | :m5_service_profile_bootstrap, keyword()) ::
+  @spec run_case(
+          :m3_contract_join | :m5_service_profile_bootstrap | :m5_governed_smoke,
+          keyword()
+        ) ::
           {:ok, map()} | {:error, term()}
   def run_case(case_name, opts \\ [])
 
@@ -97,6 +101,48 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
            profile_installation_required?: true,
            owner_contracts_consumed?: true,
            provider_local_mock_selectors_denied?: true
+         }
+       }}
+    end
+  end
+
+  def run_case(:m5_governed_smoke, opts) when is_list(opts) do
+    with {:ok, substrate} <- temporal_substrate(opts),
+         {:ok, worker_health} <- temporal_worker_health(),
+         {:ok, profile} <- service_simulation_profile(),
+         {:ok, installation} <- install_service_profiles([profile]),
+         {:ok, workload} <- extravaganza_workload_contract(),
+         {:ok, authority} <- authority_contract(),
+         {:ok, semantic} <- semantic_contract(),
+         {:ok, appkit_smoke} <-
+           AppKitOperationalSurface.run_case(:reviewable_connector_automation_console),
+         {:ok, smoke_evidence} <-
+           governed_smoke_evidence(profile, workload, authority, semantic, appkit_smoke),
+         {:ok, cleanup} <- cleanup_service_profiles(installation),
+         {:ok, negative_failures} <- governed_smoke_negative_failures(smoke_evidence) do
+      {:ok,
+       %{
+         case: :m5_governed_smoke,
+         release_manifest_ref: "phase5prelim-m5-governed-smoke",
+         temporal: %{
+           substrate: substrate,
+           worker_health: worker_health
+         },
+         service_profiles: %{
+           installed: installation,
+           cleanup: cleanup,
+           profile: profile
+         },
+         governed_smoke: smoke_evidence,
+         owner_evidence: owner_evidence(),
+         negative_failures: negative_failures,
+         service_mode_gate: %{
+           temporal_required?: true,
+           governed_subject_required?: true,
+           review_gate_required?: true,
+           lower_trace_required?: true,
+           semantic_hop_required?: true,
+           owner_contracts_consumed?: true
          }
        }}
     end
@@ -483,6 +529,125 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
        invalid_egress_policy: invalid_egress
      }}
   end
+
+  defp governed_smoke_evidence(profile, workload, authority, semantic, appkit_smoke) do
+    evidence = %{
+      workload_profile: %{
+        profile_ref: profile.profile_ref,
+        workload_ref: profile.workload_ref,
+        pack_ref: profile.pack_ref,
+        work_class_ref: profile.work_class_ref,
+        subject_kind: workload.pack.subject_kind,
+        lifecycle_after_execution: workload.lifecycle.after_execution_completed,
+        lifecycle_after_review: workload.lifecycle.after_review_accept
+      },
+      run_shape: %{
+        tenant_count: 1,
+        agent_count: 1,
+        work_item_count: 1,
+        max_concurrency: 1,
+        no_slo_claim?: true
+      },
+      owner_path_refs: %{
+        appkit_tenant_ref: appkit_smoke.tenant_id,
+        authority_decision_ref: authority.authority_decision.decision_id,
+        authorization_scope_ref:
+          "authorization-scope://#{authority.authorization_scope.tenant_id}/#{authority.authorization_scope.execution_id}",
+        semantic_ref: semantic.context_provenance.semantic_ref,
+        semantic_failure_ref: semantic.semantic_failure.trace_id,
+        lower_submission_ref: appkit_smoke.lower_access.submission_receipt_ref
+      },
+      governed_subject: %{
+        subject_ref: appkit_smoke.automation_case.subject_id,
+        source_kind: "linear",
+        subject_kind: workload.pack.subject_kind,
+        lifecycle_state_before_pause: appkit_smoke.automation_case.lifecycle_state_before_pause,
+        lifecycle_state_after_review: appkit_smoke.automation_case.lifecycle_state_after_review
+      },
+      agent_execution: %{
+        run_ref: appkit_smoke.automation_case.run_id,
+        execution_ref: appkit_smoke.automation_case.lineage_execution_ref_after_review,
+        submission_key: appkit_smoke.lower_access.submission_key,
+        submission_receipt_ref: appkit_smoke.lower_access.submission_receipt_ref,
+        trace_ref: appkit_smoke.trace.trace_id,
+        trace_step_sources: appkit_smoke.trace.step_sources
+      },
+      review_gate: %{
+        decision_ref: appkit_smoke.review.decision_id,
+        status_before: appkit_smoke.review.status_before,
+        status_after: appkit_smoke.review.status_after,
+        action_kind: appkit_smoke.review.action_kind,
+        pending_ids_before: appkit_smoke.console.pending_review_ids_before,
+        pending_ids_after: appkit_smoke.console.pending_review_ids_after
+      },
+      lower_access: %{
+        post_pause_read: appkit_smoke.lower_access.post_pause_read,
+        post_pause_stream: appkit_smoke.lower_access.post_pause_stream,
+        no_real_provider_spend?: profile.egress_policy == :deny_real_provider_and_saas
+      }
+    }
+
+    with :ok <- validate_governed_smoke(evidence), do: {:ok, evidence}
+  end
+
+  defp governed_smoke_negative_failures(smoke_evidence) do
+    missing_review_gate =
+      smoke_evidence
+      |> put_in([:review_gate, :decision_ref], nil)
+      |> validate_governed_smoke()
+      |> rejected()
+
+    missing_lower_trace =
+      smoke_evidence
+      |> put_in([:agent_execution, :trace_step_sources], ["audit_fact", "execution_record"])
+      |> validate_governed_smoke()
+      |> rejected()
+
+    non_coding_subject =
+      smoke_evidence
+      |> put_in([:governed_subject, :subject_kind], "expense_request")
+      |> validate_governed_smoke()
+      |> rejected()
+
+    {:ok,
+     %{
+       missing_review_gate: missing_review_gate,
+       missing_lower_trace: missing_lower_trace,
+       non_coding_subject: non_coding_subject
+     }}
+  end
+
+  defp validate_governed_smoke(%{
+         run_shape: %{tenant_count: 1, agent_count: 1, work_item_count: 1},
+         governed_subject: %{subject_ref: subject_ref, subject_kind: "coding_task"},
+         agent_execution: %{
+           execution_ref: execution_ref,
+           submission_receipt_ref: "submission://" <> _receipt_ref,
+           trace_step_sources: trace_step_sources
+         },
+         review_gate: %{
+           decision_ref: decision_ref,
+           status_before: "pending",
+           status_after: "accepted",
+           action_kind: "review_accept"
+         },
+         lower_access: %{no_real_provider_spend?: true}
+       })
+       when is_binary(subject_ref) and is_binary(execution_ref) and is_binary(decision_ref) and
+              is_list(trace_step_sources) do
+    if "lower_run_status" in trace_step_sources do
+      :ok
+    else
+      {:error, {:missing_trace_source, "lower_run_status"}}
+    end
+  end
+
+  defp validate_governed_smoke(%{governed_subject: %{subject_kind: subject_kind}})
+       when subject_kind != "coding_task" do
+    {:error, {:invalid_subject_kind, subject_kind}}
+  end
+
+  defp validate_governed_smoke(_evidence), do: {:error, :invalid_governed_smoke_evidence}
 
   defp validate_profile_reducer(profile, :ok) do
     case validate_service_profile(profile) do
