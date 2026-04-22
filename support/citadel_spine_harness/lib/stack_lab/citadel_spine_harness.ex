@@ -4,6 +4,8 @@ defmodule StackLab.CitadelSpineHarness do
   Jido Integration proofs.
   """
 
+  alias Mezzanine.WorkflowRuntime.TemporalDispatchContract
+
   alias StackLab.CitadelSpineHarness.{
     AITraceClaimCheckTraceContinuity,
     AppKitOperationalSurface,
@@ -31,6 +33,7 @@ defmodule StackLab.CitadelSpineHarness do
     SemanticHost,
     Stage12LoadReadiness,
     Stage9OrchestrationRecovery,
+    TemporalDispatchContractEvidence,
     TemporalPostgresProjectionDrift,
     TypedHost
   }
@@ -183,6 +186,30 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_mezzanine_restart_recovery(:temporal_replay_after_restart) do
     MezzanineRestartRecovery.run_case(:temporal_replay_after_restart)
+  end
+
+  @spec temporal_dispatch_contract_scenario() :: map()
+  def temporal_dispatch_contract_scenario do
+    contract = TemporalDispatchContract.contract()
+
+    %{
+      name: :phase6_temporal_dispatch_contract,
+      compose: LabCore.compose_file(:single),
+      runbook: "temporal_restart_replay.md",
+      repo_roots: repo_roots(),
+      contract: contract.id,
+      owner_repo: contract.owner,
+      primary_repos: contract.primary_repos,
+      cases: %{
+        restart_replay_owner_evidence: %{kind: :restart_replay_owner_evidence}
+      }
+    }
+  end
+
+  @spec exercise_temporal_dispatch_contract(:restart_replay_owner_evidence) ::
+          {:ok, map()}
+  def exercise_temporal_dispatch_contract(:restart_replay_owner_evidence) do
+    TemporalDispatchContractEvidence.run_case(:restart_replay_owner_evidence)
   end
 
   @spec installation_runtime_lease_scenario() :: map()
