@@ -18,6 +18,7 @@ defmodule StackLab.CitadelSpineHarness do
     OuterBrainDurability,
     PacketReconciliation,
     Phase5BeamHotPathLoad,
+    Phase5SessionLeaseMapEviction,
     PrelimEvidenceReport,
     PrelimServiceMode,
     PressureFailover,
@@ -524,10 +525,18 @@ defmodule StackLab.CitadelSpineHarness do
           scenario: 202,
           minimum_duration_ms: 15_000
         },
+        snapshot_staleness_classes: %{
+          kind: :snapshot_staleness_classes,
+          scenario: 202
+        },
         partitioned_signal_ingress_sustained: %{
           kind: :partitioned_signal_ingress_sustained,
           scenario: 203,
           minimum_duration_ms: 30_000
+        },
+        partition_fifo_ordering_scope: %{
+          kind: :partition_fifo_ordering_scope,
+          scenario: 203
         }
       }
     }
@@ -535,14 +544,40 @@ defmodule StackLab.CitadelSpineHarness do
 
   @spec exercise_phase5_beam_hot_path_load(
           :snapshot_publish_read_sustained
+          | :snapshot_staleness_classes
           | :partitioned_signal_ingress_sustained
+          | :partition_fifo_ordering_scope
         ) :: {:ok, map()}
   def exercise_phase5_beam_hot_path_load(case_name)
       when case_name in [
              :snapshot_publish_read_sustained,
-             :partitioned_signal_ingress_sustained
+             :snapshot_staleness_classes,
+             :partitioned_signal_ingress_sustained,
+             :partition_fifo_ordering_scope
            ] do
     Phase5BeamHotPathLoad.run_case(case_name)
+  end
+
+  @spec phase5_session_lease_map_eviction_scenario() :: map()
+  def phase5_session_lease_map_eviction_scenario do
+    %{
+      name: :phase5_session_lease_map_eviction,
+      compose: LabCore.compose_file(:single),
+      runbook: "session_lease_map_eviction.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        expiry_first_segmented_lru: %{
+          kind: :expiry_first_segmented_lru,
+          scenario: "203A"
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_session_lease_map_eviction(:expiry_first_segmented_lru) ::
+          {:ok, map()}
+  def exercise_phase5_session_lease_map_eviction(:expiry_first_segmented_lru) do
+    Phase5SessionLeaseMapEviction.run_case(:expiry_first_segmented_lru)
   end
 
   @spec memory_bindings_through_existing_seams_scenario() :: map()

@@ -67,29 +67,39 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
 
     def start(opts), do: GenServer.start(__MODULE__, opts)
     def count(pid), do: GenServer.call(pid, :count)
+    def observed_signal_ids(pid), do: GenServer.call(pid, :observed_signal_ids)
 
     @impl true
-    def init(_opts), do: {:ok, %{count: 0, signal_ids: MapSet.new()}}
+    def init(_opts), do: {:ok, %{count: 0, signal_ids: []}}
 
     @impl true
     def handle_call(:count, _from, state), do: {:reply, state.count, state}
+
+    def handle_call(:observed_signal_ids, _from, state), do: {:reply, state.signal_ids, state}
 
     def handle_call({:record_runtime_observation, observation}, _from, state) do
       {:reply, :ok,
        %{
          state
          | count: state.count + 1,
-           signal_ids: MapSet.put(state.signal_ids, observation.signal_id)
+           signal_ids: state.signal_ids ++ [observation.signal_id]
        }}
     end
   end
 
-  @spec run_case(:snapshot_publish_read_sustained | :partitioned_signal_ingress_sustained) ::
-          {:ok, map()}
+  @spec run_case(
+          :snapshot_publish_read_sustained
+          | :snapshot_staleness_classes
+          | :partitioned_signal_ingress_sustained
+          | :partition_fifo_ordering_scope
+        ) :: {:ok, map()}
   def run_case(:snapshot_publish_read_sustained), do: run_snapshot_publish_read_sustained()
+  def run_case(:snapshot_staleness_classes), do: run_snapshot_staleness_classes()
 
   def run_case(:partitioned_signal_ingress_sustained),
     do: run_partitioned_signal_ingress_sustained()
+
+  def run_case(:partition_fifo_ordering_scope), do: run_partition_fifo_ordering_scope()
 
   defp run_snapshot_publish_read_sustained do
     name = unique_name(:phase5_kernel_snapshot)
@@ -184,6 +194,102 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
   defp count_stale_read({:ok, _evidence}, count), do: count
   defp count_stale_read({:error, _reason}, count), do: count + 1
 
+  defp run_snapshot_staleness_classes do
+    name = unique_name(:phase5_kernel_snapshot_staleness)
+    {:ok, pid} = KernelSnapshot.start_link(name: name, policy_epoch: 0, policy_version: "v0")
+
+    try do
+      KernelSnapshot.publish_epoch_update(
+        name,
+        KernelEpochUpdate.new!(%{
+          source_owner: "stack_lab_phase5_scenario_202_staleness",
+          constituent: :policy_epoch,
+          epoch: 1,
+          updated_at: DateTime.utc_now(),
+          extensions: %{"policy_version" => "v1"}
+        })
+      )
+
+      :ok = wait_until(fn -> KernelSnapshot.snapshot(name).snapshot_seq >= 1 end)
+
+      {:ok, fresh_required} =
+        KernelSnapshot.read_snapshot(name,
+          staleness_class: :fresh_required,
+          required_min_sequence: 1
+        )
+
+      {:ok, bounded_stale_allowed} =
+        KernelSnapshot.read_snapshot(name,
+          staleness_class: :bounded_stale_allowed,
+          max_age_ms: 60_000,
+          max_sequence_lag: 0,
+          owner_sequence: fresh_required.snapshot_sequence
+        )
+
+      {:ok, reject_stale_positive} =
+        KernelSnapshot.read_snapshot(name,
+          staleness_class: :reject_stale,
+          required_min_sequence: 1
+        )
+
+      {:error, fresh_required_negative} =
+        KernelSnapshot.read_snapshot(name,
+          staleness_class: :fresh_required,
+          required_min_sequence: fresh_required.snapshot_sequence + 1
+        )
+
+      {:error, bounded_stale_negative} =
+        KernelSnapshot.read_snapshot(name,
+          staleness_class: :bounded_stale_allowed,
+          max_age_ms: 60_000,
+          max_sequence_lag: 0,
+          owner_sequence: fresh_required.snapshot_sequence + 1
+        )
+
+      {:error, rebuild_required} =
+        KernelSnapshot.read_snapshot(name, staleness_class: :rebuild_required)
+
+      {:error, reject_stale_negative} =
+        KernelSnapshot.read_snapshot(name,
+          staleness_class: :reject_stale,
+          required_min_sequence: fresh_required.snapshot_sequence + 1
+        )
+
+      {:error, invalid_class} =
+        KernelSnapshot.read_snapshot(name, staleness_class: :eventually_consistent)
+
+      read_surface = KernelSnapshot.read_surface_info(name)
+
+      {:ok,
+       %{
+         case: :snapshot_staleness_classes,
+         scenario: 202,
+         positive_path: %{
+           staleness_classes: [
+             fresh_required.staleness_class,
+             bounded_stale_allowed.staleness_class,
+             reject_stale_positive.staleness_class
+           ],
+           snapshot_sequence: fresh_required.snapshot_sequence,
+           max_age_ms: bounded_stale_allowed.max_age_ms,
+           max_sequence_lag: bounded_stale_allowed.max_sequence_lag,
+           hot_publication_store: read_surface.storage,
+           read_concurrency?: read_surface.read_concurrency?
+         },
+         negative_failure_modes: %{
+           fresh_required: Map.take(fresh_required_negative, [:reason, :safe_action]),
+           bounded_stale_allowed:
+             Map.take(bounded_stale_negative, [:reason, :safe_action, :max_sequence_lag]),
+           rebuild_required: Map.take(rebuild_required, [:reason, :safe_action]),
+           reject_stale: Map.take(reject_stale_negative, [:reason, :safe_action]),
+           invalid_class: Map.take(invalid_class, [:reason, :safe_action, :staleness_class])
+         }
+       }}
+    after
+      stop_process(pid)
+    end
+  end
+
   defp run_partitioned_signal_ingress_sustained do
     name = unique_name(:phase5_signal_ingress)
     {:ok, ingress_pid} = SignalIngress.start_link(signal_ingress_opts(name, sustained_policy()))
@@ -249,6 +355,65 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
       stop_process(ingress_pid)
       stop_process(blocking_consumer)
       stop_process(counting_consumer)
+    end
+  end
+
+  defp run_partition_fifo_ordering_scope do
+    name = unique_name(:phase5_signal_ordering)
+    {:ok, ingress_pid} = SignalIngress.start_link(signal_ingress_opts(name, sustained_policy()))
+    {:ok, alpha_consumer} = CountingConsumer.start([])
+    {:ok, beta_consumer} = CountingConsumer.start([])
+
+    try do
+      :ok = SignalIngress.register_subscription(name, "sess-alpha")
+      :ok = SignalIngress.register_subscription(name, "sess-beta")
+      :ok = SignalIngress.register_consumer(name, "sess-alpha", alpha_consumer)
+      :ok = SignalIngress.register_consumer(name, "sess-beta", beta_consumer)
+
+      acceptances =
+        [
+          observation("sess-alpha", "sig-alpha-1", subject_id: "subject-alpha"),
+          observation("sess-beta", "sig-beta-1", subject_id: "subject-beta"),
+          observation("sess-alpha", "sig-alpha-2", subject_id: "subject-alpha"),
+          observation("sess-beta", "sig-beta-2", subject_id: "subject-beta"),
+          observation("sess-alpha", "sig-alpha-3", subject_id: "subject-alpha"),
+          observation("sess-beta", "sig-beta-3", subject_id: "subject-beta")
+        ]
+        |> Enum.map(fn observation ->
+          {:ok, acceptance} = SignalIngress.deliver_observation(name, observation)
+          acceptance
+        end)
+
+      :ok =
+        wait_until(fn ->
+          CountingConsumer.count(alpha_consumer) == 3 and
+            CountingConsumer.count(beta_consumer) == 3
+        end)
+
+      {:ok,
+       %{
+         case: :partition_fifo_ordering_scope,
+         scenario: 203,
+         delivery_order_scope:
+           acceptances
+           |> Enum.map(& &1.delivery_order_scope)
+           |> Enum.uniq()
+           |> only_scope!(),
+         partition_fifo: %{
+           alpha: CountingConsumer.observed_signal_ids(alpha_consumer),
+           beta: CountingConsumer.observed_signal_ids(beta_consumer)
+         },
+         partition_refs:
+           acceptances
+           |> Enum.map(& &1.partition_ref)
+           |> Enum.uniq(),
+         rejected_ordering_claims: [:global_fifo, :tenant_total_fifo, :cross_partition_fifo],
+         cross_partition_ordering_assumption?: false
+       }}
+    after
+      stop_process(ingress_pid)
+      stop_process(alpha_consumer)
+      stop_process(beta_consumer)
     end
   end
 
@@ -549,6 +714,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
   end
 
   defp wait_until(_fun, 0), do: {:error, :timeout}
+
+  defp only_scope!([scope]), do: scope
 
   defp stop_process(pid) when is_pid(pid) do
     if Process.alive?(pid) do
