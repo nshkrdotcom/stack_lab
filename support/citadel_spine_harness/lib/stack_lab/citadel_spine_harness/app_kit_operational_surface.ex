@@ -2,6 +2,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   @moduledoc false
 
   alias AppKit.Bridges.MezzanineBridge
+  alias AppKit.RunGovernance
   alias Ash
   alias Citadel.InvocationBridge
   alias Citadel.JidoIntegrationBridge
@@ -62,6 +63,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
   alias Mezzanine.Pack.{
     Compiler,
+    DecisionSpec,
     ExecutionRecipeSpec,
     LifecycleSpec,
     Manifest,
@@ -221,6 +223,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
   @spec run_case(
           :install_ingest_review_trace
+          | :governed_agent_workload_contract
           | :lower_backed_command_trace
           | :lower_backed_command_terminal_rejection
           | :lower_backed_command_semantic_failure
@@ -476,6 +479,141 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
            trace_id: unified_trace.trace_id,
            step_sources: Enum.map(unified_trace.steps, & &1.source)
          }
+       }}
+    end)
+  end
+
+  def run_case(:governed_agent_workload_contract) do
+    MezzanineOperationalStack.with_store(:app_kit_governed_agent_workload, fn _repo_config ->
+      tenant_id = "tenant-app-kit-governed-workload"
+
+      activate_governed_workload_registration!()
+
+      %{program: program, work_class: work_class} = governed_workload_fixture_stack(tenant_id)
+
+      {:ok, page_request} = PageRequest.new(%{limit: 10})
+      {:ok, workload} = RunGovernance.governed_agent_workload(governed_workload_attrs())
+
+      install_context =
+        request_context(
+          tenant_id,
+          "trace/app-kit/governed/install/#{System.unique_integer([:positive])}",
+          %{program_id: program.id, work_class_id: work_class.id}
+        )
+
+      surface_opts = surface_opts()
+
+      {:ok, install_result} =
+        InstallationSurface.create_installation(
+          install_context,
+          governed_workload_install_template!(),
+          surface_opts
+        )
+
+      installation_ref = install_result.installation_ref
+
+      context =
+        request_context(
+          tenant_id,
+          "trace/app-kit/governed/work/#{System.unique_integer([:positive])}",
+          %{program_id: program.id, work_class_id: work_class.id},
+          installation_ref
+        )
+
+      {:ok, subject_ref} =
+        WorkSurface.ingest_subject(
+          context,
+          %{
+            external_ref: "linear:ENG-901",
+            title: "Governed coding operation",
+            payload: %{"issue_id" => "ENG-901"},
+            source_kind: "linear"
+          },
+          surface_opts
+        )
+
+      {:ok, run_request} =
+        RunRequest.new(%{
+          subject_ref: subject_ref,
+          recipe_ref: "coding_operations",
+          params: %{"priority" => "high"}
+        })
+
+      {:ok, run_result} = WorkControl.start_run(context, run_request, surface_opts)
+      {:ok, subject_detail} = WorkSurface.get_subject(context, subject_ref, surface_opts)
+
+      {:ok, operator_projection} =
+        OperatorSurface.subject_status(context, subject_ref, surface_opts)
+
+      {:ok, pending_reviews_before} =
+        ReviewSurface.list_pending(context, page_request, surface_opts)
+
+      decision_ref = hd(pending_reviews_before.entries).decision_ref
+
+      {:ok, review_detail_before} =
+        ReviewSurface.get_review(context, decision_ref, surface_opts)
+
+      {:ok, review_action} =
+        ReviewSurface.record_decision(
+          context,
+          decision_ref,
+          %{decision: :accept, reason: "approved by operator"},
+          surface_opts
+        )
+
+      {:ok, pending_reviews_after} =
+        ReviewSurface.list_pending(context, page_request, surface_opts)
+
+      {:ok, review_detail_after} = ReviewSurface.get_review(context, decision_ref, surface_opts)
+
+      {:error, bare_asm_substitute_rejection} =
+        RunGovernance.governed_agent_workload(bare_asm_substitute_attrs())
+
+      {:ok,
+       %{
+         case: :governed_agent_workload_contract,
+         tenant_id: tenant_id,
+         governed_workload: governed_workload_summary(workload),
+         installation: %{
+           created_status: install_result.status,
+           installation_id: installation_ref.id,
+           pack_slug: installation_ref.pack_slug
+         },
+         work: %{
+           subject_id: subject_ref.id,
+           detail_active_run_id: payload_value(subject_detail, :active_run_id),
+           detail_pending_reviews: Enum.map(subject_detail.pending_decision_refs, & &1.id),
+           detail_blocker_kinds: Enum.map(subject_detail.blocking_conditions, & &1.blocker_kind),
+           detail_next_step_kind:
+             subject_detail.next_step_preview && subject_detail.next_step_preview.step_kind
+         },
+         control: %{
+           state: run_result.state,
+           run_id: run_result.payload.run_ref.run_id,
+           review_unit_id: run_result.payload.review_unit_id
+         },
+         operator: %{
+           lifecycle_state: operator_projection.lifecycle_state,
+           blocker_kinds: Enum.map(operator_projection.blocking_conditions, & &1.blocker_kind),
+           pending_decision_ref_ids:
+             operator_projection.pending_obligations
+             |> Enum.map(& &1.decision_ref_id)
+             |> Enum.reject(&is_nil/1)
+         },
+         review: %{
+           pending_ids_before: Enum.map(pending_reviews_before.entries, & &1.decision_ref.id),
+           pending_ids_after: Enum.map(pending_reviews_after.entries, & &1.decision_ref.id),
+           status_before: review_detail_before.status,
+           status_after: review_detail_after.status,
+           action_kind: review_action.action_ref.action_kind
+         },
+         lifecycle: %{
+           states: workload.lifecycle_states,
+           transition_paths: RunGovernance.lifecycle_transition_paths(workload)
+         },
+         scale_pressure_seed: RunGovernance.scale_pressure_seed(workload),
+         bare_asm_substitute_rejection: bare_asm_substitute_rejection,
+         task_async_stream_substitute?: false
        }}
     end)
   end
@@ -1724,6 +1862,192 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       {:error, error} ->
         raise "failed to activate app-kit operational proof pack: #{inspect(error)}"
     end
+  end
+
+  defp activate_governed_workload_registration! do
+    manifest = %Manifest{
+      pack_slug: "extravaganza_coding_ops",
+      version: "1",
+      migration_strategy: :additive,
+      subject_kind_specs: [%SubjectKindSpec{name: "coding_task"}],
+      lifecycle_specs: [
+        %LifecycleSpec{
+          subject_kind: "coding_task",
+          initial_state: :submitted,
+          terminal_states: [:completed, :rejected, :expired],
+          transitions: [
+            %{
+              from: :submitted,
+              to: :awaiting_review,
+              trigger: {:execution_completed, "coding_operations"}
+            },
+            %{
+              from: :submitted,
+              to: :retry_submission,
+              trigger: {:execution_failed, "coding_operations"}
+            },
+            %{from: :retry_submission, to: :submitted, trigger: :auto},
+            %{
+              from: :awaiting_review,
+              to: :completed,
+              trigger: {:decision_made, "operator_review", :accept}
+            },
+            %{
+              from: :awaiting_review,
+              to: :rejected,
+              trigger: {:decision_made, "operator_review", :reject}
+            },
+            %{
+              from: :awaiting_review,
+              to: :expired,
+              trigger: {:decision_made, "operator_review", :expired}
+            }
+          ]
+        }
+      ],
+      execution_recipe_specs: [
+        %ExecutionRecipeSpec{
+          recipe_ref: "coding_operations",
+          placement_ref: :local_default,
+          runtime_class: :session
+        }
+      ],
+      decision_specs: [
+        %DecisionSpec{
+          decision_kind: :operator_review,
+          description: "Operator review gate for governed coding operations",
+          trigger: {:after_execution_completed, "coding_operations"},
+          authorized_actors: [:operator],
+          allowed_decisions: [:accept, :reject, :expired],
+          required_within_hours: 24
+        }
+      ],
+      projection_specs: [
+        %ProjectionSpec{name: "operator_queue", subject_kinds: ["coding_task"]}
+      ]
+    }
+
+    compiled_pack =
+      case Compiler.compile(manifest) do
+        {:ok, compiled_pack} ->
+          compiled_pack
+
+        {:error, errors} ->
+          raise "failed to compile governed workload proof pack: #{inspect(errors)}"
+      end
+
+    compiled_pack
+    |> MezzanineConfigRegistry.register_pack!()
+    |> PackRegistration.activate()
+    |> case do
+      {:ok, registration} ->
+        registration
+
+      {:error, error} ->
+        raise "failed to activate governed workload proof pack: #{inspect(error)}"
+    end
+  end
+
+  defp governed_workload_fixture_stack(tenant_id) do
+    {:ok, bootstrap} =
+      Installations.ensure_runtime_profile(tenant_id, %{
+        program: %{
+          slug: "extravaganza_coding_ops",
+          name: "Extravaganza Coding Ops",
+          product_family: "extravaganza",
+          configuration: %{},
+          metadata: %{}
+        },
+        policy_bundle: %{
+          name: "default_coding_ops",
+          version: "1.0.0",
+          policy_kind: :workflow_md,
+          source_ref: "WORKFLOW.md",
+          body: workflow_body(true),
+          metadata: %{}
+        },
+        work_class: %{
+          name: "coding_operations",
+          kind: "coding_task",
+          intake_schema: %{"required" => ["title"]},
+          default_review_profile: %{"required" => true},
+          default_run_profile: %{"runtime" => "session"}
+        },
+        placement_profile: %{
+          profile_id: "local_default",
+          strategy: "affinity",
+          target_selector: %{"runtime_driver" => "jido_session"},
+          runtime_preferences: %{"locality" => "same_region"},
+          workspace_policy: %{},
+          metadata: %{}
+        }
+      })
+
+    %{program: bootstrap.program, work_class: bootstrap.work_class}
+  end
+
+  defp governed_workload_install_template! do
+    {:ok, template} =
+      InstallTemplate.new(%{
+        template_key: "extravaganza-coding-ops",
+        pack_slug: "extravaganza_coding_ops",
+        pack_version: "1",
+        default_bindings: %{
+          "execution_bindings" => %{
+            "coding_operations" => %{"placement_ref" => "local_default"}
+          }
+        },
+        metadata: %{"managed_by" => "stack_lab", "contract" => "GovernedAgentWorkloadContract.v1"}
+      })
+
+    template
+  end
+
+  defp governed_workload_attrs do
+    %{
+      workload_ref: "workloads/extravaganza-coding-ops",
+      profile_id: "profiles/extravaganza/local_default",
+      ingress_ref: "app_kit_operator_surface_via_mezzanine_bridge",
+      work_class_ref: "extravaganza/work_classes/coding_operations",
+      pack_ref: "mezzanine/packs/extravaganza_coding_ops@1",
+      subject_kind: "coding_task",
+      lifecycle_states: [
+        :submitted,
+        :retry_submission,
+        :awaiting_review,
+        :completed,
+        :rejected,
+        :expired
+      ],
+      review_gate_ref: "extravaganza/review_gates/operator_review",
+      tenant_count: 1,
+      agent_count: 1,
+      runs_per_agent: 1,
+      max_concurrency: 1,
+      synthetic_operator_driver_ref: "operator_script_in_app_kit"
+    }
+  end
+
+  defp bare_asm_substitute_attrs do
+    Map.merge(governed_workload_attrs(), %{
+      synthetic_operator_driver_ref: "task_async_stream_of_asm_calls",
+      driver: :task_async_stream,
+      execution_mode: :bare_asm_calls
+    })
+  end
+
+  defp governed_workload_summary(workload) do
+    %{
+      contract_name: workload.contract_name,
+      ingress_ref: workload.ingress_ref,
+      synthetic_operator_driver_ref: workload.synthetic_operator_driver_ref,
+      work_class_ref: workload.work_class_ref,
+      pack_ref: workload.pack_ref,
+      subject_kind: workload.subject_kind,
+      lifecycle_states: workload.lifecycle_states,
+      review_gate_ref: workload.review_gate_ref,
+      script_surfaces: Enum.map(RunGovernance.operator_script(workload), & &1.surface)
+    }
   end
 
   defp operational_fixture_stack(tenant_id, opts \\ []) do

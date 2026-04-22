@@ -448,6 +448,7 @@ defmodule StackLab.CitadelSpineHarness do
       repo_roots: repo_roots(),
       cases: %{
         install_ingest_review_trace: %{kind: :install_ingest_review_trace},
+        governed_agent_workload_contract: %{kind: :governed_agent_workload_contract},
         lower_backed_command_trace: %{kind: :lower_backed_command_trace},
         lower_backed_command_terminal_rejection: %{
           kind: :lower_backed_command_terminal_rejection
@@ -466,6 +467,7 @@ defmodule StackLab.CitadelSpineHarness do
 
   @spec exercise_app_kit_operational_surface(
           :install_ingest_review_trace
+          | :governed_agent_workload_contract
           | :lower_backed_command_trace
           | :lower_backed_command_terminal_rejection
           | :lower_backed_command_semantic_failure
@@ -476,6 +478,7 @@ defmodule StackLab.CitadelSpineHarness do
   def exercise_app_kit_operational_surface(case_name)
       when case_name in [
              :install_ingest_review_trace,
+             :governed_agent_workload_contract,
              :lower_backed_command_trace,
              :lower_backed_command_terminal_rejection,
              :lower_backed_command_semantic_failure,

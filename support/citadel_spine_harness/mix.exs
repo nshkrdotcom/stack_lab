@@ -56,6 +56,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:app_kit_mezzanine_bridge, path: "../../../app_kit/bridges/mezzanine_bridge"},
       {:app_kit_operator_surface, path: "../../../app_kit/core/operator_surface"},
       {:app_kit_review_surface, path: "../../../app_kit/core/review_surface"},
+      {:app_kit_run_governance, path: "../../../app_kit/core/run_governance"},
       {:app_kit_scope_objects, path: "../../../app_kit/core/scope_objects"},
       {:app_kit_work_control, path: "../../../app_kit/core/work_control"},
       {:app_kit_work_surface, path: "../../../app_kit/core/work_surface"},

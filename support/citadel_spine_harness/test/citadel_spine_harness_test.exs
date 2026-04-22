@@ -198,6 +198,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
 
     assert scenario.cases == %{
              install_ingest_review_trace: %{kind: :install_ingest_review_trace},
+             governed_agent_workload_contract: %{kind: :governed_agent_workload_contract},
              lower_backed_command_trace: %{kind: :lower_backed_command_trace},
              lower_backed_command_terminal_rejection: %{
                kind: :lower_backed_command_terminal_rejection
