@@ -66,6 +66,13 @@ handling: Citadel invocation requests accept V2 only, malformed/downgraded/
 future schema versions and stale schema hashes fail closed, Mezzanine workflow
 signals require explicit registered signal versions, and BrainIngress has no
 current workflow-bound old-shape intake path without an active-workflow pin.
+Phase 5 Scenarios 210, 210A, and 211 prove the Milestone-8 AI-native minimal
+seams: context-budget enforcement fails closed at preflight, append, stream,
+runtime-admission, and reconciliation loci; cost attribution requires tenant,
+authority, lineage, runtime, provider, model, endpoint, and source-meter joins;
+semantic failure exports carry structured journal identity, artifact-backed
+evidence, redaction refs, bounded reply-publication refs, and denial evidence
+for unsafe feedback, training, delimiter, and direct agent-mutation paths.
 Phase 3 adds product-boundary release proofs: Scenario 31 runs the AppKit
 product no-bypass scanner against `extravaganza`, Scenario 36 separately proves
 there is no direct Execution Plane bypass in product/AppKit paths, and Scenario

@@ -50,6 +50,10 @@ This package owns:
   invocation-request V2-only acceptance, malformed/downgraded/future
   schema-version rejection, stale schema-hash rejection, explicit Mezzanine
   workflow signal versions, and BrainIngress active-workflow pin applicability
+- the Phase-5 Scenarios-210, 210A, and 211 AI-native minimal seam proofs for
+  context budget fail-closed loci, source-metered cost attribution joins, and
+  semantic failure evidence export boundaries without feedback, dataset,
+  promotion, training, or direct agent-mutation paths
 - the real split-node remote transport proof
 - restart and failover drill helpers
 

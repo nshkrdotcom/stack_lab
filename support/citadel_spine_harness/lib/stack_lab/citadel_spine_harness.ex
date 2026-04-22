@@ -17,6 +17,7 @@ defmodule StackLab.CitadelSpineHarness do
     MultiWriterStateAudit,
     OuterBrainDurability,
     PacketReconciliation,
+    Phase5AiNativeMinimalSeams,
     Phase5ArtifactReferenceBoundary,
     Phase5BeamHotPathLoad,
     Phase5LineageContextMissing,
@@ -625,6 +626,70 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()}
   def exercise_phase5_version_skew_malformed_packet(:contract_chaos) do
     Phase5VersionSkewMalformedPacket.run_case(:contract_chaos)
+  end
+
+  @spec phase5_context_budget_exceeded_scenario() :: map()
+  def phase5_context_budget_exceeded_scenario do
+    %{
+      name: :phase5_context_budget_exceeded,
+      compose: LabCore.compose_file(:single),
+      runbook: "context_budget_exceeded.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        context_budget_exceeded: %{
+          kind: :context_budget_exceeded,
+          scenario: 210
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_context_budget_exceeded(:context_budget_exceeded) :: {:ok, map()}
+  def exercise_phase5_context_budget_exceeded(:context_budget_exceeded) do
+    Phase5AiNativeMinimalSeams.run_case(:context_budget_exceeded)
+  end
+
+  @spec phase5_cost_attribution_missing_scenario() :: map()
+  def phase5_cost_attribution_missing_scenario do
+    %{
+      name: :phase5_cost_attribution_missing,
+      compose: LabCore.compose_file(:single),
+      runbook: "cost_attribution_missing.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        cost_attribution_missing: %{
+          kind: :cost_attribution_missing,
+          scenario: "210A"
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_cost_attribution_missing(:cost_attribution_missing) :: {:ok, map()}
+  def exercise_phase5_cost_attribution_missing(:cost_attribution_missing) do
+    Phase5AiNativeMinimalSeams.run_case(:cost_attribution_missing)
+  end
+
+  @spec phase5_semantic_failure_evidence_gap_scenario() :: map()
+  def phase5_semantic_failure_evidence_gap_scenario do
+    %{
+      name: :phase5_semantic_failure_evidence_gap,
+      compose: LabCore.compose_file(:single),
+      runbook: "semantic_failure_evidence_gap.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        semantic_failure_evidence_gap: %{
+          kind: :semantic_failure_evidence_gap,
+          scenario: 211
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_semantic_failure_evidence_gap(:semantic_failure_evidence_gap) ::
+          {:ok, map()}
+  def exercise_phase5_semantic_failure_evidence_gap(:semantic_failure_evidence_gap) do
+    Phase5AiNativeMinimalSeams.run_case(:semantic_failure_evidence_gap)
   end
 
   @spec phase5_session_lease_map_eviction_scenario() :: map()
