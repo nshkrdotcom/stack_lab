@@ -157,7 +157,10 @@ defmodule StackLab.CitadelSpineHarness.Phase5AiNativeMinimalSeams do
        negative_failures: %{
          missing_evidence_refs: validate_semantic_failure_export(%{evidence_refs: []}),
          raw_prompt_provider_body_export:
-           validate_semantic_failure_export(%{raw_prompt: "secret", raw_provider_body: %{}}),
+           validate_semantic_failure_export(%{
+             raw_prompt: :redacted_placeholder,
+             raw_provider_body: :redacted_placeholder
+           }),
          feedback_training_promotion_fields:
            validate_semantic_failure_export(%{training_ready_marker: true}),
          opaque_delimiter_new_write:
