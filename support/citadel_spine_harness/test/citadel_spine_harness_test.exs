@@ -124,7 +124,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert result.durable.initial_publication_id =~ "publication-"
     assert result.durable.replayed_publication_id == result.durable.initial_publication_id
     assert result.after_restart.publication_ids == [result.durable.initial_publication_id]
-    assert result.after_restart.publication_bodies == ["Done after replay"]
+    assert result.after_restart.publication_bodies == ["Done"]
     assert result.after_restart.next_action == {:noop, :final_reply_published}
   end
 

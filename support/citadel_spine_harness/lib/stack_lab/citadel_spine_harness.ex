@@ -17,6 +17,7 @@ defmodule StackLab.CitadelSpineHarness do
     MultiWriterStateAudit,
     OuterBrainDurability,
     PacketReconciliation,
+    Phase5ArtifactReferenceBoundary,
     Phase5BeamHotPathLoad,
     Phase5SessionLeaseMapEviction,
     PrelimEvidenceReport,
@@ -556,6 +557,28 @@ defmodule StackLab.CitadelSpineHarness do
              :partition_fifo_ordering_scope
            ] do
     Phase5BeamHotPathLoad.run_case(case_name)
+  end
+
+  @spec phase5_artifact_reference_boundary_scenario() :: map()
+  def phase5_artifact_reference_boundary_scenario do
+    %{
+      name: :phase5_artifact_reference_boundary,
+      compose: LabCore.compose_file(:single),
+      runbook: "artifact_reference_payload_bypass.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        payload_boundary_fault_matrix: %{
+          kind: :payload_boundary_fault_matrix,
+          scenario: 204
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_artifact_reference_boundary(:payload_boundary_fault_matrix) ::
+          {:ok, map()}
+  def exercise_phase5_artifact_reference_boundary(:payload_boundary_fault_matrix) do
+    Phase5ArtifactReferenceBoundary.run_case(:payload_boundary_fault_matrix)
   end
 
   @spec phase5_session_lease_map_eviction_scenario() :: map()
