@@ -5,6 +5,7 @@ defmodule StackLab.CitadelSpineHarness do
   """
 
   alias Mezzanine.WorkflowRuntime.TemporalDispatchContract
+  alias OuterBrain.Contracts.SemanticGatewayContract
 
   alias StackLab.CitadelSpineHarness.{
     AITraceClaimCheckTraceContinuity,
@@ -30,6 +31,7 @@ defmodule StackLab.CitadelSpineHarness do
     PressureFailover,
     RestartAuthority,
     SameNode,
+    SemanticGatewayContractEvidence,
     SemanticHost,
     Stage12LoadReadiness,
     Stage9OrchestrationRecovery,
@@ -210,6 +212,31 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()}
   def exercise_temporal_dispatch_contract(:restart_replay_owner_evidence) do
     TemporalDispatchContractEvidence.run_case(:restart_replay_owner_evidence)
+  end
+
+  @spec semantic_gateway_contract_scenario() :: map()
+  def semantic_gateway_contract_scenario do
+    contract = SemanticGatewayContract.contract()
+
+    %{
+      name: :phase6_semantic_gateway_contract,
+      compose: LabCore.compose_file(:single),
+      runbook: "outer_brain_semantic_durability.md",
+      repo_roots: repo_roots(),
+      contract: contract.id,
+      owner_repo: String.to_existing_atom(contract.owner),
+      primary_repos: Enum.map(contract.primary_repos, &String.to_existing_atom/1),
+      real_durability_scenario: :outer_brain_restart_durability,
+      cases: %{
+        semantic_gateway_owner_evidence: %{kind: :semantic_gateway_owner_evidence}
+      }
+    }
+  end
+
+  @spec exercise_semantic_gateway_contract(:semantic_gateway_owner_evidence) ::
+          {:ok, map()}
+  def exercise_semantic_gateway_contract(:semantic_gateway_owner_evidence) do
+    SemanticGatewayContractEvidence.run_case(:semantic_gateway_owner_evidence)
   end
 
   @spec installation_runtime_lease_scenario() :: map()
