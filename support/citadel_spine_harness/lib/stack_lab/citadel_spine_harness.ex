@@ -4,12 +4,16 @@ defmodule StackLab.CitadelSpineHarness do
   Jido Integration proofs.
   """
 
+  alias Citadel.AuthorityContract.AuthorityTenantPropagation.V1,
+    as: AuthorityTenantPropagationContract
+
   alias Mezzanine.WorkflowRuntime.TemporalDispatchContract
   alias OuterBrain.Contracts.SemanticGatewayContract
 
   alias StackLab.CitadelSpineHarness.{
     AITraceClaimCheckTraceContinuity,
     AppKitOperationalSurface,
+    AuthorityTenantPropagationEvidence,
     ExtensionAuthoring,
     GovernedRun,
     InstallationRuntimeLease,
@@ -237,6 +241,31 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()}
   def exercise_semantic_gateway_contract(:semantic_gateway_owner_evidence) do
     SemanticGatewayContractEvidence.run_case(:semantic_gateway_owner_evidence)
+  end
+
+  @spec authority_tenant_propagation_scenario() :: map()
+  def authority_tenant_propagation_scenario do
+    contract = AuthorityTenantPropagationContract.contract()
+
+    %{
+      name: :phase6_authority_tenant_propagation,
+      compose: LabCore.compose_file(:single),
+      runbook: "evidence_report_validation.md",
+      repo_roots: repo_roots(),
+      contract: contract.id,
+      owner_repos: contract.primary_repos,
+      consumer_repo: :stack_lab,
+      real_lower_facts_case: :authorized_mezzanine_readback,
+      cases: %{
+        owner_composed_evidence: %{kind: :owner_composed_evidence}
+      }
+    }
+  end
+
+  @spec exercise_authority_tenant_propagation(:owner_composed_evidence) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_authority_tenant_propagation(:owner_composed_evidence) do
+    AuthorityTenantPropagationEvidence.run_case(:owner_composed_evidence)
   end
 
   @spec installation_runtime_lease_scenario() :: map()

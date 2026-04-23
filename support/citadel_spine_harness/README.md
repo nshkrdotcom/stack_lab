@@ -10,6 +10,10 @@ This package owns:
   and the authoritative packet docs
 - the real same-node in-process transport proof
 - the real substrate-facing lower-facts readback proof
+- the Phase-6 `AuthorityTenantPropagation.v1` evidence composition proof that
+  consumes Citadel, Mezzanine, and Jido Integration owner evidence and the real
+  authorized lower-facts read path without replacing owner facts with harness
+  assertions
 - the real `outer_brain` restart-durability proof
 - the Phase-3 Outer Brain semantic-failure carrier, durable journal, and
   duplicate-publication suppression proofs
