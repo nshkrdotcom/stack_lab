@@ -59,6 +59,58 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert_received {:lower_run_artifacts, "tenant-app-kit-operational", _run_id}
   end
 
+  test "app-kit operational surface consumes the governed agent workload contract" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_app_kit_operational_surface(
+               :governed_agent_workload_contract
+             )
+
+    assert result.case == :governed_agent_workload_contract
+    assert result.tenant_id == "tenant-app-kit-governed-workload"
+
+    assert result.governed_workload.contract_name == "GovernedAgentWorkloadContract.v1"
+    assert result.governed_workload.ingress_ref == "app_kit_operator_surface_via_mezzanine_bridge"
+    assert result.governed_workload.synthetic_operator_driver_ref == "operator_script_in_app_kit"
+
+    assert result.governed_workload.work_class_ref ==
+             "extravaganza/work_classes/coding_operations"
+
+    assert result.governed_workload.pack_ref == "mezzanine/packs/extravaganza_coding_ops@1"
+    assert result.governed_workload.subject_kind == "coding_task"
+
+    assert result.governed_workload.script_surfaces == [
+             :app_kit_work_control,
+             :app_kit_review_surface,
+             :app_kit_operator_surface
+           ]
+
+    assert result.control.state == :waiting_review
+    assert result.work.detail_blocker_kinds == ["review_pending"]
+    assert result.review.status_before == "pending"
+    assert result.review.status_after == "accepted"
+    assert result.review.action_kind == "review_accept"
+
+    assert result.lifecycle.transition_paths.rejection_path == [
+             :submitted,
+             :awaiting_review,
+             :rejected
+           ]
+
+    assert result.scale_pressure_seed == %{
+             contract_name: "ScalePressureProfile.v1",
+             workload_contract_ref: "GovernedAgentWorkloadContract.v1",
+             workload_ref: "workloads/extravaganza-coding-ops",
+             profile_id: "profiles/extravaganza/local_default",
+             tenant_count: 1,
+             agents_per_tenant: 1,
+             work_items_per_agent: 1,
+             max_concurrency: 1
+           }
+
+    assert result.bare_asm_substitute_rejection == :bare_asm_workload_forbidden
+    refute result.task_async_stream_substitute?
+  end
+
   test "app-kit operational surface proves one real lower-backed command path and receipt readback" do
     assert {:ok, result} =
              CitadelSpineHarness.exercise_app_kit_operational_surface(:lower_backed_command_trace)

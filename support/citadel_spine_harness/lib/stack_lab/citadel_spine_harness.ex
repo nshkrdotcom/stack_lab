@@ -4,9 +4,16 @@ defmodule StackLab.CitadelSpineHarness do
   Jido Integration proofs.
   """
 
+  alias Citadel.AuthorityContract.AuthorityTenantPropagation.V1,
+    as: AuthorityTenantPropagationContract
+
+  alias Mezzanine.WorkflowRuntime.TemporalDispatchContract
+  alias OuterBrain.Contracts.SemanticGatewayContract
+
   alias StackLab.CitadelSpineHarness.{
     AITraceClaimCheckTraceContinuity,
     AppKitOperationalSurface,
+    AuthorityTenantPropagationEvidence,
     ExtensionAuthoring,
     GovernedRun,
     InstallationRuntimeLease,
@@ -17,14 +24,25 @@ defmodule StackLab.CitadelSpineHarness do
     MultiWriterStateAudit,
     OuterBrainDurability,
     PacketReconciliation,
+    Phase5AiNativeMinimalSeams,
+    Phase5ArtifactReferenceBoundary,
+    Phase5BeamHotPathLoad,
+    Phase5LineageContextMissing,
+    Phase5SessionLeaseMapEviction,
+    Phase5VersionSkewMalformedPacket,
+    Phase6EvidenceReport,
     PrelimEvidenceReport,
     PrelimServiceMode,
     PressureFailover,
+    ProviderFamilyRuntimeIntegration,
     RestartAuthority,
     SameNode,
+    ScalePressureHarness,
+    SemanticGatewayContractEvidence,
     SemanticHost,
     Stage12LoadReadiness,
     Stage9OrchestrationRecovery,
+    TemporalDispatchContractEvidence,
     TemporalPostgresProjectionDrift,
     TypedHost
   }
@@ -177,6 +195,176 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_mezzanine_restart_recovery(:temporal_replay_after_restart) do
     MezzanineRestartRecovery.run_case(:temporal_replay_after_restart)
+  end
+
+  @spec temporal_dispatch_contract_scenario() :: map()
+  def temporal_dispatch_contract_scenario do
+    contract = TemporalDispatchContract.contract()
+
+    %{
+      name: :phase6_temporal_dispatch_contract,
+      compose: LabCore.compose_file(:single),
+      runbook: "temporal_restart_replay.md",
+      repo_roots: repo_roots(),
+      contract: contract.id,
+      owner_repo: contract.owner,
+      primary_repos: contract.primary_repos,
+      cases: %{
+        restart_replay_owner_evidence: %{kind: :restart_replay_owner_evidence}
+      }
+    }
+  end
+
+  @spec exercise_temporal_dispatch_contract(:restart_replay_owner_evidence) ::
+          {:ok, map()}
+  def exercise_temporal_dispatch_contract(:restart_replay_owner_evidence) do
+    TemporalDispatchContractEvidence.run_case(:restart_replay_owner_evidence)
+  end
+
+  @spec semantic_gateway_contract_scenario() :: map()
+  def semantic_gateway_contract_scenario do
+    contract = SemanticGatewayContract.contract()
+
+    %{
+      name: :phase6_semantic_gateway_contract,
+      compose: LabCore.compose_file(:single),
+      runbook: "outer_brain_semantic_durability.md",
+      repo_roots: repo_roots(),
+      contract: contract.id,
+      owner_repo: String.to_existing_atom(contract.owner),
+      primary_repos: Enum.map(contract.primary_repos, &String.to_existing_atom/1),
+      real_durability_scenario: :outer_brain_restart_durability,
+      cases: %{
+        semantic_gateway_owner_evidence: %{kind: :semantic_gateway_owner_evidence}
+      }
+    }
+  end
+
+  @spec exercise_semantic_gateway_contract(:semantic_gateway_owner_evidence) ::
+          {:ok, map()}
+  def exercise_semantic_gateway_contract(:semantic_gateway_owner_evidence) do
+    SemanticGatewayContractEvidence.run_case(:semantic_gateway_owner_evidence)
+  end
+
+  @spec authority_tenant_propagation_scenario() :: map()
+  def authority_tenant_propagation_scenario do
+    contract = AuthorityTenantPropagationContract.contract()
+
+    %{
+      name: :phase6_authority_tenant_propagation,
+      compose: LabCore.compose_file(:single),
+      runbook: "evidence_report_validation.md",
+      repo_roots: repo_roots(),
+      contract: contract.id,
+      owner_repos: contract.primary_repos,
+      consumer_repo: :stack_lab,
+      real_lower_facts_case: :authorized_mezzanine_readback,
+      cases: %{
+        owner_composed_evidence: %{kind: :owner_composed_evidence}
+      }
+    }
+  end
+
+  @spec exercise_authority_tenant_propagation(:owner_composed_evidence) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_authority_tenant_propagation(:owner_composed_evidence) do
+    AuthorityTenantPropagationEvidence.run_case(:owner_composed_evidence)
+  end
+
+  @spec provider_family_runtime_integration_scenario() :: map()
+  def provider_family_runtime_integration_scenario do
+    %{
+      name: :phase6_provider_family_runtime_integration,
+      compose: LabCore.compose_file(:single),
+      runbook: "provider_family_runtime_validation.md",
+      repo_roots: repo_roots(),
+      scenario: 606,
+      consumer_repo: :stack_lab,
+      owner_repos: [
+        :agent_session_manager,
+        :cli_subprocess_core,
+        :pristine,
+        :prismatic,
+        :self_hosted_inference_core
+      ],
+      provider_sdk_repos: [
+        :codex_sdk,
+        :gemini_cli_sdk,
+        :claude_agent_sdk,
+        :amp_sdk,
+        :notion_sdk,
+        :github_ex,
+        :linear_sdk,
+        :llama_cpp_sdk
+      ],
+      cases: %{
+        provider_family_runtime_integration: %{
+          kind: :provider_family_runtime_integration,
+          scenario: 606
+        }
+      }
+    }
+  end
+
+  @spec exercise_provider_family_runtime_integration(:provider_family_runtime_integration) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_provider_family_runtime_integration(:provider_family_runtime_integration) do
+    ProviderFamilyRuntimeIntegration.run_case(:provider_family_runtime_integration)
+  end
+
+  @spec scale_pressure_harness_scenario() :: map()
+  def scale_pressure_harness_scenario do
+    %{
+      name: :phase6_scale_pressure_harness,
+      compose: LabCore.compose_file(:single),
+      runbook: "scale_pressure_harness.md",
+      repo_roots: repo_roots(),
+      scenario: 610,
+      owner_repo: :stack_lab,
+      contracts: [
+        "ScalePressureProfile.v1",
+        "ProviderFaultMatrix.v1",
+        "BudgetCostAuthorityContract.v1"
+      ],
+      cases: %{
+        bounded_local_pressure: %{
+          kind: :bounded_local_pressure,
+          scenario: 610
+        }
+      }
+    }
+  end
+
+  @spec exercise_scale_pressure_harness(:bounded_local_pressure) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_scale_pressure_harness(:bounded_local_pressure) do
+    ScalePressureHarness.run_case(:bounded_local_pressure)
+  end
+
+  @spec phase6_evidence_report_scenario() :: map()
+  def phase6_evidence_report_scenario do
+    %{
+      name: :phase6_evidence_report_validation,
+      compose: LabCore.compose_file(:single),
+      runbook: "evidence_report_validation.md",
+      repo_roots: repo_roots(),
+      scenario: 611,
+      owner_repo: :stack_lab,
+      primary_repos: [:stack_lab, :AITrace],
+      contract: "SimulationEvidenceReport.v1",
+      schema_ref: Phase6EvidenceReport.schema_ref(),
+      cases: %{
+        validated_report: %{
+          kind: :validated_report,
+          scenario: 611
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase6_evidence_report(:validated_report) :: {:ok, map()} | {:error, term()}
+  def exercise_phase6_evidence_report(:validated_report) do
+    Phase6EvidenceReport.run_case(:validated_report)
   end
 
   @spec installation_runtime_lease_scenario() :: map()
@@ -442,6 +630,7 @@ defmodule StackLab.CitadelSpineHarness do
       repo_roots: repo_roots(),
       cases: %{
         install_ingest_review_trace: %{kind: :install_ingest_review_trace},
+        governed_agent_workload_contract: %{kind: :governed_agent_workload_contract},
         lower_backed_command_trace: %{kind: :lower_backed_command_trace},
         lower_backed_command_terminal_rejection: %{
           kind: :lower_backed_command_terminal_rejection
@@ -460,6 +649,7 @@ defmodule StackLab.CitadelSpineHarness do
 
   @spec exercise_app_kit_operational_surface(
           :install_ingest_review_trace
+          | :governed_agent_workload_contract
           | :lower_backed_command_trace
           | :lower_backed_command_terminal_rejection
           | :lower_backed_command_semantic_failure
@@ -470,6 +660,7 @@ defmodule StackLab.CitadelSpineHarness do
   def exercise_app_kit_operational_surface(case_name)
       when case_name in [
              :install_ingest_review_trace,
+             :governed_agent_workload_contract,
              :lower_backed_command_trace,
              :lower_backed_command_terminal_rejection,
              :lower_backed_command_semantic_failure,
@@ -508,6 +699,204 @@ defmodule StackLab.CitadelSpineHarness do
              :claim_check_degradation_and_compactness
            ] do
     Stage12LoadReadiness.run_case(case_name)
+  end
+
+  @spec phase5_beam_hot_path_load_scenario() :: map()
+  def phase5_beam_hot_path_load_scenario do
+    %{
+      name: :phase5_beam_hot_path_load,
+      compose: LabCore.compose_file(:single),
+      runbook: "beam_hot_path_load.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        snapshot_publish_read_sustained: %{
+          kind: :snapshot_publish_read_sustained,
+          scenario: 202,
+          minimum_duration_ms: 15_000
+        },
+        snapshot_staleness_classes: %{
+          kind: :snapshot_staleness_classes,
+          scenario: 202
+        },
+        partitioned_signal_ingress_sustained: %{
+          kind: :partitioned_signal_ingress_sustained,
+          scenario: 203,
+          minimum_duration_ms: 30_000
+        },
+        partition_fifo_ordering_scope: %{
+          kind: :partition_fifo_ordering_scope,
+          scenario: 203
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_beam_hot_path_load(
+          :snapshot_publish_read_sustained
+          | :snapshot_staleness_classes
+          | :partitioned_signal_ingress_sustained
+          | :partition_fifo_ordering_scope
+        ) :: {:ok, map()}
+  def exercise_phase5_beam_hot_path_load(case_name)
+      when case_name in [
+             :snapshot_publish_read_sustained,
+             :snapshot_staleness_classes,
+             :partitioned_signal_ingress_sustained,
+             :partition_fifo_ordering_scope
+           ] do
+    Phase5BeamHotPathLoad.run_case(case_name)
+  end
+
+  @spec phase5_artifact_reference_boundary_scenario() :: map()
+  def phase5_artifact_reference_boundary_scenario do
+    %{
+      name: :phase5_artifact_reference_boundary,
+      compose: LabCore.compose_file(:single),
+      runbook: "artifact_reference_payload_bypass.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        payload_boundary_fault_matrix: %{
+          kind: :payload_boundary_fault_matrix,
+          scenario: 204
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_artifact_reference_boundary(:payload_boundary_fault_matrix) ::
+          {:ok, map()}
+  def exercise_phase5_artifact_reference_boundary(:payload_boundary_fault_matrix) do
+    Phase5ArtifactReferenceBoundary.run_case(:payload_boundary_fault_matrix)
+  end
+
+  @spec phase5_lineage_context_missing_scenario() :: map()
+  def phase5_lineage_context_missing_scenario do
+    %{
+      name: :phase5_lineage_context_missing,
+      compose: LabCore.compose_file(:single),
+      runbook: "lineage_context_missing.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        lineage_context_missing: %{
+          kind: :lineage_context_missing,
+          scenario: 208
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_lineage_context_missing(:lineage_context_missing) ::
+          {:ok, map()}
+  def exercise_phase5_lineage_context_missing(:lineage_context_missing) do
+    Phase5LineageContextMissing.run_case(:lineage_context_missing)
+  end
+
+  @spec phase5_version_skew_malformed_packet_scenario() :: map()
+  def phase5_version_skew_malformed_packet_scenario do
+    %{
+      name: :phase5_version_skew_malformed_packet,
+      compose: LabCore.compose_file(:single),
+      runbook: "version_skew_malformed_packet.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        contract_chaos: %{
+          kind: :contract_chaos,
+          scenario: 209
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_version_skew_malformed_packet(:contract_chaos) ::
+          {:ok, map()}
+  def exercise_phase5_version_skew_malformed_packet(:contract_chaos) do
+    Phase5VersionSkewMalformedPacket.run_case(:contract_chaos)
+  end
+
+  @spec phase5_context_budget_exceeded_scenario() :: map()
+  def phase5_context_budget_exceeded_scenario do
+    %{
+      name: :phase5_context_budget_exceeded,
+      compose: LabCore.compose_file(:single),
+      runbook: "context_budget_exceeded.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        context_budget_exceeded: %{
+          kind: :context_budget_exceeded,
+          scenario: 210
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_context_budget_exceeded(:context_budget_exceeded) :: {:ok, map()}
+  def exercise_phase5_context_budget_exceeded(:context_budget_exceeded) do
+    Phase5AiNativeMinimalSeams.run_case(:context_budget_exceeded)
+  end
+
+  @spec phase5_cost_attribution_missing_scenario() :: map()
+  def phase5_cost_attribution_missing_scenario do
+    %{
+      name: :phase5_cost_attribution_missing,
+      compose: LabCore.compose_file(:single),
+      runbook: "cost_attribution_missing.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        cost_attribution_missing: %{
+          kind: :cost_attribution_missing,
+          scenario: "210A"
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_cost_attribution_missing(:cost_attribution_missing) :: {:ok, map()}
+  def exercise_phase5_cost_attribution_missing(:cost_attribution_missing) do
+    Phase5AiNativeMinimalSeams.run_case(:cost_attribution_missing)
+  end
+
+  @spec phase5_semantic_failure_evidence_gap_scenario() :: map()
+  def phase5_semantic_failure_evidence_gap_scenario do
+    %{
+      name: :phase5_semantic_failure_evidence_gap,
+      compose: LabCore.compose_file(:single),
+      runbook: "semantic_failure_evidence_gap.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        semantic_failure_evidence_gap: %{
+          kind: :semantic_failure_evidence_gap,
+          scenario: 211
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_semantic_failure_evidence_gap(:semantic_failure_evidence_gap) ::
+          {:ok, map()}
+  def exercise_phase5_semantic_failure_evidence_gap(:semantic_failure_evidence_gap) do
+    Phase5AiNativeMinimalSeams.run_case(:semantic_failure_evidence_gap)
+  end
+
+  @spec phase5_session_lease_map_eviction_scenario() :: map()
+  def phase5_session_lease_map_eviction_scenario do
+    %{
+      name: :phase5_session_lease_map_eviction,
+      compose: LabCore.compose_file(:single),
+      runbook: "session_lease_map_eviction.md",
+      repo_roots: repo_roots(),
+      cases: %{
+        expiry_first_segmented_lru: %{
+          kind: :expiry_first_segmented_lru,
+          scenario: "203A"
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase5_session_lease_map_eviction(:expiry_first_segmented_lru) ::
+          {:ok, map()}
+  def exercise_phase5_session_lease_map_eviction(:expiry_first_segmented_lru) do
+    Phase5SessionLeaseMapEviction.run_case(:expiry_first_segmented_lru)
   end
 
   @spec memory_bindings_through_existing_seams_scenario() :: map()

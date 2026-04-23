@@ -2,7 +2,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
   @moduledoc false
 
   alias Ecto.Adapters.SQL
-  alias OuterBrain.Contracts.SemanticFailure
+  alias OuterBrain.Contracts.{ReplyBodyBoundary, SemanticFailure}
 
   alias OuterBrain.Journal.Tables.{
     RecoveryTaskRecord,
@@ -189,7 +189,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
         reply_publication_record(
           causal_unit_id,
           :final,
-          "Done after replay",
+          "Done",
           publication_id: "publication-replayed-#{causal_unit_id}-final"
         ),
         repo: Repo
@@ -288,6 +288,9 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
   end
 
   defp reply_publication_record(causal_unit_id, phase, body, opts \\ []) do
+    dedupe_key = "#{causal_unit_id}:#{phase}"
+    {:ok, reply_body} = ReplyBodyBoundary.build(causal_unit_id, phase, dedupe_key, body)
+
     {:ok, publication} =
       ReplyPublicationRecord.new(%{
         publication_id:
@@ -295,8 +298,9 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
         causal_unit_id: causal_unit_id,
         phase: phase,
         state: :published,
-        dedupe_key: "#{causal_unit_id}:#{phase}",
-        body: body
+        dedupe_key: dedupe_key,
+        body: reply_body.preview,
+        body_ref: reply_body.ref
       })
 
     publication
@@ -376,9 +380,14 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
         state text NOT NULL,
         dedupe_key text NOT NULL,
         body text NOT NULL,
+        body_ref jsonb NOT NULL DEFAULT '{}'::jsonb,
         inserted_at timestamptz NOT NULL,
         updated_at timestamptz NOT NULL
       )
+      """,
+      """
+      ALTER TABLE reply_publications
+      ADD COLUMN IF NOT EXISTS body_ref jsonb NOT NULL DEFAULT '{}'::jsonb
       """,
       """
       CREATE UNIQUE INDEX IF NOT EXISTS reply_publications_dedupe_key_index

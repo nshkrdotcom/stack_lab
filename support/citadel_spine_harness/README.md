@@ -10,6 +10,19 @@ This package owns:
   and the authoritative packet docs
 - the real same-node in-process transport proof
 - the real substrate-facing lower-facts readback proof
+- the Phase-6 `AuthorityTenantPropagation.v1` evidence composition proof that
+  consumes Citadel, Mezzanine, and Jido Integration owner evidence and the real
+  authorized lower-facts read path without replacing owner facts with harness
+  assertions
+- the Phase-6 provider-family runtime integration release gate for scenario
+  606, consuming ASM plus `cli_subprocess_core`, Pristine, Prismatic, and
+  `self_hosted_inference_core` owner contracts while rejecting provider-local
+  mock selectors, public simulation selectors, real egress, and raw-payload
+  evidence
+- the Phase-6 ScalePressureProfile.v1 harness for Scenario 610, recording
+  bounded local tenant/agent/work-item pressure, rate limits, reject-over-cap
+  backpressure, provider fault matrix, budget/cost no-spend posture, cleanup,
+  no-egress negatives, cross-tenant leak rejection, and explicit no-SLO status
 - the real `outer_brain` restart-durability proof
 - the Phase-3 Outer Brain semantic-failure carrier, durable journal, and
   duplicate-publication suppression proofs
@@ -46,6 +59,14 @@ This package owns:
   canonical room truth, room event logs, client/worker local state, derived
   projections, and explicit rejection of OT/CRDT or projection-as-truth claims
   without source-owned merge mechanics
+- the Phase-5 Scenario-209 version-skew and contract-chaos proof for Citadel
+  invocation-request V2-only acceptance, malformed/downgraded/future
+  schema-version rejection, stale schema-hash rejection, explicit Mezzanine
+  workflow signal versions, and BrainIngress active-workflow pin applicability
+- the Phase-5 Scenarios-210, 210A, and 211 AI-native minimal seam proofs for
+  context budget fail-closed loci, source-metered cost attribution joins, and
+  semantic failure evidence export boundaries without feedback, dataset,
+  promotion, training, or direct agent-mutation paths
 - the real split-node remote transport proof
 - restart and failover drill helpers
 

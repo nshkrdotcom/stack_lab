@@ -18,6 +18,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   alias OuterBrain.Contracts.{
     ContextAdapterReadOnly,
     PrivacyRedactionFixture,
+    ReplyBodyBoundary,
     ReplyPublication,
     SemanticContextProvenance,
     SemanticFailure,
@@ -1255,13 +1256,22 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   end
 
   defp reply_publication_attrs do
+    {:ok, reply_body} =
+      ReplyBodyBoundary.build(
+        "causal-unit-prelim",
+        :final,
+        "reply-publication-prelim",
+        "Bounded public reply body."
+      )
+
     %{
       publication_id: "publication-prelim-final",
       causal_unit_id: "causal-unit-prelim",
       phase: :final,
       dedupe_key: "reply-publication-prelim",
       state: :published,
-      body: "Bounded public reply body."
+      body: reply_body.preview,
+      body_ref: reply_body.ref
     }
   end
 

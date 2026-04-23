@@ -233,8 +233,10 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
     app_kit_files =
       scan_absence!(
         [
-          Path.join(roots.app_kit, "core/**/*.ex"),
-          Path.join(roots.app_kit, "bridges/**/*.ex"),
+          Path.join(roots.app_kit, "core/*/lib/**/*.ex"),
+          Path.join(roots.app_kit, "core/*/test/**/*.ex"),
+          Path.join(roots.app_kit, "bridges/*/lib/**/*.ex"),
+          Path.join(roots.app_kit, "bridges/*/test/**/*.ex"),
           Path.join(roots.app_kit, "core/*/mix.exs"),
           Path.join(roots.app_kit, "bridges/*/mix.exs")
         ],
@@ -258,7 +260,9 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
     checked_files =
       scan_absence!(
         [
-          Path.join(roots.stack_lab, "support/citadel_spine_harness/**/*.ex"),
+          Path.join(roots.stack_lab, "support/citadel_spine_harness/lib/**/*.ex"),
+          Path.join(roots.stack_lab, "support/citadel_spine_harness/test/**/*.exs"),
+          Path.join(roots.stack_lab, "support/citadel_spine_harness/mix.exs"),
           Path.join(roots.stack_lab, "support/citadel_spine_harness/README.md"),
           Path.join(roots.stack_lab, "README.md")
         ],

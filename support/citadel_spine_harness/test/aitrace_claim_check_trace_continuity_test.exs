@@ -75,7 +75,25 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuityTest do
     assert result.execution_plane.request_id == result.app_kit_to_lower.execution_id
 
     assert result.aitrace.trace_id == result.trace_id
+    assert result.aitrace.trace_id_source.kind == :external_alias
     assert result.aitrace.span_count == 1
+    assert result.aitrace.span_id_source.kind == :external_alias
+    assert result.aitrace.start_time == nil
+    assert %DateTime{} = result.aitrace.start_wall_time
+    assert result.aitrace.clock_domain.source == "citadel_trace_envelope"
+    assert result.aitrace.lineage.trace_id == result.trace_id
+    assert result.aitrace.lineage.tenant_id == result.app_kit_to_lower.tenant_id
+    assert result.aitrace.lineage.causation_id == result.app_kit_to_lower.execution_id
+
+    assert result.aitrace.lineage.canonical_idempotency_key ==
+             result.execution_plane.idempotency_key
+
+    assert result.aitrace.aitrace_context.trace_id == result.trace_id
+    assert result.aitrace.aitrace_context.span_id == result.aitrace.span_id
+    assert result.aitrace.platform_envelope_field_map.trace_id == "AITrace.Trace.trace_id"
+
+    assert result.aitrace.platform_envelope_field_map.request_id ==
+             "AITrace.Context.metadata.causation_id"
   end
 
   test "claim-check degradation keeps telemetry and cleanup honest without mutating the ledger on stage failure" do
