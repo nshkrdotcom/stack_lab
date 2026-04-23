@@ -19,6 +19,10 @@ This package owns:
   `self_hosted_inference_core` owner contracts while rejecting provider-local
   mock selectors, public simulation selectors, real egress, and raw-payload
   evidence
+- the Phase-6 ScalePressureProfile.v1 harness for Scenario 610, recording
+  bounded local tenant/agent/work-item pressure, rate limits, reject-over-cap
+  backpressure, provider fault matrix, budget/cost no-spend posture, cleanup,
+  no-egress negatives, cross-tenant leak rejection, and explicit no-SLO status
 - the real `outer_brain` restart-durability proof
 - the Phase-3 Outer Brain semantic-failure carrier, durable journal, and
   duplicate-publication suppression proofs

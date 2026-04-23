@@ -36,6 +36,7 @@ defmodule StackLab.CitadelSpineHarness do
     ProviderFamilyRuntimeIntegration,
     RestartAuthority,
     SameNode,
+    ScalePressureHarness,
     SemanticGatewayContractEvidence,
     SemanticHost,
     Stage12LoadReadiness,
@@ -308,6 +309,35 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_provider_family_runtime_integration(:provider_family_runtime_integration) do
     ProviderFamilyRuntimeIntegration.run_case(:provider_family_runtime_integration)
+  end
+
+  @spec scale_pressure_harness_scenario() :: map()
+  def scale_pressure_harness_scenario do
+    %{
+      name: :phase6_scale_pressure_harness,
+      compose: LabCore.compose_file(:single),
+      runbook: "scale_pressure_harness.md",
+      repo_roots: repo_roots(),
+      scenario: 610,
+      owner_repo: :stack_lab,
+      contracts: [
+        "ScalePressureProfile.v1",
+        "ProviderFaultMatrix.v1",
+        "BudgetCostAuthorityContract.v1"
+      ],
+      cases: %{
+        bounded_local_pressure: %{
+          kind: :bounded_local_pressure,
+          scenario: 610
+        }
+      }
+    }
+  end
+
+  @spec exercise_scale_pressure_harness(:bounded_local_pressure) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_scale_pressure_harness(:bounded_local_pressure) do
+    ScalePressureHarness.run_case(:bounded_local_pressure)
   end
 
   @spec installation_runtime_lease_scenario() :: map()
