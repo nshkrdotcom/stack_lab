@@ -14,6 +14,11 @@ This package owns:
   consumes Citadel, Mezzanine, and Jido Integration owner evidence and the real
   authorized lower-facts read path without replacing owner facts with harness
   assertions
+- the Phase-6 provider-family runtime integration release gate for scenario
+  606, consuming ASM plus `cli_subprocess_core`, Pristine, Prismatic, and
+  `self_hosted_inference_core` owner contracts while rejecting provider-local
+  mock selectors, public simulation selectors, real egress, and raw-payload
+  evidence
 - the real `outer_brain` restart-durability proof
 - the Phase-3 Outer Brain semantic-failure carrier, durable journal, and
   duplicate-publication suppression proofs

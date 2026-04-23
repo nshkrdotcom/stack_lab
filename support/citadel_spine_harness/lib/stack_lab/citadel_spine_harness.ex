@@ -33,6 +33,7 @@ defmodule StackLab.CitadelSpineHarness do
     PrelimEvidenceReport,
     PrelimServiceMode,
     PressureFailover,
+    ProviderFamilyRuntimeIntegration,
     RestartAuthority,
     SameNode,
     SemanticGatewayContractEvidence,
@@ -266,6 +267,47 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_authority_tenant_propagation(:owner_composed_evidence) do
     AuthorityTenantPropagationEvidence.run_case(:owner_composed_evidence)
+  end
+
+  @spec provider_family_runtime_integration_scenario() :: map()
+  def provider_family_runtime_integration_scenario do
+    %{
+      name: :phase6_provider_family_runtime_integration,
+      compose: LabCore.compose_file(:single),
+      runbook: "provider_family_runtime_validation.md",
+      repo_roots: repo_roots(),
+      scenario: 606,
+      consumer_repo: :stack_lab,
+      owner_repos: [
+        :agent_session_manager,
+        :cli_subprocess_core,
+        :pristine,
+        :prismatic,
+        :self_hosted_inference_core
+      ],
+      provider_sdk_repos: [
+        :codex_sdk,
+        :gemini_cli_sdk,
+        :claude_agent_sdk,
+        :amp_sdk,
+        :notion_sdk,
+        :github_ex,
+        :linear_sdk,
+        :llama_cpp_sdk
+      ],
+      cases: %{
+        provider_family_runtime_integration: %{
+          kind: :provider_family_runtime_integration,
+          scenario: 606
+        }
+      }
+    }
+  end
+
+  @spec exercise_provider_family_runtime_integration(:provider_family_runtime_integration) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_provider_family_runtime_integration(:provider_family_runtime_integration) do
+    ProviderFamilyRuntimeIntegration.run_case(:provider_family_runtime_integration)
   end
 
   @spec installation_runtime_lease_scenario() :: map()
