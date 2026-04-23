@@ -111,6 +111,8 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:outer_brain_restart_authority,
        path: "../../../outer_brain/core/outer_brain_restart_authority"},
       {:outer_brain_runtime, path: "../../../outer_brain/core/outer_brain_runtime"},
+      {:jason, "~> 1.4", runtime: false},
+      {:jsv, "~> 0.16", runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}

@@ -30,6 +30,7 @@ defmodule StackLab.CitadelSpineHarness do
     Phase5LineageContextMissing,
     Phase5SessionLeaseMapEviction,
     Phase5VersionSkewMalformedPacket,
+    Phase6EvidenceReport,
     PrelimEvidenceReport,
     PrelimServiceMode,
     PressureFailover,
@@ -338,6 +339,32 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_scale_pressure_harness(:bounded_local_pressure) do
     ScalePressureHarness.run_case(:bounded_local_pressure)
+  end
+
+  @spec phase6_evidence_report_scenario() :: map()
+  def phase6_evidence_report_scenario do
+    %{
+      name: :phase6_evidence_report_validation,
+      compose: LabCore.compose_file(:single),
+      runbook: "evidence_report_validation.md",
+      repo_roots: repo_roots(),
+      scenario: 611,
+      owner_repo: :stack_lab,
+      primary_repos: [:stack_lab, :AITrace],
+      contract: "SimulationEvidenceReport.v1",
+      schema_ref: Phase6EvidenceReport.schema_ref(),
+      cases: %{
+        validated_report: %{
+          kind: :validated_report,
+          scenario: 611
+        }
+      }
+    }
+  end
+
+  @spec exercise_phase6_evidence_report(:validated_report) :: {:ok, map()} | {:error, term()}
+  def exercise_phase6_evidence_report(:validated_report) do
+    Phase6EvidenceReport.run_case(:validated_report)
   end
 
   @spec installation_runtime_lease_scenario() :: map()
