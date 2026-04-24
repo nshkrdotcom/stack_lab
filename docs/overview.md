@@ -10,5 +10,6 @@ It exists to make these seams executable:
 - restart-authority drills
 - governed-run and operator-surface examples
 - session-lineage and failover drills
+- governed-memory substrate simulations
 
 This repo is a harness workspace, not a shipping product surface.

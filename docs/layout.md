@@ -10,6 +10,8 @@ The workspace is organized as:
   - shared harness helpers
 - `support/citadel_spine_harness/`
   - harness-only sibling assembly for `citadel -> jido_integration`
+- `support/memsim_harness/`
+  - Phase 7 governed-memory substrate simulations
 - `examples/`
   - first-class proving projects
   - `single_node_roundtrip`

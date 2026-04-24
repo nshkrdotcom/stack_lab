@@ -4,6 +4,7 @@ defmodule StackLab.Build.WorkspaceContract do
   @package_paths [
     "support/lab_core",
     "support/citadel_spine_harness",
+    "support/memsim_harness",
     "examples/single_node_roundtrip",
     "examples/lower_facts_roundtrip",
     "examples/outer_brain_restart_durability",

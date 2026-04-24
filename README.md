@@ -61,6 +61,10 @@ harness classifies Jido Hive room truth, room event logs, participant presence,
 client/worker local state, and context-graph projections into explicit writer
 modes, while rejecting OT/CRDT or projection-as-truth claims that lack a source
 owner and merge mechanics.
+Phase 7 adds `support/memsim_harness` for governed-memory substrate drills,
+starting with Scenario 700 for multi-node epoch monotonicity, source-node
+attribution, commit-order evidence, AITrace per-node receipt collection,
+cluster invalidation observations, and local-only toxiproxy hooks.
 Phase 5 Scenario 209 proves Milestone-7 version-skew and contract-chaos
 handling: Citadel invocation requests accept V2 only, malformed/downgraded/
 future schema versions and stale schema hashes fail closed, Mezzanine workflow
@@ -153,6 +157,7 @@ just fault net-cut
 - [docs/runbooks/up_multi.md](./docs/runbooks/up_multi.md)
 - [docs/runbooks/faults.md](./docs/runbooks/faults.md)
 - [support/citadel_spine_harness/README.md](./support/citadel_spine_harness/README.md)
+- [support/memsim_harness/README.md](./support/memsim_harness/README.md)
 
 ## License
 
