@@ -25,8 +25,8 @@ defmodule StackLab.WorkspaceTest do
     assert "examples/pressure_failover_drill" in package_paths
   end
 
-  test "uses the released Weld 0.7.1 line directly" do
-    assert {:weld, "~> 0.7.1", runtime: false} in MixProject.project()[:deps]
+  test "uses the released Weld 0.7.2 line directly" do
+    assert {:weld, "~> 0.7.2", runtime: false} in MixProject.project()[:deps]
   end
 
   test "uses Weld task autodiscovery instead of local release aliases" do
