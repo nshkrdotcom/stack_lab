@@ -9,7 +9,7 @@ defmodule StackLab.MemsimHarness do
   """
 
   alias StackLab.LabCore
-  alias StackLab.MemsimHarness.InvariantReport
+  alias StackLab.MemsimHarness.{InvariantReport, Phase7EvidenceReport}
 
   @scenario_id 700
   @scenario_name :multi_node_epoch_monotonicity_and_ordering
@@ -44,6 +44,16 @@ defmodule StackLab.MemsimHarness do
 
   @spec validate_memory_invariant_report(map()) :: :ok | {:error, term()}
   def validate_memory_invariant_report(report), do: InvariantReport.validate(report)
+
+  @spec phase7_evidence_report(keyword()) :: {:ok, map()} | {:error, term()}
+  def phase7_evidence_report(opts \\ []) do
+    with {:ok, invariant_report} <- run_memory_invariants(opts) do
+      Phase7EvidenceReport.build(invariant_report)
+    end
+  end
+
+  @spec validate_phase7_evidence_report(map()) :: :ok | {:error, term()}
+  def validate_phase7_evidence_report(report), do: Phase7EvidenceReport.validate(report)
 
   @spec seed!(keyword()) :: map()
   def seed!(opts \\ []) do

@@ -5,8 +5,8 @@ defmodule StackLab.MemsimHarness.InvariantReport do
   @required_invariant_ids ~w(11.0 11.1 11.2 11.3 11.4 11.5 11.6 11.7 11.8 11.9 11.10)
   @required_proof_kinds [:recall, :write_private, :share_up, :promote, :invalidate, :audit]
   @default_source_commits %{
-    stack_lab: "4a39ec1097c28892fdfd18d3a8044999fc3415ef",
-    jido_integration: "fb3dd263dad38911ab73adeb2f3905c6e5d69e44",
+    stack_lab: "71f2f64290e5da88d76927dbf1969a226d739220",
+    jido_integration: "2272b9f112795c32e089ad293b749e4fb5a5e289",
     mezzanine: "247045be4013c028a3a6411e5492d98d961ade77",
     outer_brain: "05ae0e6ff114a9f145c97987113a2cc88388967e",
     app_kit: "64842d17144b239a458f0038fbb043a749ec8b3f",
