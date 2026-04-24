@@ -9,6 +9,7 @@ defmodule StackLab.MemsimHarness do
   """
 
   alias StackLab.LabCore
+  alias StackLab.MemsimHarness.InvariantReport
 
   @scenario_id 700
   @scenario_name :multi_node_epoch_monotonicity_and_ordering
@@ -30,6 +31,19 @@ defmodule StackLab.MemsimHarness do
       owner_gate_required?: true
     }
   end
+
+  @spec memory_invariant_scenarios() :: [map()]
+  def memory_invariant_scenarios, do: InvariantReport.scenario_families()
+
+  @spec run_memory_invariants(keyword()) :: {:ok, map()} | {:error, term()}
+  def run_memory_invariants(opts \\ []) do
+    with {:ok, m7a_result} <- run_epoch_monotonicity(opts) do
+      InvariantReport.run(m7a_result, opts)
+    end
+  end
+
+  @spec validate_memory_invariant_report(map()) :: :ok | {:error, term()}
+  def validate_memory_invariant_report(report), do: InvariantReport.validate(report)
 
   @spec seed!(keyword()) :: map()
   def seed!(opts \\ []) do
