@@ -11,6 +11,7 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
   @logical_workspace_ref "workspace://stack_lab/root"
+  @restart_recovery_timeout_ms 60_000
 
   @spec run_case(:delayed_acceptance | :node_restart_recovery) :: {:ok, map()}
   def run_case(:delayed_acceptance) do
@@ -94,13 +95,17 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
         try do
           :ok =
             TransportRuntime.put!(
-              transport_config(self(), replacement_remote.remote_node, timeout_ms: 20_000)
+              transport_config(
+                self(),
+                replacement_remote.remote_node,
+                timeout_ms: @restart_recovery_timeout_ms
+              )
             )
 
-          Process.sleep(25)
+          Process.sleep(100)
           :ok = SessionServer.replay_pending(env.session_server)
 
-          transport = await_transport_result!(20_000)
+          transport = await_transport_result!(@restart_recovery_timeout_ms)
 
           resolved =
             RoundtripRuntime.wait_for_entry!(

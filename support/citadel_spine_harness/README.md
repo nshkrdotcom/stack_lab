@@ -9,6 +9,10 @@ This package owns:
   `execution_plane`, `citadel`, `jido_integration`, `mezzanine`, `outer_brain`,
   and the authoritative packet docs
 - the real same-node in-process transport proof
+- the Execution Plane node-boundary proof with explicit node, process, and
+  HTTP lane deps, verified targets, authority rejection, target-attestation
+  rejection, evidence capture, remote runtime-client substitution, and
+  JidoIntegration fallback-ladder ownership
 - the real substrate-facing lower-facts readback proof
 - the Phase-6 `AuthorityTenantPropagation.v1` evidence composition proof that
   consumes Citadel, Mezzanine, and Jido Integration owner evidence and the real
@@ -74,6 +78,11 @@ It does not move ownership out of the owner repos. Citadel stays the Brain-side
 owner, `jido_integration` stays the lower acceptance owner, `mezzanine` stays
 the substrate-truth owner, `outer_brain` stays the semantic-runtime owner, and
 this package only assembles them for proof work inside `stack_lab`.
+
+For Execution Plane node proofs, this package is the host that selects lane
+deps and registers adapters. The node remains lane-neutral, and fallback is
+proved above the node through separate runtime-client execute calls for each
+acceptable-attestation rung.
 
 The semantic host path in this harness is intentionally adapter-shaped. The
 real `outer_brain` durability proof is covered separately by the dedicated

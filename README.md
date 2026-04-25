@@ -100,6 +100,12 @@ The OuterBrain restart-durability proof also carries Phase-3 semantic gateway
 coverage: provider-neutral semantic failure carriers are journaled durably,
 context adapter requests stay read-only and provenance-preserving, and restart
 replay is deduped by reply-publication key.
+The Execution Plane node proof now assembles a real lane-neutral node with
+explicit process and HTTP lane deps, verified targets, evidence capture, and a
+remote-runtime-client stub. It proves local node process/HTTP execution,
+rejection of unsigned authority and unattested targets, and the
+JidoIntegration-owned fallback ladder that records a rejected strong
+attestation rung before succeeding on `local-erlexec-weak`.
 
 ## Scope
 

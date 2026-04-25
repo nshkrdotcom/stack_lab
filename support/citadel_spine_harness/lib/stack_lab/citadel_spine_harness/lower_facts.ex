@@ -361,6 +361,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
           "level" => "strict",
           "egress" => "restricted",
           "approvals" => "manual",
+          "acceptable_attestation" => ["local-erlexec-weak"],
           "allowed_tools" => ["bash", "git"],
           "file_scope_ref" => @logical_workspace_ref,
           "file_scope_hint" => RoundtripRuntime.workspace_root()

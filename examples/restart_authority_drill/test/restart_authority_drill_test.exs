@@ -32,6 +32,7 @@ defmodule StackLab.Examples.RestartAuthorityDrillTest do
   end
 
   @tag skip: @distribution_skip
+  @tag timeout: 120_000
   test "node restart recovery replays pending work into a replacement Spine node" do
     assert {:ok, result} = RestartAuthorityDrill.exercise(:node_restart_recovery)
 

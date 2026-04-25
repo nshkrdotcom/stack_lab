@@ -349,6 +349,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
           sandbox_level: "strict",
           sandbox_egress: "restricted",
           sandbox_approvals: "manual",
+          acceptable_attestation: ["local-erlexec-weak"],
           allowed_tools: ["bash", "git"],
           file_scope_ref: @logical_workspace_ref,
           file_scope_hint: workspace_root(),
