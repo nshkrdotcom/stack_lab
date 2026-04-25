@@ -100,7 +100,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:jido_integration_v2_store_postgres,
        path: "../../../jido_integration/core/store_postgres", runtime: false},
       {:jido_integration_v2_store_local, path: "../../../jido_integration/core/store_local"},
-      {:execution_plane, path: "../../../execution_plane"},
+      {:execution_plane, path: "../../../execution_plane/core/execution_plane"},
       {:execution_plane_node, path: "../../../execution_plane/runtimes/execution_plane_node"},
       {:execution_plane_process,
        path: "../../../execution_plane/runtimes/execution_plane_process"},
