@@ -14,8 +14,20 @@
 - `./mix.exs`: Tooling root for the StackLab non-umbrella monorepo
 - `./support/citadel_spine_harness/mix.exs`: Harness-only assembly package for Citadel and Jido Integration proofs
 - `./support/lab_core/mix.exs`: Shared harness helpers for the StackLab workspace
+- `./support/memsim_harness/mix.exs`: Governed-memory substrate simulation helpers for StackLab
 
 # AGENTS.md
+
+## Execution Plane dependency wiring
+
+- `support/citadel_spine_harness` consumes `:execution_plane` from
+  `../../../execution_plane/core/execution_plane`.
+- The harness may also consume lane/runtime package homes directly, such as
+  `../../../execution_plane/runtimes/execution_plane_node`,
+  `../../../execution_plane/runtimes/execution_plane_process`, and
+  `../../../execution_plane/protocols/execution_plane_http`.
+- Do not point `:execution_plane` at the sibling repo root. That root is the
+  non-published Blitz workspace project, not the Hex package.
 
 ## Temporal developer environment
 
