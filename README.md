@@ -112,10 +112,10 @@ contract for the current coding-ops path: Linear-shaped source admission,
 workspace refs, Codex lower receipts, GitHub PR evidence refs, operator review,
 and Linear workpad publication readback are carried through AppKit DTOs and
 Extravaganza product templates. The harness now also exposes an opt-in dynamic
-live provider command that composes Linear terminal publication, GitHub
-disposable PR creation/review/cleanup, Codex app-server execution, Temporal
-substrate status, and a local receipt without accepting static provider
-selectors.
+live provider command from the workspace root that composes Linear terminal
+publication, GitHub disposable PR creation/review/cleanup, Codex app-server
+execution, Temporal substrate status, and a local receipt without accepting
+static provider selectors.
 
 ## Scope
 
