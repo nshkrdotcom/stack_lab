@@ -1,11 +1,11 @@
-defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2ETest do
+defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheckTest do
   use ExUnit.Case, async: true
 
-  alias StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E
+  alias StackLab.CitadelSpineHarness.ProviderSmokeCheck
 
-  test "typed live spec defaults to the approved GitHub write target and rejects static selectors" do
+  test "typed smoke spec defaults to the approved GitHub write target and rejects static selectors" do
     assert {:ok, spec} =
-             ExtravaganzaLiveE2E.parse_args([
+             ProviderSmokeCheck.parse_args([
                "--linear-api-key-stdin",
                "--run-label",
                "m12-test"
@@ -30,13 +30,13 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2ETest do
           "--temporal-workflow-id"
         ] do
       assert {:error, {:static_provider_selector, ^flag}} =
-               ExtravaganzaLiveE2E.parse_args(["--linear-api-key-stdin", flag, "static"])
+               ProviderSmokeCheck.parse_args(["--linear-api-key-stdin", flag, "static"])
     end
   end
 
-  test "dry run plan carries dynamic provider identity lifecycle without running live commands" do
+  test "dry run plan carries dynamic provider identity lifecycle without running commands" do
     assert {:ok, spec} =
-             ExtravaganzaLiveE2E.parse_args([
+             ProviderSmokeCheck.parse_args([
                "--linear-api-key-file",
                "/operator/linear-token",
                "--github-repo",
@@ -45,7 +45,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2ETest do
                "/tmp/codex-proof"
              ])
 
-    plan = ExtravaganzaLiveE2E.plan(spec)
+    plan = ProviderSmokeCheck.plan(spec)
 
     assert plan.steps == [
              :internal_appkit_projection,
@@ -85,7 +85,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2ETest do
     end
 
     assert {:ok, receipt} =
-             ExtravaganzaLiveE2E.run(
+             ProviderSmokeCheck.run(
                [
                  "--linear-api-key-stdin",
                  "--run-label",

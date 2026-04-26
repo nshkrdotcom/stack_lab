@@ -1,6 +1,6 @@
-defmodule Mix.Tasks.StackLab.Extravaganza.LiveE2e do
+defmodule Mix.Tasks.StackLab.ProviderSmokeCheck do
   @moduledoc """
-  Root workspace entry point for the Extravaganza dynamic live E2E proof.
+  Root workspace entry point for the live provider smoke check.
 
   The implementation lives in `support/citadel_spine_harness`; this task keeps
   the documented root command working by delegating to that package.
@@ -8,7 +8,7 @@ defmodule Mix.Tasks.StackLab.Extravaganza.LiveE2e do
 
   use Mix.Task
 
-  @shortdoc "Run Extravaganza's dynamic live provider E2E proof"
+  @shortdoc "Run the live provider smoke check"
 
   @stdin_flag "--linear-api-key-stdin"
   @file_flag "--linear-api-key-file"
@@ -22,7 +22,7 @@ defmodule Mix.Tasks.StackLab.Extravaganza.LiveE2e do
         :ok
 
       {:error, reason} ->
-        Mix.raise("Extravaganza dynamic live provider E2E failed: #{inspect(reason)}")
+        Mix.raise("Provider smoke check failed: #{inspect(reason)}")
     end
   end
 
@@ -52,7 +52,10 @@ defmodule Mix.Tasks.StackLab.Extravaganza.LiveE2e do
       @stdin_flag in args ->
         with {:ok, secret} <- read_stdin_secret(),
              {:ok, path} <- write_stdin_secret(secret) do
-          Mix.shell().info("Linear API key read from stdin; starting delegated live E2E.")
+          Mix.shell().info(
+            "Linear API key read from stdin; starting delegated provider smoke check."
+          )
+
           {:ok, replace_stdin_flag(args, path), [path]}
         end
 
@@ -75,7 +78,7 @@ defmodule Mix.Tasks.StackLab.Extravaganza.LiveE2e do
     path =
       Path.join(
         System.tmp_dir!(),
-        "stack_lab_live_e2e_linear_#{System.unique_integer([:positive])}.secret"
+        "stack_lab_provider_smoke_linear_#{System.unique_integer([:positive])}.secret"
       )
 
     with :ok <- File.write(path, secret, [:write, :exclusive]),
@@ -94,7 +97,7 @@ defmodule Mix.Tasks.StackLab.Extravaganza.LiveE2e do
     {_stream, status} =
       System.cmd(
         mix_executable(),
-        ["stack_lab.extravaganza.live_e2e" | args],
+        ["stack_lab.provider_smoke_check" | args],
         cd: delegate_project_dir(),
         stderr_to_stdout: true,
         into: IO.stream(:stdio, :line)

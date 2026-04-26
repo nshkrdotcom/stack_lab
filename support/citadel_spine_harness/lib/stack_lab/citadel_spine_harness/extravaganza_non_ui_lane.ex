@@ -194,10 +194,10 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaNonUiLane do
     {:ok,
      %{
        case: :live_readiness,
-       current_live_status: :dynamic_live_e2e_command_available,
+       current_live_status: :provider_smoke_check_available,
        default_ci_requires_live?: false,
        live_command_contract: %{
-         command: "mix stack_lab.extravaganza.live_e2e",
+         command: "mix stack_lab.provider_smoke_check",
          secret_bootstrap: "/home/home/scripts/with_bash_secrets",
          non_secret_inputs: :typed_cli_or_control_api,
          credential_flow: :jido_connection_or_credential_lease,
@@ -206,7 +206,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaNonUiLane do
          static_provider_selector_acceptance?: false,
          github_write_target: "nshkrdotcom/test"
        },
-       dynamic_live_e2e_steps: [
+       provider_smoke_check_steps: [
          :internal_appkit_projection,
          :temporal_status,
          :linear_terminal_publication,

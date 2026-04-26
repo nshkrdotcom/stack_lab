@@ -132,16 +132,16 @@ absence of placeholder runbook content.
 The Extravaganza non-UI lane fixture is credential-free internal contract
 coverage. It compiles the product pack, builds typed AppKit runtime projection
 DTOs, renders the product workpad preview, maps required failure variants to
-owner coverage, and exposes the opt-in dynamic live provider command for M12.
-The live command composes owner-owned Linear, GitHub, Codex, and Mezzanine
+owner coverage, and exposes the opt-in provider smoke command for M12.
+The provider smoke command composes owner-owned Linear, GitHub, Codex, and Mezzanine
 Temporal live checks and writes a local receipt; it does not accept static
 GitHub, Linear, Codex, or Temporal provider selectors.
 
-Run the live command from the StackLab workspace root:
+Run the provider smoke command from the StackLab workspace root:
 
 ```bash
 cd /home/home/p/g/n/stack_lab
-mix stack_lab.extravaganza.live_e2e \
+mix stack_lab.provider_smoke_check \
   --linear-api-key-stdin \
   --github-repo nshkrdotcom/test
 ```
@@ -153,11 +153,11 @@ Operators may wrap the shell invocation with their external secret bootstrap,
 but repo code and scripts still receive credentials through stdin/file sources
 or existing connector leases, and non-secret choices through typed flags.
 An interactive `--linear-api-key-stdin` invocation waits until EOF, typically
-`Ctrl-D`, before the delegated live proof starts. Once input is complete, the
-full proof can take minutes because it checks/starts Temporal and performs real
+`Ctrl-D`, before the delegated provider smoke check starts. Once input is complete, the
+full smoke check can take minutes because it checks/starts Temporal and performs real
 Linear, GitHub, and Codex calls. The harness prints safe progress markers for
 the internal projection, Temporal, Linear, GitHub, Codex, and receipt stages so
-operators can distinguish an active live run from stdin blocking without
+operators can distinguish an active provider smoke run from stdin blocking without
 printing secrets.
 
 ## Generated Artifact Hygiene

@@ -1,8 +1,8 @@
-defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
+defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
   @moduledoc """
-  Opt-in live E2E harness for the Extravaganza non-UI lane.
+  Opt-in live provider smoke harness for the Extravaganza non-UI lane.
 
-  The harness composes existing owner-owned live proofs and records one local
+  The harness composes existing owner-owned live checks and records one local
   receipt. It does not accept provider object ids from the operator; the lower
   proofs must create, discover, and carry provider identities from provider
   output and runtime receipts.
@@ -50,7 +50,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
   @spec plan(spec()) :: map()
   def plan(%{} = spec) do
     %{
-      command: "mix stack_lab.extravaganza.live_e2e",
+      command: "mix stack_lab.provider_smoke_check",
       run_label: spec.run_label,
       github_repo: spec.github_repo,
       temporal_mode: spec.temporal_mode,
@@ -463,24 +463,24 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
 
   defp default_progress(%{run_label: run_label, github_repo: github_repo}, :started) do
     Mix.shell().info(
-      "Extravaganza live E2E starting run_label=#{run_label} github_repo=#{github_repo}"
+      "Provider smoke check starting run_label=#{run_label} github_repo=#{github_repo}"
     )
   end
 
   defp default_progress(%{receipt_file: receipt_file}, :receipt_written) do
-    Mix.shell().info("Extravaganza live E2E receipt written receipt_file=#{receipt_file}")
+    Mix.shell().info("Provider smoke check receipt written receipt_file=#{receipt_file}")
   end
 
   defp default_progress(step, :started) when is_atom(step) do
-    Mix.shell().info("Extravaganza live E2E step starting: #{step}")
+    Mix.shell().info("Provider smoke check step starting: #{step}")
   end
 
   defp default_progress(step, :passed) when is_atom(step) do
-    Mix.shell().info("Extravaganza live E2E step passed: #{step}")
+    Mix.shell().info("Provider smoke check step passed: #{step}")
   end
 
   defp default_progress(step, :failed) when is_atom(step) do
-    Mix.shell().error("Extravaganza live E2E step failed: #{step}")
+    Mix.shell().error("Provider smoke check step failed: #{step}")
   end
 
   defp default_command_runner(command, args, opts) do
@@ -531,7 +531,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
   end
 
   defp default_receipt_file(run_label) do
-    Path.join(System.tmp_dir!(), "stack_lab_extravaganza_live_e2e_#{slug(run_label)}.json")
+    Path.join(System.tmp_dir!(), "stack_lab_provider_smoke_check_#{slug(run_label)}.json")
   end
 
   defp slug(value) do
