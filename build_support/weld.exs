@@ -20,7 +20,8 @@ defmodule StackLab.Build.WeldContract do
     "docs/layout.md",
     "docs/runbooks/up_single.md",
     "docs/runbooks/up_multi.md",
-    "docs/runbooks/faults.md"
+    "docs/runbooks/faults.md",
+    "docs/runbooks/extravaganza_non_ui_lane.md"
   ]
 
   def manifest do

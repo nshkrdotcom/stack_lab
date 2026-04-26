@@ -31,6 +31,7 @@ owner, and the product-facing northbound surfaces:
 - `examples/multi_node_roundtrip`
 - `examples/restart_authority_drill`
 - `examples/pressure_failover_drill`
+- `support/citadel_spine_harness` Extravaganza non-UI lane fixture
 
 Those examples exercise real `citadel` and real `jido_integration` code
 through the harness-only `support/citadel_spine_harness` package. The typed
@@ -106,6 +107,12 @@ remote-runtime-client stub. It proves local node process/HTTP execution,
 rejection of unsigned authority and unattested targets, and the
 JidoIntegration-owned fallback ladder that records a rejected strong
 attestation rung before succeeding on `local-erlexec-weak`.
+The Extravaganza non-UI lane fixture proves the credential-free internal
+contract for the current coding-ops path: Linear-shaped source admission,
+workspace refs, Codex lower receipts, GitHub PR evidence refs, operator review,
+and Linear workpad publication readback are carried through AppKit DTOs and
+Extravaganza product templates. It also records the remaining full live provider
+E2E blockers rather than accepting static provider selectors.
 
 ## Scope
 
@@ -162,6 +169,7 @@ just fault net-cut
 - [docs/runbooks/up_single.md](./docs/runbooks/up_single.md)
 - [docs/runbooks/up_multi.md](./docs/runbooks/up_multi.md)
 - [docs/runbooks/faults.md](./docs/runbooks/faults.md)
+- [docs/runbooks/extravaganza_non_ui_lane.md](./docs/runbooks/extravaganza_non_ui_lane.md)
 - [support/citadel_spine_harness/README.md](./support/citadel_spine_harness/README.md)
 - [support/memsim_harness/README.md](./support/memsim_harness/README.md)
 

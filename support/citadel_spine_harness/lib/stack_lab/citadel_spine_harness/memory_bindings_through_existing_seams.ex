@@ -387,6 +387,12 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
             timeout_ms: 120_000,
             reasoning_tier: "deliberate"
           },
+          workspace_policy: %{
+            strategy: :per_subject,
+            root_ref: "#{@execution_binding_key}_workspaces"
+          },
+          sandbox_policy_ref: "#{@execution_binding_key}_sandbox",
+          prompt_refs: ["#{@execution_binding_key}_prompt"],
           retry_config: %{
             max_attempts: 3,
             backoff: :exponential,

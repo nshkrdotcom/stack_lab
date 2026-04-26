@@ -281,7 +281,13 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
         %ExecutionRecipeSpec{
           recipe_ref: recipe_ref,
           runtime_class: :session,
-          placement_ref: :local_runner
+          placement_ref: :local_runner,
+          workspace_policy: %{
+            strategy: :per_subject,
+            root_ref: "#{recipe_ref}_workspaces"
+          },
+          sandbox_policy_ref: "#{recipe_ref}_sandbox",
+          prompt_refs: ["#{recipe_ref}_prompt"]
         }
       ],
       projection_specs: [

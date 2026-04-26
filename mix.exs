@@ -137,6 +137,7 @@ defmodule StackLab.Workspace.MixProject do
         "docs/runbooks/up_single.md",
         "docs/runbooks/up_multi.md",
         "docs/runbooks/faults.md",
+        "docs/runbooks/extravaganza_non_ui_lane.md",
         "CHANGELOG.md",
         "LICENSE"
       ],
@@ -146,7 +147,8 @@ defmodule StackLab.Workspace.MixProject do
         Runbooks: [
           "docs/runbooks/up_single.md",
           "docs/runbooks/up_multi.md",
-          "docs/runbooks/faults.md"
+          "docs/runbooks/faults.md",
+          "docs/runbooks/extravaganza_non_ui_lane.md"
         ],
         Project: ["CHANGELOG.md", "LICENSE"]
       ]

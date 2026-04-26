@@ -212,7 +212,13 @@ defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLease do
         %ExecutionRecipeSpec{
           recipe_ref: Keyword.fetch!(opts, :recipe_ref),
           runtime_class: :session,
-          placement_ref: :local_runner
+          placement_ref: :local_runner,
+          workspace_policy: %{
+            strategy: :per_subject,
+            root_ref: "#{Keyword.fetch!(opts, :recipe_ref)}_workspaces"
+          },
+          sandbox_policy_ref: "#{Keyword.fetch!(opts, :recipe_ref)}_sandbox",
+          prompt_refs: ["#{Keyword.fetch!(opts, :recipe_ref)}_prompt"]
         }
       ],
       projection_specs: [

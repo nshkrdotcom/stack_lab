@@ -33,6 +33,9 @@ This package owns:
 - the real `mezzanine` restart-recovery proof through the JobOutbox-backed
   dispatch worker
 - the governed-run proof above the `app_kit` operational surface
+- the Extravaganza non-UI lane fixture for Linear-shaped source admission,
+  workspace refs, Codex lower receipts, GitHub PR evidence refs, operator
+  review, and Linear workpad publication readback through AppKit DTOs
 - the Scenario-19 observability, archived-read honesty, and trace-join
   continuity proof across the public northbound and lower-backed surfaces
 - the Scenario-38 and Scenario-41 archived unified-trace reconstruction proof
@@ -125,6 +128,13 @@ the Phase-3 packet under
 `nshkrdotcom/docs/20260418/ecosystem_buildout_phase3`. It verifies the
 runbook index, Scenario 29-43 runbook references in `STACK_LAB_SPEC.md`, and
 absence of placeholder runbook content.
+
+The Extravaganza non-UI lane fixture is credential-free internal contract
+coverage. It compiles the product pack, builds typed AppKit runtime projection
+DTOs, renders the product workpad preview, maps required failure variants to
+owner coverage, and reports the remaining full live provider E2E blockers. It
+does not count as live connector/runtime proof and does not accept static
+GitHub, Linear, Codex, or Temporal provider selectors.
 
 ## Generated Artifact Hygiene
 

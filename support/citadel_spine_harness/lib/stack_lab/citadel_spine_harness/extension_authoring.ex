@@ -215,6 +215,12 @@ defmodule StackLab.CitadelSpineHarness.ExtensionAuthoring do
           recipe_ref: :phase3_capture,
           runtime_class: :session,
           placement_ref: :local_runner,
+          workspace_policy: %{
+            strategy: :per_subject,
+            root_ref: :stacklab_authoring_workspaces
+          },
+          sandbox_policy_ref: :stacklab_authoring_sandbox,
+          prompt_refs: [:phase3_capture_prompt],
           required_lifecycle_hints: required_lifecycle_hints
         }
       ],

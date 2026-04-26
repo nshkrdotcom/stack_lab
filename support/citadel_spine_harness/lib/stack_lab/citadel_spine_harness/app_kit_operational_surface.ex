@@ -1835,7 +1835,13 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         %ExecutionRecipeSpec{
           recipe_ref: "expense_capture",
           placement_ref: :local_runner,
-          runtime_class: :session
+          runtime_class: :session,
+          workspace_policy: %{
+            strategy: :per_subject,
+            root_ref: "expense_capture_workspaces"
+          },
+          sandbox_policy_ref: "expense_capture_sandbox",
+          prompt_refs: ["expense_capture_prompt"]
         }
       ],
       projection_specs: [
@@ -1909,7 +1915,13 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         %ExecutionRecipeSpec{
           recipe_ref: "coding_operations",
           placement_ref: :local_default,
-          runtime_class: :session
+          runtime_class: :session,
+          workspace_policy: %{
+            strategy: :per_subject,
+            root_ref: "coding_operations_workspaces"
+          },
+          sandbox_policy_ref: "coding_operations_sandbox",
+          prompt_refs: ["coding_operations_prompt"]
         }
       ],
       decision_specs: [

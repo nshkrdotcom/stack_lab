@@ -15,6 +15,7 @@ defmodule StackLab.CitadelSpineHarness do
     AppKitOperationalSurface,
     AuthorityTenantPropagationEvidence,
     ExtensionAuthoring,
+    ExtravaganzaNonUiLane,
     GovernedRun,
     InstallationRuntimeLease,
     LowerFacts,
@@ -668,6 +669,33 @@ defmodule StackLab.CitadelSpineHarness do
              :unauthorized_lower_trace_read
            ] do
     AppKitOperationalSurface.run_case(case_name)
+  end
+
+  @spec extravaganza_non_ui_lane_scenario() :: map()
+  def extravaganza_non_ui_lane_scenario do
+    %{
+      name: :extravaganza_non_ui_lane,
+      compose: LabCore.compose_file(:single),
+      runbook: "extravaganza_non_ui_lane.md",
+      repo_roots: repo_roots(),
+      owner_repo: :stack_lab,
+      product_repo: :extravaganza,
+      cases: %{
+        deterministic_full_lane: %{kind: :deterministic_full_lane},
+        failure_matrix: %{kind: :failure_matrix},
+        live_readiness: %{kind: :live_readiness}
+      }
+    }
+  end
+
+  @spec exercise_extravaganza_non_ui_lane(
+          :deterministic_full_lane
+          | :failure_matrix
+          | :live_readiness
+        ) :: {:ok, map()}
+  def exercise_extravaganza_non_ui_lane(case_name)
+      when case_name in [:deterministic_full_lane, :failure_matrix, :live_readiness] do
+    ExtravaganzaNonUiLane.run_case(case_name)
   end
 
   @spec stage12_load_readiness_scenario() :: map()
