@@ -14,7 +14,8 @@ dynamic live command contract.
 
 Run the opt-in live provider proof from the workspace root. When using
 `--linear-api-key-stdin`, pipe the secret into the command or finish stdin
-manually; the task does not read credentials from process environment.
+manually with EOF, typically `Ctrl-D`; the task does not read credentials from
+process environment.
 
 ```bash
 cd /home/home/p/g/n/stack_lab
@@ -32,3 +33,8 @@ as publication evidence, creates/reviews/closes a disposable GitHub PR, deletes
 the disposable branch, runs the Codex app-server proof, and checks/starts
 Temporal only through Mezzanine `just` commands. Static provider object
 selectors do not satisfy this runbook and are rejected by the command parser.
+
+An interactive `--linear-api-key-stdin` invocation waits until EOF before any
+live provider work starts. After credential input is complete, the full live
+proof is expected to take minutes because it checks/starts Temporal and performs
+real Linear, GitHub, and Codex calls.

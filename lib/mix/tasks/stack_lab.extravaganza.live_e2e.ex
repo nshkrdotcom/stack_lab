@@ -61,7 +61,9 @@ defmodule Mix.Tasks.StackLab.Extravaganza.LiveE2e do
   end
 
   defp read_stdin_secret do
-    case IO.read(:stdio, :all) do
+    Mix.shell().info("Reading Linear API key from stdin; finish input with EOF when interactive.")
+
+    case IO.read(:stdio, :eof) do
       data when is_binary(data) -> {:ok, data}
       :eof -> {:ok, ""}
       {:error, reason} -> {:error, {:stdin_read_failed, reason}}

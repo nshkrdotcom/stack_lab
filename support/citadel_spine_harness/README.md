@@ -152,6 +152,10 @@ task from this package also works for harness development.
 Operators may wrap the shell invocation with their external secret bootstrap,
 but repo code and scripts still receive credentials through stdin/file sources
 or existing connector leases, and non-secret choices through typed flags.
+An interactive `--linear-api-key-stdin` invocation waits until EOF, typically
+`Ctrl-D`, before the delegated live proof starts. Once input is complete, the
+full proof can take minutes because it checks/starts Temporal and performs real
+Linear, GitHub, and Codex calls.
 
 ## Generated Artifact Hygiene
 
