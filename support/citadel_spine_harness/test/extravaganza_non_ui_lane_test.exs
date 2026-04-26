@@ -96,18 +96,27 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaNonUiLaneTest do
            end)
   end
 
-  test "live readiness reports explicit blockers instead of accepting static provider ids" do
+  test "live readiness exposes the dynamic command without accepting static provider ids" do
     assert {:ok, result} =
              CitadelSpineHarness.exercise_extravaganza_non_ui_lane(:live_readiness)
 
     assert result.case == :live_readiness
     assert result.default_ci_requires_live? == false
+    assert result.live_command_contract.command == "mix stack_lab.extravaganza.live_e2e"
     assert result.live_command_contract.secret_bootstrap == "/home/home/scripts/with_bash_secrets"
     assert result.live_command_contract.non_secret_inputs == :typed_cli_or_control_api
+    assert result.live_command_contract.github_write_target == "nshkrdotcom/test"
     assert result.live_command_contract.static_provider_selector_acceptance? == false
 
-    assert :github_disposable_pr_creation_or_discovery in result.blockers
-    assert :full_linear_to_github_to_linear_live_workflow in result.blockers
-    assert result.current_live_status == :blocked_for_full_provider_e2e
+    assert result.dynamic_live_e2e_steps == [
+             :internal_appkit_projection,
+             :temporal_status,
+             :linear_terminal_publication,
+             :github_disposable_pr,
+             :codex_session_turn,
+             :receipt_write
+           ]
+
+    assert result.current_live_status == :dynamic_live_e2e_command_available
   end
 end

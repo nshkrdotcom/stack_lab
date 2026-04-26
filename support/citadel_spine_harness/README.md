@@ -132,9 +132,22 @@ absence of placeholder runbook content.
 The Extravaganza non-UI lane fixture is credential-free internal contract
 coverage. It compiles the product pack, builds typed AppKit runtime projection
 DTOs, renders the product workpad preview, maps required failure variants to
-owner coverage, and reports the remaining full live provider E2E blockers. It
-does not count as live connector/runtime proof and does not accept static
+owner coverage, and exposes the opt-in dynamic live provider command for M12.
+The live command composes owner-owned Linear, GitHub, Codex, and Mezzanine
+Temporal live checks and writes a local receipt; it does not accept static
 GitHub, Linear, Codex, or Temporal provider selectors.
+
+Run the live command from this package:
+
+```bash
+mix stack_lab.extravaganza.live_e2e \
+  --linear-api-key-stdin \
+  --github-repo nshkrdotcom/test
+```
+
+Operators may wrap the shell invocation with their external secret bootstrap,
+but repo code and scripts still receive credentials through stdin/file sources
+or existing connector leases, and non-secret choices through typed flags.
 
 ## Generated Artifact Hygiene
 

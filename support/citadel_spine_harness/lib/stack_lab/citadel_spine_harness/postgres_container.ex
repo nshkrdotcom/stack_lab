@@ -1,7 +1,7 @@
 defmodule StackLab.CitadelSpineHarness.PostgresContainer do
   @moduledoc false
 
-  @image System.get_env("STACK_LAB_TEST_POSTGRES_IMAGE") || "postgres:16-alpine"
+  @image "postgres:16-alpine"
   @database "stack_lab_test"
   @password "postgres"
   @username "postgres"
@@ -84,18 +84,10 @@ defmodule StackLab.CitadelSpineHarness.PostgresContainer do
     case System.cmd(
            "psql",
            [
-             "--host",
-             "127.0.0.1",
-             "--port",
-             Integer.to_string(port),
-             "--username",
-             @username,
-             "--dbname",
-             @database,
+             "postgresql://#{@username}:#{@password}@127.0.0.1:#{port}/#{@database}",
              "--command",
              "SELECT 1"
            ],
-           env: [{"PGPASSWORD", @password}],
            stderr_to_stdout: true
          ) do
       {_output, 0} ->

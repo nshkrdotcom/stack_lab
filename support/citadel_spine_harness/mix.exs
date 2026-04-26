@@ -28,10 +28,10 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       ci: [
         "format --check-formatted",
         "compile --warnings-as-errors",
-        "cmd env MIX_ENV=test mix test",
+        "test",
         "credo --strict",
-        "cmd env MIX_ENV=dev mix dialyzer --force-check",
-        "cmd env MIX_ENV=dev mix docs --warnings-as-errors"
+        "dialyzer --force-check",
+        "docs --warnings-as-errors"
       ]
     ]
   end
