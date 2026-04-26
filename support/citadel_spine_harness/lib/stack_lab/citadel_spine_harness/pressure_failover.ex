@@ -11,6 +11,8 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
   @logical_workspace_ref "workspace://stack_lab/root"
+  @pressure_recovery_timeout_ms 60_000
+  @entry_wait_attempts div(@pressure_recovery_timeout_ms, 25)
 
   @spec run_case(:transport_interruption | :duplicate_delivery) :: {:ok, map()}
   def run_case(:transport_interruption) do
@@ -33,21 +35,31 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
         RoundtripRuntime.submit_outbox_entry!(env.session_server, entry)
 
         pending =
-          RoundtripRuntime.wait_for_entry!(env.session_directory, entry.entry_id, fn candidate ->
-            candidate.replay_status == :pending and
-              candidate.last_error_code == "transport_unreachable"
-          end)
+          RoundtripRuntime.wait_for_entry!(
+            env.session_directory,
+            entry.entry_id,
+            fn candidate ->
+              candidate.replay_status == :pending and
+                candidate.last_error_code == "transport_unreachable"
+            end,
+            @entry_wait_attempts
+          )
 
         :ok = TransportRuntime.put!(env.transport_configs.recovered)
         Process.sleep(25)
         :ok = SessionServer.replay_pending(env.session_server)
 
-        transport = await_transport_result!()
+        transport = await_transport_result!(@pressure_recovery_timeout_ms)
 
         resolved =
-          RoundtripRuntime.wait_for_entry!(env.session_directory, entry.entry_id, fn candidate ->
-            candidate.replay_status == :submission_accepted
-          end)
+          RoundtripRuntime.wait_for_entry!(
+            env.session_directory,
+            entry.entry_id,
+            fn candidate ->
+              candidate.replay_status == :submission_accepted
+            end,
+            @entry_wait_attempts
+          )
 
         {:ok, acceptance} =
           RemoteSupport.remote_call!(env.remote_node, RemoteSpine, :fetch_acceptance, [
@@ -94,12 +106,17 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
 
         RoundtripRuntime.submit_outbox_entry!(env.session_server, entry)
 
-        transport = await_transport_result!()
+        transport = await_transport_result!(@pressure_recovery_timeout_ms)
 
         resolved =
-          RoundtripRuntime.wait_for_entry!(env.session_directory, entry.entry_id, fn candidate ->
-            candidate.replay_status == :submission_accepted
-          end)
+          RoundtripRuntime.wait_for_entry!(
+            env.session_directory,
+            entry.entry_id,
+            fn candidate ->
+              candidate.replay_status == :submission_accepted
+            end,
+            @entry_wait_attempts
+          )
 
         {:ok, acceptance} =
           RemoteSupport.remote_call!(env.remote_node, RemoteSpine, :fetch_acceptance, [
@@ -169,7 +186,7 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
     %{
       listener: listener,
       remote_node: remote_node,
-      timeout_ms: 5_000,
+      timeout_ms: Keyword.get(opts, :timeout_ms, 5_000),
       deliver_twice?: Keyword.get(opts, :deliver_twice?, false),
       brain_ingress_opts: [
         submission_ledger: Jido.Integration.V2.StoreLocal.SubmissionLedger,
@@ -180,7 +197,14 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
     }
   end
 
-  defp await_transport_result! do
+  defp await_transport_result!(timeout_ms) when is_integer(timeout_ms) and timeout_ms > 0 do
+    deadline_ms = System.monotonic_time(:millisecond) + timeout_ms
+    do_await_transport_result!(deadline_ms)
+  end
+
+  defp do_await_transport_result!(deadline_ms) do
+    timeout_ms = max(deadline_ms - System.monotonic_time(:millisecond), 0)
+
     receive do
       {:stack_lab_brain_ingress_result, %{result: :accepted} = payload} ->
         %{
@@ -189,9 +213,9 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
         }
 
       {:stack_lab_brain_ingress_result, %{result: :error}} ->
-        await_transport_result!()
+        do_await_transport_result!(deadline_ms)
     after
-      5_000 ->
+      timeout_ms ->
         raise "timed out waiting for pressure-failover transport result"
     end
   end

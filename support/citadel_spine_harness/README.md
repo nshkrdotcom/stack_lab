@@ -155,7 +155,10 @@ or existing connector leases, and non-secret choices through typed flags.
 An interactive `--linear-api-key-stdin` invocation waits until EOF, typically
 `Ctrl-D`, before the delegated live proof starts. Once input is complete, the
 full proof can take minutes because it checks/starts Temporal and performs real
-Linear, GitHub, and Codex calls.
+Linear, GitHub, and Codex calls. The harness prints safe progress markers for
+the internal projection, Temporal, Linear, GitHub, Codex, and receipt stages so
+operators can distinguish an active live run from stdin blocking without
+printing secrets.
 
 ## Generated Artifact Hygiene
 

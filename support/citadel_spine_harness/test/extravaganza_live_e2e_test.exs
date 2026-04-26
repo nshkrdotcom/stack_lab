@@ -79,6 +79,11 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2ETest do
       {:ok, path}
     end
 
+    progress = fn subject, event ->
+      send(self(), {:progress, progress_subject(subject), event})
+      :ok
+    end
+
     assert {:ok, receipt} =
              ExtravaganzaLiveE2E.run(
                [
@@ -90,7 +95,8 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2ETest do
                ],
                command_runner: command_runner,
                secret_reader: secret_reader,
-               receipt_writer: receipt_writer
+               receipt_writer: receipt_writer,
+               progress: progress
              )
 
     assert receipt.run_label == "m12-test"
@@ -101,5 +107,20 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2ETest do
     assert receipt.status == :passed
 
     assert_receive {:receipt_written, "/tmp/m12-receipt.json", ^receipt}
+    assert_receive {:progress, :run, :started}
+    assert_receive {:progress, :internal_appkit_projection, :started}
+    assert_receive {:progress, :internal_appkit_projection, :passed}
+    assert_receive {:progress, :temporal, :started}
+    assert_receive {:progress, :temporal, :passed}
+    assert_receive {:progress, :linear, :started}
+    assert_receive {:progress, :linear, :passed}
+    assert_receive {:progress, :github, :started}
+    assert_receive {:progress, :github, :passed}
+    assert_receive {:progress, :codex, :started}
+    assert_receive {:progress, :codex, :passed}
+    assert_receive {:progress, :run, :receipt_written}
   end
+
+  defp progress_subject(%{run_label: _run_label}), do: :run
+  defp progress_subject(subject), do: subject
 end

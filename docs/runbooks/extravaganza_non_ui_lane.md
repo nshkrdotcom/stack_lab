@@ -37,4 +37,6 @@ selectors do not satisfy this runbook and are rejected by the command parser.
 An interactive `--linear-api-key-stdin` invocation waits until EOF before any
 live provider work starts. After credential input is complete, the full live
 proof is expected to take minutes because it checks/starts Temporal and performs
-real Linear, GitHub, and Codex calls.
+real Linear, GitHub, and Codex calls. The command prints safe progress markers
+when stdin is consumed and when each live stage starts or finishes; it never
+prints credential values.

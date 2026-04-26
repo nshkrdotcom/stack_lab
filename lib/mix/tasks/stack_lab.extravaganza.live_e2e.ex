@@ -52,6 +52,7 @@ defmodule Mix.Tasks.StackLab.Extravaganza.LiveE2e do
       @stdin_flag in args ->
         with {:ok, secret} <- read_stdin_secret(),
              {:ok, path} <- write_stdin_secret(secret) do
+          Mix.shell().info("Linear API key read from stdin; starting delegated live E2E.")
           {:ok, replace_stdin_flag(args, path), [path]}
         end
 

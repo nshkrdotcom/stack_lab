@@ -78,14 +78,16 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
     command_runner = Keyword.get(opts, :command_runner, &default_command_runner/3)
     secret_reader = Keyword.get(opts, :secret_reader, &read_linear_secret/1)
     receipt_writer = Keyword.get(opts, :receipt_writer, &write_receipt/2)
+    progress = Keyword.get(opts, :progress, &default_progress/2)
 
     with {:ok, spec} <- parse_args(argv),
          {:ok, linear_stdin} <- maybe_read_linear_stdin(spec, secret_reader),
-         {:ok, internal_projection} <- internal_projection(),
-         {:ok, temporal} <- run_temporal(spec, command_runner),
-         {:ok, linear} <- run_linear(spec, linear_stdin, command_runner),
-         {:ok, github} <- run_github(spec, command_runner),
-         {:ok, codex} <- run_codex(spec, command_runner) do
+         :ok <- progress.(spec, :started),
+         {:ok, internal_projection} <- run_internal_projection(progress),
+         {:ok, temporal} <- run_temporal(spec, command_runner, progress),
+         {:ok, linear} <- run_linear(spec, linear_stdin, command_runner, progress),
+         {:ok, github} <- run_github(spec, command_runner, progress),
+         {:ok, codex} <- run_codex(spec, command_runner, progress) do
       receipt =
         %{
           status: :passed,
@@ -105,6 +107,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
         }
 
       with {:ok, _path} <- receipt_writer.(spec.receipt_file, receipt) do
+        progress.(spec, :receipt_written)
         {:ok, receipt}
       end
     end
@@ -278,11 +281,21 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
     end
   end
 
-  defp internal_projection do
-    CitadelSpineHarness.exercise_extravaganza_non_ui_lane(:deterministic_full_lane)
+  defp run_internal_projection(progress) do
+    progress.(:internal_appkit_projection, :started)
+
+    case CitadelSpineHarness.exercise_extravaganza_non_ui_lane(:deterministic_full_lane) do
+      {:ok, result} ->
+        progress.(:internal_appkit_projection, :passed)
+        {:ok, result}
+
+      {:error, reason} ->
+        progress.(:internal_appkit_projection, :failed)
+        {:error, reason}
+    end
   end
 
-  defp run_temporal(spec, command_runner) do
+  defp run_temporal(spec, command_runner, progress) do
     roots = CitadelSpineHarness.repo_roots()
 
     commands =
@@ -291,7 +304,14 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
         :check -> [["dev-status"]]
       end
 
-    case run_command_sequence(:temporal, command_runner, "just", commands, cd: roots.mezzanine) do
+    case run_command_sequence(
+           :temporal,
+           command_runner,
+           "just",
+           commands,
+           [cd: roots.mezzanine],
+           progress
+         ) do
       {:ok, outputs} ->
         {:ok, %{mode: spec.temporal_mode, command: "just", outputs: outputs}}
 
@@ -300,7 +320,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
     end
   end
 
-  defp run_linear(spec, linear_stdin, command_runner) do
+  defp run_linear(spec, linear_stdin, command_runner, progress) do
     roots = CitadelSpineHarness.repo_roots()
     connector_dir = Path.join(roots.jido_integration, "connectors/linear")
     script = Path.join(connector_dir, "scripts/live_acceptance.sh")
@@ -322,7 +342,8 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
              command_runner,
              script,
              args,
-             cd: connector_dir
+             [cd: connector_dir],
+             progress
            ) do
         {:ok, output} ->
           {:ok,
@@ -362,7 +383,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
     end
   end
 
-  defp run_github(spec, command_runner) do
+  defp run_github(spec, command_runner, progress) do
     roots = CitadelSpineHarness.repo_roots()
     connector_dir = Path.join(roots.jido_integration, "connectors/github")
     script = Path.join(connector_dir, "scripts/live_acceptance.sh")
@@ -377,7 +398,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
       Integer.to_string(spec.timeout_ms)
     ]
 
-    case run_step(:github, command_runner, script, args, cd: connector_dir) do
+    case run_step(:github, command_runner, script, args, [cd: connector_dir], progress) do
       {:ok, output} ->
         {:ok,
          %{
@@ -391,7 +412,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
     end
   end
 
-  defp run_codex(spec, command_runner) do
+  defp run_codex(spec, command_runner, progress) do
     roots = CitadelSpineHarness.repo_roots()
     bridge_dir = Path.join(roots.jido_integration, "core/asm_runtime_bridge")
 
@@ -403,7 +424,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
       spec.codex_cwd
     ]
 
-    case run_step(:codex, command_runner, "mix", args, cd: bridge_dir) do
+    case run_step(:codex, command_runner, "mix", args, [cd: bridge_dir], progress) do
       {:ok, output} ->
         {:ok,
          %{
@@ -417,23 +438,49 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaLiveE2E do
     end
   end
 
-  defp run_command_sequence(step, command_runner, command, arg_lists, opts) do
+  defp run_command_sequence(step, command_runner, command, arg_lists, opts, progress) do
     Enum.reduce_while(arg_lists, {:ok, []}, fn args, {:ok, outputs} ->
-      case run_step(step, command_runner, command, args, opts) do
+      case run_step(step, command_runner, command, args, opts, progress) do
         {:ok, output} -> {:cont, {:ok, outputs ++ [output]}}
         {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
   end
 
-  defp run_step(step, command_runner, command, args, opts) do
+  defp run_step(step, command_runner, command, args, opts, progress) do
+    progress.(step, :started)
+
     case command_runner.(command, args, opts) do
       {:ok, output} ->
+        progress.(step, :passed)
         {:ok, output}
 
       {:error, reason} ->
+        progress.(step, :failed)
         {:error, %{step: step, command: command, args: args, reason: reason}}
     end
+  end
+
+  defp default_progress(%{run_label: run_label, github_repo: github_repo}, :started) do
+    Mix.shell().info(
+      "Extravaganza live E2E starting run_label=#{run_label} github_repo=#{github_repo}"
+    )
+  end
+
+  defp default_progress(%{receipt_file: receipt_file}, :receipt_written) do
+    Mix.shell().info("Extravaganza live E2E receipt written receipt_file=#{receipt_file}")
+  end
+
+  defp default_progress(step, :started) when is_atom(step) do
+    Mix.shell().info("Extravaganza live E2E step starting: #{step}")
+  end
+
+  defp default_progress(step, :passed) when is_atom(step) do
+    Mix.shell().info("Extravaganza live E2E step passed: #{step}")
+  end
+
+  defp default_progress(step, :failed) when is_atom(step) do
+    Mix.shell().error("Extravaganza live E2E step failed: #{step}")
   end
 
   defp default_command_runner(command, args, opts) do
