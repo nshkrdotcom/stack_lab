@@ -288,7 +288,16 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaNonUiLane do
       runtime: runtime_facts!(),
       evidence: evidence_items!(),
       review: review_projection!(subject_ref),
-      updated_at: ~U[2026-04-25 12:00:00Z]
+      updated_at: ~U[2026-04-25 12:00:00Z],
+      schema_ref: "app_kit/subject_runtime_projection",
+      schema_version: 1,
+      payload: %{
+        projection_name: "operator_subject_runtime",
+        provenance: %{
+          lower_receipt_ref: "lower_receipt://terminal-success",
+          reducer: "Mezzanine.Projections.ReceiptReducer"
+        }
+      }
     })
     |> unwrap!()
   end

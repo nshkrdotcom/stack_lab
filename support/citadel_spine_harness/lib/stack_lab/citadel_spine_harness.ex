@@ -35,6 +35,7 @@ defmodule StackLab.CitadelSpineHarness do
     PrelimEvidenceReport,
     PrelimServiceMode,
     PressureFailover,
+    ProductionE2E,
     ProviderFamilyRuntimeIntegration,
     RestartAuthority,
     SameNode,
@@ -696,6 +697,38 @@ defmodule StackLab.CitadelSpineHarness do
   def exercise_extravaganza_non_ui_lane(case_name)
       when case_name in [:deterministic_full_lane, :failure_matrix, :live_readiness] do
     ExtravaganzaNonUiLane.run_case(case_name)
+  end
+
+  @spec production_e2e_scenario() :: map()
+  def production_e2e_scenario do
+    %{
+      name: :production_e2e,
+      compose: LabCore.compose_file(:single),
+      runbook: "production_e2e.md",
+      repo_roots: repo_roots(),
+      owner_repo: :stack_lab,
+      product_repo: :extravaganza,
+      schema_name: ProductionE2E.schema_name(),
+      provider_smoke_schema_name: "provider_smoke_receipt_v1.json",
+      temporal: ProductionE2E.temporal_contract(),
+      cases: %{
+        deterministic_offline_fixture: %{kind: :true_production_path},
+        live_provider_mutation: %{
+          kind: :true_production_path,
+          requires_env: "EXTRAVAGANZA_LIVE_E2E=1"
+        },
+        temporal_unavailable: %{kind: :fail_closed_guard}
+      }
+    }
+  end
+
+  @spec exercise_production_e2e(:deterministic_offline_fixture | :live_provider_mutation, keyword()) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_production_e2e(case_name, opts \\ [])
+
+  def exercise_production_e2e(case_name, opts)
+      when case_name in [:deterministic_offline_fixture, :live_provider_mutation] and is_list(opts) do
+    ProductionE2E.run_case(case_name, opts)
   end
 
   @spec stage12_load_readiness_scenario() :: map()
