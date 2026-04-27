@@ -37,6 +37,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
   alias OuterBrain.Core.SemanticFrame
   alias OuterBrain.Prompting.ContextPack
   alias StackLab.CitadelSpineHarness.MezzanineOperationalStack
+  alias StackLab.CitadelSpineHarness.ProfileSlots
 
   @shared_trace_id "trace-stage14-memory-runtime"
   @memory_trace_id "trace-stage14-memory-maintenance"
@@ -321,6 +322,12 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
       pack_slug: String.to_atom(@pack_slug),
       version: pack_version,
       max_supersession_depth: 8,
+      profile_slots:
+        ProfileSlots.default(
+          runtime_profile_ref: :memory_runtime_v1,
+          memory_profile_ref: :private_facts_v1,
+          projection_profile_ref: :memory_readback_v1
+        ),
       subject_kind_specs: [
         %SubjectKindSpec{name: :expense_request},
         %SubjectKindSpec{name: String.to_atom(@subject_binding_key)}

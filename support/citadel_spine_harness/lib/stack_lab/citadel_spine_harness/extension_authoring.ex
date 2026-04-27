@@ -7,6 +7,7 @@ defmodule StackLab.CitadelSpineHarness.ExtensionAuthoring do
   alias Mezzanine.Pack.{Compiler, ExecutionRecipeSpec, LifecycleSpec, Manifest, Serializer}
   alias Mezzanine.Pack.{ContextSourceSpec, ProjectionSpec, SubjectKindSpec}
   alias StackLab.CitadelSpineHarness.MezzanineOperationalStack
+  alias StackLab.CitadelSpineHarness.ProfileSlots
 
   @signing_key "stacklab-phase3-m7-signing-key"
   @policy_refs ["policy.default"]
@@ -186,6 +187,11 @@ defmodule StackLab.CitadelSpineHarness.ExtensionAuthoring do
     manifest = %Manifest{
       pack_slug: Keyword.fetch!(opts, :pack_slug),
       version: "1.0.0",
+      profile_slots:
+        ProfileSlots.default(
+          memory_profile_ref: :private_facts_v1,
+          projection_profile_ref: :phase3_authoring_projection_v1
+        ),
       subject_kind_specs: [%SubjectKindSpec{name: :phase3_request}],
       context_source_specs: [
         %ContextSourceSpec{

@@ -39,7 +39,8 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
   def run_case(case_name, opts \\ [])
 
   def run_case(case_name, opts)
-      when case_name in [:deterministic_offline_fixture, :live_provider_mutation] and is_list(opts) do
+      when case_name in [:deterministic_offline_fixture, :live_provider_mutation] and
+             is_list(opts) do
     with :ok <- require_temporal_reachable(opts),
          :ok <- authorize_live_provider_mode(case_name, opts) do
       {:ok, receipt(case_name, opts)}
@@ -82,7 +83,8 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
     %{
       expected: "Mezzanine Temporal dev substrate reports SERVING on 127.0.0.1:7233",
       output: output,
-      operator_action: "Run `just dev-up` from /home/home/p/g/n/mezzanine; do not start an ephemeral Temporal cluster."
+      operator_action:
+        "Run `just dev-up` from /home/home/p/g/n/mezzanine; do not start an ephemeral Temporal cluster."
     }
   end
 
@@ -94,7 +96,9 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
     if Map.get(env, "EXTRAVAGANZA_LIVE_E2E") == "1" do
       :ok
     else
-      {:error, {:live_provider_mutation_disabled, "Set EXTRAVAGANZA_LIVE_E2E=1 to permit live provider mutation."}}
+      {:error,
+       {:live_provider_mutation_disabled,
+        "Set EXTRAVAGANZA_LIVE_E2E=1 to permit live provider mutation."}}
     end
   end
 
@@ -190,7 +194,8 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
         placeholder_artifact_refs?: false
       },
       receipt_structural_difference_from_provider_smoke: true,
-      receipt_path: Keyword.get(opts, :receipt_path, "priv/receipts/production_e2e_receipt_v1.json")
+      receipt_path:
+        Keyword.get(opts, :receipt_path, "priv/receipts/production_e2e_receipt_v1.json")
     }
   end
 

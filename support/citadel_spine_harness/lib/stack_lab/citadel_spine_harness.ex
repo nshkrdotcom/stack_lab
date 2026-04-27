@@ -722,12 +722,16 @@ defmodule StackLab.CitadelSpineHarness do
     }
   end
 
-  @spec exercise_production_e2e(:deterministic_offline_fixture | :live_provider_mutation, keyword()) ::
+  @spec exercise_production_e2e(
+          :deterministic_offline_fixture | :live_provider_mutation,
+          keyword()
+        ) ::
           {:ok, map()} | {:error, term()}
   def exercise_production_e2e(case_name, opts \\ [])
 
   def exercise_production_e2e(case_name, opts)
-      when case_name in [:deterministic_offline_fixture, :live_provider_mutation] and is_list(opts) do
+      when case_name in [:deterministic_offline_fixture, :live_provider_mutation] and
+             is_list(opts) do
     ProductionE2E.run_case(case_name, opts)
   end
 

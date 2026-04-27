@@ -97,24 +97,31 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
     assert receipt.jido_integration.lower_submission_ref =~ "jido://submissions/"
     assert receipt.jido_integration.carries_citadel_authority? == true
     assert receipt.jido_integration.provider_effect_live? == false
+
     assert receipt.jido_integration.provider_object_refs == [
              "fixture://github/pr/production-e2e",
              "fixture://linear/workpad/production-e2e"
            ]
 
     assert receipt.lower_receipt.receipt_state == :succeeded
-    assert receipt.lower_receipt.provider_created_refs == receipt.jido_integration.provider_object_refs
+
+    assert receipt.lower_receipt.provider_created_refs ==
+             receipt.jido_integration.provider_object_refs
+
     assert receipt.lower_receipt.evidence_artifact_refs == receipt.evidence.durable_refs
 
     assert receipt.reducer_projection.reducer == Mezzanine.Projections.ReceiptReducer
     assert receipt.reducer_projection.data_available_to_appkit? == true
-    assert receipt.reducer_projection.lower_receipt_ref == receipt.jido_integration.lower_receipt_ref
+
+    assert receipt.reducer_projection.lower_receipt_ref ==
+             receipt.jido_integration.lower_receipt_ref
 
     assert receipt.extravaganza.readback_source == :appkit_runtime_projection_dto
     assert receipt.extravaganza.rendered? == true
     assert receipt.extravaganza.provider_smoke_result_consumed? == false
 
     assert receipt.evidence.required == ["github_pr", "codex_session", "source_workpad"]
+
     assert receipt.evidence.durable_refs == [
              "evidence://github-pr/production-e2e",
              "evidence://codex-session/production-e2e",
@@ -151,6 +158,7 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
     assert receipt.live_mutation_leg == :live_provider_mutation
     assert receipt.jido_integration.provider_effect_live? == true
     assert receipt.cleanup.provider_cleanup == :delete_disposable_provider_objects
+
     assert receipt.jido_integration.provider_object_refs == [
              "github://nshkrdotcom/test/pulls/created-by-production-e2e",
              "linear://comments/created-by-production-e2e"

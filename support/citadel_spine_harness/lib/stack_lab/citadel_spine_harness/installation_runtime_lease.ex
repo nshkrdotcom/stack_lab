@@ -16,6 +16,7 @@ defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLease do
   alias Mezzanine.RuntimeScheduler.InstallationLease
   alias MezzanineConfigRegistry
   alias StackLab.CitadelSpineHarness.MezzanineSubstrate
+  alias StackLab.CitadelSpineHarness.ProfileSlots
 
   @spec run_case(:two_owner_fencing) :: {:ok, map()}
   def run_case(:two_owner_fencing) do
@@ -186,6 +187,7 @@ defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLease do
     manifest = %Manifest{
       pack_slug: Keyword.fetch!(opts, :pack_slug),
       version: Keyword.fetch!(opts, :version),
+      profile_slots: ProfileSlots.default(),
       subject_kind_specs: [
         %SubjectKindSpec{name: Keyword.fetch!(opts, :subject_kind)}
       ],

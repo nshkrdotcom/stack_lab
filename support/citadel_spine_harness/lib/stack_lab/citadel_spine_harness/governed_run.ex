@@ -17,7 +17,12 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
     SubjectKindSpec
   }
 
-  alias StackLab.CitadelSpineHarness.{DispatchProbe, LowerGatewayStub, MezzanineSubstrate}
+  alias StackLab.CitadelSpineHarness.{
+    DispatchProbe,
+    LowerGatewayStub,
+    MezzanineSubstrate,
+    ProfileSlots
+  }
 
   @spec run_case(:expense_capture_acceptance | :multi_pack_installation_routing) ::
           {:ok, map()}
@@ -259,6 +264,7 @@ defmodule StackLab.CitadelSpineHarness.GovernedRun do
     manifest = %Manifest{
       pack_slug: pack_slug,
       version: version,
+      profile_slots: ProfileSlots.default(),
       subject_kind_specs: [
         %SubjectKindSpec{name: subject_kind}
       ],

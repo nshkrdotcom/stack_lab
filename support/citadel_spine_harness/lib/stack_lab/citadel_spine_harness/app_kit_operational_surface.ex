@@ -77,6 +77,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     InProcessTransport,
     LowerGatewayStub,
     MezzanineOperationalStack,
+    ProfileSlots,
     RoundtripRuntime,
     TransportRuntime
   }
@@ -1811,6 +1812,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       pack_slug: "expense_approval",
       version: version,
       migration_strategy: :additive,
+      profile_slots: ProfileSlots.default(),
       subject_kind_specs: [%SubjectKindSpec{name: "expense_request"}],
       lifecycle_specs: [
         %LifecycleSpec{
@@ -1875,6 +1877,16 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       pack_slug: "extravaganza_coding_ops",
       version: "1",
       migration_strategy: :additive,
+      profile_slots:
+        ProfileSlots.default(
+          source_profile_ref: :linear_coding_task,
+          runtime_profile_ref: :codex_session,
+          tool_scope_ref: :coding_ops_v1,
+          evidence_profile_ref: :github_pr_plus_workpad,
+          publication_profile_ref: :linear_workpad_review,
+          review_profile_ref: :human_operator,
+          projection_profile_ref: :coding_ops_projection_v1
+        ),
       subject_kind_specs: [%SubjectKindSpec{name: "coding_task"}],
       lifecycle_specs: [
         %LifecycleSpec{
