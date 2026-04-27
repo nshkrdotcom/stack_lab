@@ -259,7 +259,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
 
     try do
       :ok = StoreLocalTestSupport.reconfigure!(storage_dir: storage_dir)
-      :ok = StoreLocalTestSupport.reset_all!()
+      :ok = reset_store_local!()
       :ok = reset_control_plane_if_started()
       fun.()
     after
@@ -267,6 +267,14 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
       restore_env(previous_env)
       StoreLocalTestSupport.cleanup!(storage_dir)
     end
+  end
+
+  defp reset_store_local! do
+    StoreLocalTestSupport.reset_all!()
+  catch
+    :exit, {:shutdown, _details} ->
+      :ok = StoreLocalTestSupport.restart_store!()
+      StoreLocalTestSupport.reset_all!()
   end
 
   defp reset_control_plane_if_started do

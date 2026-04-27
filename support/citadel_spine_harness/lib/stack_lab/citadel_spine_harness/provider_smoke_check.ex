@@ -1,6 +1,6 @@
 defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
   @moduledoc """
-  Opt-in live provider smoke harness for the Extravaganza non-UI lane.
+  Opt-in provider smoke harness for the Extravaganza non-UI lane.
 
   The harness composes existing owner-owned live checks and records one local
   receipt. It does not accept provider object ids from the operator; the lower
@@ -13,6 +13,19 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
   @approved_github_repo "nshkrdotcom/test"
   @default_read_limit 10
   @default_timeout_ms 60_000
+  @schema_name "provider_smoke_receipt_v1.json"
+  @proof_class "provider_smoke_only"
+  @not_proven [
+    "Extravaganza product entrypoint",
+    "AppKit WorkSurface ingest",
+    "AppKit WorkControl start_run",
+    "Mezzanine workflow execution",
+    "Citadel authority decision",
+    "Jido lower invocation under authority",
+    "Mezzanine receipt reducer projection",
+    "AppKit runtime projection readback",
+    "Extravaganza operator/readback path"
+  ]
   @static_selector_flags [
     "--github-issue-number",
     "--github-pr-number",
@@ -29,7 +42,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
           required(:linear_api_key_source) => :stdin | {:file, String.t()},
           required(:github_repo) => String.t(),
           required(:run_label) => String.t(),
-          required(:temporal_mode) => :up | :check,
+          required(:temporal_mode) => :check,
           required(:codex_cwd) => String.t(),
           required(:read_limit) => pos_integer(),
           required(:timeout_ms) => pos_integer(),
@@ -90,10 +103,17 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
          {:ok, codex} <- run_codex(spec, command_runner, progress) do
       receipt =
         %{
-          status: :passed,
+          schema_name: @schema_name,
+          proof_class: @proof_class,
+          production_e2e: false,
+          status: :smoke_test_only,
+          provider_smoke_result: :passed,
+          command: "mix stack_lab.provider_smoke_check",
           run_label: spec.run_label,
           receipt_file: spec.receipt_file,
+          provider_smoke_steps: plan(spec).steps,
           plan: plan(spec),
+          not_proven: @not_proven,
           internal_projection: internal_projection_summary(internal_projection),
           temporal: temporal,
           linear: linear,
@@ -220,7 +240,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
     {:error, {:missing, ["--linear-api-key-stdin", "--linear-api-key-file"]}}
   end
 
-  defp validate_temporal_mode(%{temporal_mode: mode}) when mode in ["up", "check"], do: :ok
+  defp validate_temporal_mode(%{temporal_mode: "check"}), do: :ok
 
   defp validate_temporal_mode(%{temporal_mode: mode}),
     do: {:error, {:invalid_temporal_mode, mode}}
@@ -243,7 +263,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
       linear_api_key_source: linear_api_key_source(opts),
       github_repo: Map.get(opts, :github_repo, @approved_github_repo),
       run_label: run_label,
-      temporal_mode: temporal_mode(Map.get(opts, :temporal_mode, "up")),
+      temporal_mode: temporal_mode(Map.get(opts, :temporal_mode, "check")),
       codex_cwd: Path.expand(Map.get(opts, :codex_cwd, roots.jido_integration)),
       read_limit: Map.fetch!(opts, :read_limit),
       timeout_ms: Map.fetch!(opts, :timeout_ms),
@@ -254,7 +274,6 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
   defp linear_api_key_source(%{linear_api_key_stdin: true}), do: :stdin
   defp linear_api_key_source(%{linear_api_key_file: path}), do: {:file, Path.expand(path)}
 
-  defp temporal_mode("up"), do: :up
   defp temporal_mode("check"), do: :check
 
   defp maybe_read_linear_stdin(%{linear_api_key_source: :stdin}, secret_reader) do
@@ -300,7 +319,6 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
 
     commands =
       case spec.temporal_mode do
-        :up -> [["dev-up"], ["dev-status"]]
         :check -> [["dev-status"]]
       end
 

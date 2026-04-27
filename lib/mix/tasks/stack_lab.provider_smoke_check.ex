@@ -1,6 +1,6 @@
 defmodule Mix.Tasks.StackLab.ProviderSmokeCheck do
   @moduledoc """
-  Root workspace entry point for the live provider smoke check.
+  Root workspace entry point for the provider smoke check.
 
   The implementation lives in `support/citadel_spine_harness`; this task keeps
   the documented root command working by delegating to that package.
@@ -8,7 +8,7 @@ defmodule Mix.Tasks.StackLab.ProviderSmokeCheck do
 
   use Mix.Task
 
-  @shortdoc "Run the live provider smoke check"
+  @shortdoc "Run the provider smoke check"
 
   @stdin_flag "--linear-api-key-stdin"
   @file_flag "--linear-api-key-file"

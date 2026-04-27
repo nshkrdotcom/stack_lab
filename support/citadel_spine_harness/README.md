@@ -134,8 +134,10 @@ coverage. It compiles the product pack, builds typed AppKit runtime projection
 DTOs, renders the product workpad preview, maps required failure variants to
 owner coverage, and exposes the opt-in provider smoke command for M12.
 The provider smoke command composes owner-owned Linear, GitHub, Codex, and Mezzanine
-Temporal live checks and writes a local receipt; it does not accept static
-GitHub, Linear, Codex, or Temporal provider selectors.
+Temporal status checks and writes a local receipt; it does not accept static
+GitHub, Linear, Codex, or Temporal provider selectors. This is lower provider
+reachability only; it is not production E2E, does not prove the product path,
+and does not prove the AppKit/Mezzanine/Citadel/Jido causal chain.
 
 Run the provider smoke command from the StackLab workspace root:
 
@@ -154,7 +156,7 @@ but repo code and scripts still receive credentials through stdin/file sources
 or existing connector leases, and non-secret choices through typed flags.
 An interactive `--linear-api-key-stdin` invocation waits until EOF, typically
 `Ctrl-D`, before the delegated provider smoke check starts. Once input is complete, the
-full smoke check can take minutes because it checks/starts Temporal and performs real
+full smoke check can take minutes because it checks Temporal status and performs real
 Linear, GitHub, and Codex calls. The harness prints safe progress markers for
 the internal projection, Temporal, Linear, GitHub, Codex, and receipt stages so
 operators can distinguish an active provider smoke run from stdin blocking without

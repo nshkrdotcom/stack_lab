@@ -14,7 +14,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheckTest do
     assert spec.linear_api_key_source == :stdin
     assert spec.github_repo == "nshkrdotcom/test"
     assert spec.run_label == "m12-test"
-    assert spec.temporal_mode == :up
+    assert spec.temporal_mode == :check
 
     refute Map.has_key?(spec, :github_issue_number)
     refute Map.has_key?(spec, :github_pr_number)
@@ -32,6 +32,13 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheckTest do
       assert {:error, {:static_provider_selector, ^flag}} =
                ProviderSmokeCheck.parse_args(["--linear-api-key-stdin", flag, "static"])
     end
+
+    assert {:error, {:invalid_temporal_mode, "up"}} =
+             ProviderSmokeCheck.parse_args([
+               "--linear-api-key-stdin",
+               "--temporal-mode",
+               "up"
+             ])
   end
 
   test "dry run plan carries dynamic provider identity lifecycle without running commands" do
@@ -67,8 +74,13 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheckTest do
   end
 
   test "run writes a receipt from command outputs using injectable command runner" do
-    command_runner = fn _command, _args, opts ->
+    command_runner = fn command, args, opts ->
       assert Keyword.has_key?(opts, :cd)
+
+      if command == "just" do
+        assert args == ["dev-status"]
+      end
+
       {:ok, "proof ok"}
     end
 
@@ -102,9 +114,17 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheckTest do
     assert receipt.run_label == "m12-test"
     assert receipt.github.repo == "nshkrdotcom/test"
     assert receipt.linear.terminal_comment_preserved? == true
-    assert receipt.temporal.mode == :up
+    assert receipt.temporal.mode == :check
     assert receipt.internal_projection.case == :deterministic_full_lane
-    assert receipt.status == :passed
+    assert receipt.schema_name == "provider_smoke_receipt_v1.json"
+    assert receipt.proof_class == "provider_smoke_only"
+    assert receipt.production_e2e == false
+    assert receipt.status == :smoke_test_only
+    assert receipt.provider_smoke_result == :passed
+    assert receipt.command == "mix stack_lab.provider_smoke_check"
+    assert receipt.provider_smoke_steps == receipt.plan.steps
+    assert "Citadel authority decision" in receipt.not_proven
+    assert "AppKit runtime projection readback" in receipt.not_proven
 
     assert_receive {:receipt_written, "/tmp/m12-receipt.json", ^receipt}
     assert_receive {:progress, :run, :started}

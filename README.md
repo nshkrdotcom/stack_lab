@@ -115,7 +115,9 @@ Extravaganza product templates. The harness now also exposes an opt-in provider
 smoke command from the workspace root that composes Linear terminal
 publication, GitHub disposable PR creation/review/cleanup, Codex app-server
 execution, Temporal substrate status, and a local receipt without accepting
-static provider selectors.
+static provider selectors. This is lower provider reachability only; it is not
+production E2E, does not prove the product path, and does not prove the
+AppKit/Mezzanine/Citadel/Jido causal chain.
 
 ## Scope
 

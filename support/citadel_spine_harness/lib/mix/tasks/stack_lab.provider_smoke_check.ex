@@ -1,13 +1,13 @@
 defmodule Mix.Tasks.StackLab.ProviderSmokeCheck do
   @moduledoc """
-  Runs the opt-in live provider smoke check for the Extravaganza non-UI lane.
+  Runs the opt-in provider smoke check for the Extravaganza non-UI lane.
   """
 
   use Mix.Task
 
   alias StackLab.CitadelSpineHarness.ProviderSmokeCheck
 
-  @shortdoc "Run the live provider smoke check"
+  @shortdoc "Run the provider smoke check"
 
   @impl true
   def run(args) do
