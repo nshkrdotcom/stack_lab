@@ -7,6 +7,8 @@ defmodule StackLab.GnTen.Manifest do
   coordination file and the validator protects the required ownership facts.
   """
 
+  alias GroundPlane.Contracts.{RepoRef, WorkspaceRef}
+
   @expected_repos ~w(
     ground_plane
     execution_plane
@@ -21,6 +23,7 @@ defmodule StackLab.GnTen.Manifest do
   )
 
   @schema_version "gn_ten_manifest_v1"
+  @workspace_ref WorkspaceRef.new!("nshkrdotcom", "gn-ten").ref
   @branch_policy "main_only"
   @main_branch "main"
   @default_path Path.expand("../../../gn-ten.yml", __DIR__)
@@ -89,7 +92,7 @@ defmodule StackLab.GnTen.Manifest do
   defp validate(manifest, manifest_path) do
     []
     |> require_equal(:schema_version, manifest.schema_version, @schema_version)
-    |> require_equal(:workspace_ref, manifest.workspace_ref, "workspace://nshkrdotcom/gn-ten")
+    |> require_equal(:workspace_ref, manifest.workspace_ref, @workspace_ref)
     |> require_equal(:branch_policy, manifest.branch_policy, @branch_policy)
     |> require_equal(:repos, manifest.repos, @expected_repos)
     |> require_repo_refs(manifest.repo_refs)
@@ -106,7 +109,7 @@ defmodule StackLab.GnTen.Manifest do
   end
 
   defp require_repo_refs(failures, refs) do
-    expected_refs = Enum.map(@expected_repos, &"repo://nshkrdotcom/#{&1}")
+    expected_refs = Enum.map(@expected_repos, &RepoRef.new!("nshkrdotcom", &1).ref)
 
     if refs == expected_refs do
       failures

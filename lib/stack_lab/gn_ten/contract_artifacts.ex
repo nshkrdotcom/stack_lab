@@ -7,10 +7,11 @@ defmodule StackLab.GnTen.ContractArtifacts do
   artifacts can be bootstrapped without forcing recursive commits.
   """
 
+  alias GroundPlane.Contracts.{ArtifactRef, WorkspaceRef}
   alias StackLab.GnTen.Manifest
 
   @schema_version "gn_ten_contract_artifacts_v1"
-  @workspace_ref "workspace://nshkrdotcom/gn-ten"
+  @workspace_ref WorkspaceRef.new!("nshkrdotcom", "gn-ten").ref
   @branch_policy "main_only"
   @main_ref "main"
   @allowed_statuses ~w(proposed bootstrap projected stable deprecated)
@@ -254,7 +255,7 @@ defmodule StackLab.GnTen.ContractArtifacts do
 
   defp validate_artifact_refs(failures, artifacts) do
     Enum.reduce(artifacts, failures, fn artifact, acc ->
-      expected = "artifact://nshkrdotcom/#{artifact.producer_repo}/#{artifact.name}"
+      expected = ArtifactRef.new!("nshkrdotcom", artifact.producer_repo, artifact.name).ref
 
       if artifact.artifact_ref == expected do
         acc

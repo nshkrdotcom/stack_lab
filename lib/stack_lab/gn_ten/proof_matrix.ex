@@ -7,10 +7,11 @@ defmodule StackLab.GnTen.ProofMatrix do
   command, receipt, and does-not-prove boundary.
   """
 
+  alias GroundPlane.Contracts.WorkspaceRef
   alias StackLab.GnTen.Manifest
 
   @schema_version "gn_ten_proof_matrix_v1"
-  @workspace_ref "workspace://nshkrdotcom/gn-ten"
+  @workspace_ref WorkspaceRef.new!("nshkrdotcom", "gn-ten").ref
   @branch_policy "main_only"
   @contract_families [
     "000 repo contracts",

@@ -6,10 +6,11 @@ defmodule StackLab.GnTen.TraceFixtures do
   not claim deployment proof.
   """
 
+  alias GroundPlane.Contracts.WorkspaceRef
   alias StackLab.GnTen.Manifest
 
   @schema_version "aitrace.single_node_proof_trace.v1"
-  @workspace_ref "workspace://nshkrdotcom/gn-ten"
+  @workspace_ref WorkspaceRef.new!("nshkrdotcom", "gn-ten").ref
   @node_ref "node://single-node/local-beam"
   @proof_class "single_node_beam_development"
   @allowed_profiles ~w(local_quick local_full assembled_offline deployment_single_node)

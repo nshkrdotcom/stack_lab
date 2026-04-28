@@ -48,6 +48,7 @@ defmodule StackLab.Workspace.MixProject do
       {:blitz, "~> 0.2.0", runtime: false},
       {:weld, "~> 0.7.2", runtime: false},
       {:jason, "~> 1.4", runtime: false},
+      {:ground_plane_contracts, path: "../ground_plane/core/ground_plane_contracts"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
