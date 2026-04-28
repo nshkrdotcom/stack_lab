@@ -64,6 +64,23 @@ defmodule StackLab.GnTen.ProofMatrixTest do
     assert failure_code?(report, "proof_missing_contract_family")
   end
 
+  test "rejects trace receipts with unsafe posture" do
+    path =
+      matrix_path!(
+        proof_overrides: %{
+          trace_receipt: %{
+            schema: "aitrace.single_node_proof_trace.v1",
+            ref: "trace://stack_lab/local_quick/latest",
+            authoritative_audit?: "true",
+            production_deployment_proven?: "false"
+          }
+        }
+      )
+
+    assert {:error, report} = ProofMatrix.validate(path)
+    assert failure_code?(report, "proof_invalid_trace_join")
+  end
+
   test "validates the checked-in proof matrix ledger" do
     assert {:ok, report} = ProofMatrix.validate()
     assert report.schema_version == "gn_ten_proof_matrix_v1"
@@ -141,6 +158,20 @@ defmodule StackLab.GnTen.ProofMatrixTest do
         does_not_prove:
     #{Enum.map_join(proof.does_not_prove, "\n", &"      - #{&1}")}
         next_action: #{proof.next_action}
+    #{trace_receipt_yaml(Map.get(proof, :trace_receipt))}
+    """
+  end
+
+  defp trace_receipt_yaml(nil), do: ""
+
+  defp trace_receipt_yaml(trace_receipt) do
+    """
+        trace_receipt:
+          schema: #{Map.fetch!(trace_receipt, :schema)}
+          ref: #{Map.fetch!(trace_receipt, :ref)}
+          posture:
+            authoritative_audit?: #{Map.fetch!(trace_receipt, :authoritative_audit?)}
+            production_deployment_proven?: #{Map.fetch!(trace_receipt, :production_deployment_proven?)}
     """
   end
 

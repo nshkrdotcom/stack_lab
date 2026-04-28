@@ -15,6 +15,15 @@ proof_matrix.yml
 The YAML ledger is the source used by `mix gn_ten.proofs.validate`. This
 Markdown file remains the human-readable review surface.
 
+Phase E trace joins:
+
+```text
+trace://stack_lab/local_quick/latest
+```
+
+The local-quick trace joins are development evidence only. They explicitly do
+not claim authoritative audit truth or production deployment proof.
+
 ## Repository Coverage
 
 | Repo | Repo Ref | Current Proof Posture | Command | Evidence |

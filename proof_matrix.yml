@@ -27,6 +27,12 @@ proofs:
       - semantic correctness of every human-authored instruction paragraph
       - future repo-local edits outside marked gn-ten sections
     next_action: keep validator in mix ci and expand with no-bypass checks in Phase I
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/local_quick/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
 
   - id: stack_lab_development_loop
     owner_repo: stack_lab
@@ -73,6 +79,12 @@ proofs:
       - runtime correctness of any repo
       - artifact freshness after producer commits
     next_action: keep manifest validation in mix ci and link Phase G receipts to repo command batches
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/local_quick/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
 
   - id: contract_artifact_ledger
     owner_repo: stack_lab
@@ -89,6 +101,12 @@ proofs:
       - artifacts have been published or consumed by package managers
       - consumer behavior has been assembled through runtime fixtures
     next_action: add Phase G batch receipts that connect producer commands to ledger refreshes
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/local_quick/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
 
   - id: agent_turn_runtime_patterns
     owner_repo: stack_lab

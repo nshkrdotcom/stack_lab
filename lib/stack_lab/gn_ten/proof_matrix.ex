@@ -23,6 +23,7 @@ defmodule StackLab.GnTen.ProofMatrix do
   ]
   @allowed_statuses ~w(implemented partial missing-proof not-applicable)
   @allowed_profiles ~w(local_quick local_full assembled_offline deployment_single_node)
+  @trace_schema "aitrace.single_node_proof_trace.v1"
   @default_path Path.expand("../../../proof_matrix.yml", __DIR__)
 
   @type report :: %{
@@ -103,6 +104,7 @@ defmodule StackLab.GnTen.ProofMatrix do
       |> validate_profiles(ledger.proofs)
       |> validate_does_not_prove(ledger.proofs)
       |> validate_status_invariants(ledger.proofs)
+      |> validate_trace_receipts(ledger.proofs)
       |> validate_family_coverage(ledger.proofs)
 
     %{
@@ -325,7 +327,8 @@ defmodule StackLab.GnTen.ProofMatrix do
       receipt: proof.receipt,
       proves: proof.proves,
       does_not_prove: proof.does_not_prove,
-      next_action: proof.next_action
+      next_action: proof.next_action,
+      trace_receipt: proof.trace_receipt
     }
   end
 
@@ -362,8 +365,47 @@ defmodule StackLab.GnTen.ProofMatrix do
       receipt: block_scalar(block, "receipt"),
       proves: block_list(block, "proves"),
       does_not_prove: block_list(block, "does_not_prove"),
-      next_action: block_scalar(block, "next_action")
+      next_action: block_scalar(block, "next_action"),
+      trace_receipt: trace_receipt(block)
     }
+  end
+
+  defp validate_trace_receipts(failures, proofs) do
+    Enum.reduce(proofs, failures, fn proof, acc ->
+      case proof.trace_receipt do
+        nil -> acc
+        trace_receipt -> validate_trace_receipt(acc, proof, trace_receipt)
+      end
+    end)
+  end
+
+  defp validate_trace_receipt(failures, proof, trace_receipt) do
+    safe_posture? =
+      get_in(trace_receipt, [:posture, :authoritative_audit?]) == "false" and
+        get_in(trace_receipt, [:posture, :production_deployment_proven?]) == "false"
+
+    valid? =
+      trace_receipt.schema == @trace_schema and
+        String.starts_with?(trace_receipt.ref || "", "trace://") and safe_posture?
+
+    if valid? do
+      failures
+    else
+      [failure("proof_invalid_trace_join", proof: proof.id) | failures]
+    end
+  end
+
+  defp trace_receipt(block) do
+    if String.contains?(block, "trace_receipt:") do
+      %{
+        schema: block_scalar(block, "schema"),
+        ref: block_scalar(block, "ref"),
+        posture: %{
+          authoritative_audit?: block_scalar(block, "authoritative_audit?"),
+          production_deployment_proven?: block_scalar(block, "production_deployment_proven?")
+        }
+      }
+    end
   end
 
   defp contract_family_list(content) do
