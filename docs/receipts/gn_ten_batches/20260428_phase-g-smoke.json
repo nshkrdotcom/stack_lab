@@ -1,0 +1,117 @@
+{
+  "batch_id": "20260428-phase-g-smoke",
+  "branch_policy": "main_only",
+  "commands": [
+    {
+      "command": "mix ci",
+      "duration_ms": 0,
+      "evidence_ref": "repo-local-ci-status",
+      "exit_status": 0,
+      "repo": "ground_plane",
+      "repo_ref": "repo://nshkrdotcom/ground_plane",
+      "status": "dry_run"
+    },
+    {
+      "command": "mix ci",
+      "duration_ms": 0,
+      "evidence_ref": "repo-local-ci-status",
+      "exit_status": 0,
+      "repo": "execution_plane",
+      "repo_ref": "repo://nshkrdotcom/execution_plane",
+      "status": "dry_run"
+    },
+    {
+      "command": "mix ci",
+      "duration_ms": 0,
+      "evidence_ref": "repo-local-ci-status",
+      "exit_status": 0,
+      "repo": "citadel",
+      "repo_ref": "repo://nshkrdotcom/citadel",
+      "status": "dry_run"
+    },
+    {
+      "command": "mix ci",
+      "duration_ms": 0,
+      "evidence_ref": "repo-local-ci-status",
+      "exit_status": 0,
+      "repo": "jido_integration",
+      "repo_ref": "repo://nshkrdotcom/jido_integration",
+      "status": "dry_run"
+    },
+    {
+      "command": "mix ci",
+      "duration_ms": 0,
+      "evidence_ref": "repo-local-ci-status",
+      "exit_status": 0,
+      "repo": "mezzanine",
+      "repo_ref": "repo://nshkrdotcom/mezzanine",
+      "status": "dry_run"
+    },
+    {
+      "command": "mix ci",
+      "duration_ms": 0,
+      "evidence_ref": "repo-local-ci-status",
+      "exit_status": 0,
+      "repo": "outer_brain",
+      "repo_ref": "repo://nshkrdotcom/outer_brain",
+      "status": "dry_run"
+    },
+    {
+      "command": "mix ci",
+      "duration_ms": 0,
+      "evidence_ref": "repo-local-ci-status",
+      "exit_status": 0,
+      "repo": "app_kit",
+      "repo_ref": "repo://nshkrdotcom/app_kit",
+      "status": "dry_run"
+    },
+    {
+      "command": "mix ci",
+      "duration_ms": 0,
+      "evidence_ref": "repo-local-ci-status",
+      "exit_status": 0,
+      "repo": "extravaganza",
+      "repo_ref": "repo://nshkrdotcom/extravaganza",
+      "status": "dry_run"
+    },
+    {
+      "command": "mix deps.get && mix format --check-formatted && mix compile --warnings-as-errors && mix test && mix credo --strict && mix dialyzer --format short && mix docs",
+      "duration_ms": 0,
+      "evidence_ref": "repo-local-ci-status",
+      "exit_status": 0,
+      "repo": "AITrace",
+      "repo_ref": "repo://nshkrdotcom/AITrace",
+      "status": "dry_run"
+    },
+    {
+      "command": "mix ci",
+      "duration_ms": 0,
+      "evidence_ref": "repo-local-ci-status",
+      "exit_status": 0,
+      "repo": "stack_lab",
+      "repo_ref": "repo://nshkrdotcom/stack_lab",
+      "status": "dry_run"
+    }
+  ],
+  "consumer_repos": [],
+  "contract_producer_repo": null,
+  "date": "2026-04-28",
+  "git_closeout": [],
+  "notes": [],
+  "primary_owner_repo": "stack_lab",
+  "proof": {
+    "does_not_prove": [
+      "production_deployment",
+      "live_provider_behavior",
+      "authoritative_audit_truth"
+    ],
+    "evidence": [],
+    "scenario": "gn-ten repo-local CI batch"
+  },
+  "resume": null,
+  "run_status": "dry_run",
+  "schema_version": "gn_ten_batch_receipt_v1",
+  "slug": "phase-g-smoke",
+  "trace_evidence": [],
+  "workspace_ref": "workspace://nshkrdotcom/gn-ten"
+}
