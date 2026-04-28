@@ -1,0 +1,170 @@
+schema_version: gn_ten_manifest_v1
+workspace_ref: workspace://nshkrdotcom/gn-ten
+proof_matrix: docs/gn_ten_proof_matrix.md
+docs_root: /home/home/p/g/j/jido_brainstorm/nshkrdotcom/docs/20260427/contracts
+description: Ranked local workspace manifest for the ten core nshkr repositories.
+
+repos:
+  - name: ground_plane
+    repo_ref: repo://nshkrdotcom/ground_plane
+    path: /home/home/p/g/n/ground_plane
+    layer: foundational_substrate
+    role: universal_primitives
+    variant: gn-ten
+    strategy: elixir_ranked_v1
+    order: 4
+    ci: mix ci
+    produces:
+      - ground_plane_contracts
+    consumes: []
+    proof_owner: stack_lab
+
+  - name: execution_plane
+    repo_ref: repo://nshkrdotcom/execution_plane
+    path: /home/home/p/g/n/execution_plane
+    layer: execution_substrate
+    role: lower_runtime_packets_and_lanes
+    variant: default
+    strategy: elixir_ranked_v1
+    order: 0
+    ci: mix ci
+    produces:
+      - execution_plane
+    consumes:
+      - ground_plane_contracts
+    proof_owner: stack_lab
+
+  - name: jido_integration
+    repo_ref: repo://nshkrdotcom/jido_integration
+    path: /home/home/p/g/n/jido_integration
+    layer: spine_connector_gateway
+    role: credential_leases_and_lower_invocation
+    variant: gn-ten
+    strategy: elixir_ranked_v1
+    order: 27
+    ci: mix ci
+    produces:
+      - jido_integration_contracts
+    consumes:
+      - execution_plane
+      - ground_plane_contracts
+    proof_owner: stack_lab
+
+  - name: citadel
+    repo_ref: repo://nshkrdotcom/citadel
+    path: /home/home/p/g/n/citadel
+    layer: typed_brain_kernel
+    role: policy_packets_and_authority
+    variant: gn-ten
+    strategy: elixir_ranked_v1
+    order: 15
+    ci: mix ci
+    produces:
+      - citadel_domain_surface
+      - authority_contract
+    consumes:
+      - jido_integration_contracts
+      - execution_plane
+      - ground_plane_contracts
+    proof_owner: stack_lab
+
+  - name: outer_brain
+    repo_ref: repo://nshkrdotcom/outer_brain
+    path: /home/home/p/g/n/outer_brain
+    layer: semantic_runtime
+    role: context_assembly_and_semantic_recovery
+    variant: gn-ten
+    strategy: elixir_ranked_v1
+    order: 16
+    ci: mix ci
+    produces:
+      - outer_brain_contracts
+    consumes:
+      - citadel_domain_surface
+      - ground_plane_contracts
+    proof_owner: stack_lab
+
+  - name: mezzanine
+    repo_ref: repo://nshkrdotcom/mezzanine
+    path: /home/home/p/g/n/mezzanine
+    layer: operational_spine
+    role: lifecycle_projection_audit_and_workflow_truth
+    variant: gn-ten
+    strategy: elixir_ranked_v1
+    order: 11
+    ci: mix ci
+    produces:
+      - mezzanine_core
+    consumes:
+      - ground_plane_contracts
+      - citadel_authority
+      - jido_integration_contracts
+    proof_owner: stack_lab
+
+  - name: app_kit
+    repo_ref: repo://nshkrdotcom/app_kit
+    path: /home/home/p/g/n/app_kit
+    layer: northbound_surface
+    role: product_boundary
+    variant: gn-ten
+    strategy: elixir_ranked_v1
+    order: 19
+    ci: mix ci
+    produces:
+      - app_kit_core
+    consumes:
+      - mezzanine_core
+      - outer_brain_contracts
+      - citadel_domain_surface
+      - ground_plane_contracts
+    proof_owner: stack_lab
+
+  - name: extravaganza
+    repo_ref: repo://nshkrdotcom/extravaganza
+    path: /home/home/p/g/n/extravaganza
+    layer: proving_product
+    role: thin_operator_product
+    variant: default
+    strategy: elixir_ranked_v1
+    order: 0
+    ci: mix ci
+    produces: []
+    consumes:
+      - app_kit_core
+    proof_owner: stack_lab
+
+  - name: stack_lab
+    repo_ref: repo://nshkrdotcom/stack_lab
+    path: /home/home/p/g/n/stack_lab
+    layer: proof_workspace
+    role: assembled_proofs_and_fault_injection
+    variant: gn-ten
+    strategy: elixir_ranked_v1
+    order: 2
+    ci: mix ci
+    produces:
+      - stack_lab_lab_core
+    consumes:
+      - app_kit_core
+      - mezzanine_core
+      - outer_brain_contracts
+      - citadel_domain_surface
+      - jido_integration_contracts
+      - execution_plane
+      - ground_plane_contracts
+      - aitrace
+    proof_owner: stack_lab
+
+  - name: AITrace
+    repo_ref: repo://nshkrdotcom/AITrace
+    path: /home/home/p/g/n/AITrace
+    layer: observability
+    role: trace_model_and_execution_cinema
+    variant: default
+    strategy: elixir_ranked_v1
+    order: 0
+    ci: mix deps.get && mix format --check-formatted && mix compile --warnings-as-errors && mix test && mix credo --strict && mix dialyzer --format short && mix docs
+    produces:
+      - aitrace
+    consumes: []
+    proof_owner: stack_lab
