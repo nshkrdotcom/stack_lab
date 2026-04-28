@@ -3,7 +3,7 @@
 Date: 2026-04-28
 Batch ID: 20260428-phase-g-smoke
 Branch policy: main_only
-Run status: dry_run
+Run status: failed
 Primary owner repo: stack_lab
 Contract producer repo: 
 Consumer repos: 
@@ -18,16 +18,16 @@ Consumer repos:
 
 | Repo | Command | Status | Exit | Duration ms |
 | --- | --- | --- | --- | --- |
-| ground_plane | `mix ci` | dry_run | 0 | 0 |
-| execution_plane | `mix ci` | dry_run | 0 | 0 |
-| citadel | `mix ci` | dry_run | 0 | 0 |
-| jido_integration | `mix ci` | dry_run | 0 | 0 |
-| mezzanine | `mix ci` | dry_run | 0 | 0 |
-| outer_brain | `mix ci` | dry_run | 0 | 0 |
-| app_kit | `mix ci` | dry_run | 0 | 0 |
-| extravaganza | `mix ci` | dry_run | 0 | 0 |
-| AITrace | `mix deps.get && mix format --check-formatted && mix compile --warnings-as-errors && mix test && mix credo --strict && mix dialyzer --format short && mix docs` | dry_run | 0 | 0 |
-| stack_lab | `mix ci` | dry_run | 0 | 0 |
+| ground_plane | `mix ci` | ok | 0 | 28785 |
+| execution_plane | `mix ci` | ok | 0 | 211396 |
+| citadel | `mix ci` | ok | 0 | 103792 |
+| jido_integration | `mix ci` | ok | 0 | 380991 |
+| mezzanine | `mix ci` | ok | 0 | 243348 |
+| outer_brain | `mix ci` | ok | 0 | 65982 |
+| app_kit | `mix ci` | ok | 0 | 210186 |
+| extravaganza | `mix ci` | ok | 0 | 48800 |
+| AITrace | `mix deps.get && mix format --check-formatted && mix compile --warnings-as-errors && mix test && mix credo --strict && mix dialyzer --format short && mix docs` | ok | 0 | 6042 |
+| stack_lab | `mix ci` | ok | 0 | 387826 |
 
 ## Proof
 

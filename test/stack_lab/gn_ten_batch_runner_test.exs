@@ -159,6 +159,56 @@ defmodule StackLab.GnTen.BatchRunnerTest do
     assert Enum.any?(result.failures, &(&1.repo == "execution_plane"))
   end
 
+  test "allows repo-owned projection lock refreshes and records them" do
+    workspace = temp_workspace!()
+
+    citadel_lock =
+      Path.join(repo_path(workspace, "citadel"), "dist/hex/citadel/projection.lock.json")
+
+    File.mkdir_p!(Path.dirname(citadel_lock))
+    File.write!(citadel_lock, ~s({"git_revision":"before"}\n))
+    git!(repo_path(workspace, "citadel"), ["add", "dist/hex/citadel/projection.lock.json"])
+
+    git!(repo_path(workspace, "citadel"), [
+      "-c",
+      "user.name=StackLab",
+      "-c",
+      "user.email=stack_lab@example.invalid",
+      "commit",
+      "-m",
+      "add projection lock"
+    ])
+
+    runner = fn repo, _command ->
+      if repo.name == "citadel" do
+        File.write!(citadel_lock, ~s({"git_revision":"after"}\n))
+      end
+
+      {:ok, 0, "output"}
+    end
+
+    assert {:ok, result} =
+             BatchRunner.run("projection-lock-run",
+               manifest: workspace.manifest,
+               out_dir: workspace.receipts,
+               trace_dir: workspace.traces,
+               date: @date,
+               command_runner: runner
+             )
+
+    receipt = read_receipt!(workspace, "projection-lock-run")
+
+    assert result.status == :ok
+
+    assert [
+             %{
+               "repo" => "citadel",
+               "path" => "dist/hex/citadel/projection.lock.json",
+               "status" => "M"
+             }
+           ] = receipt["post_run_mutations"]
+  end
+
   test "resume requires explicit confirmation" do
     workspace = temp_workspace!()
 

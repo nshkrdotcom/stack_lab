@@ -114,6 +114,7 @@ defmodule StackLab.GnTen.BatchRunner do
         },
         "trace_evidence" => [],
         "git_closeout" => [],
+        "post_run_mutations" => [],
         "resume" => nil,
         "notes" => [],
         "paths" => %{
@@ -254,23 +255,85 @@ defmodule StackLab.GnTen.BatchRunner do
   end
 
   defp ensure_non_stacklab_clean(%{status: :ok} = result, manifest, _opts) do
-    failures =
-      manifest.repo_entries
-      |> Enum.reject(&(&1.name == "stack_lab"))
-      |> Enum.map(&Status.repo_status/1)
-      |> Enum.flat_map(& &1.failures)
+    mutations = non_stacklab_mutations(manifest)
+    failures = Enum.reject(mutations, &allowed_generated_mutation?/1)
 
     case failures do
       [] ->
-        result
+        put_post_run_mutations(result, mutations)
 
       failures ->
         result
         |> Map.put(:status, :failed)
         |> Map.put(:code, "workspace_mutated")
         |> Map.update!(:receipt, &Map.put(&1, "run_status", "failed"))
-        |> Map.put(:failures, failures)
+        |> Map.put(:failures, Enum.map(failures, &mutation_failure/1))
     end
+  end
+
+  defp non_stacklab_mutations(manifest) do
+    manifest.repo_entries
+    |> Enum.reject(&(&1.name == "stack_lab"))
+    |> Enum.flat_map(&repo_mutations/1)
+  end
+
+  defp repo_mutations(repo) do
+    case System.cmd("git", ["status", "--porcelain", "--untracked-files=all"], cd: repo.path) do
+      {"", 0} ->
+        []
+
+      {output, 0} ->
+        output
+        |> String.split("\n", trim: true)
+        |> Enum.map(&mutation(repo, &1))
+
+      {_output, _status} ->
+        [%{repo: repo.name, path: repo.path, status: "git_status_failed"}]
+    end
+  end
+
+  defp mutation(repo, line) do
+    status = line |> String.slice(0, 2) |> String.trim()
+    path = String.slice(line, 3..-1//1)
+
+    %{
+      repo: repo.name,
+      path: path,
+      status: status
+    }
+  end
+
+  defp allowed_generated_mutation?(%{status: "M", path: path}) do
+    Regex.match?(~r/^dist\/(hex|monolith)\/[^\/]+\/projection\.lock\.json$/, path)
+  end
+
+  defp allowed_generated_mutation?(_mutation), do: false
+
+  defp put_post_run_mutations(result, []), do: result
+
+  defp put_post_run_mutations(result, mutations) do
+    public_mutations =
+      Enum.map(mutations, fn mutation ->
+        %{
+          "repo" => mutation.repo,
+          "path" => mutation.path,
+          "status" => mutation.status,
+          "classification" => "repo_owned_generated_projection_lock"
+        }
+      end)
+
+    Map.update!(result, :receipt, &Map.put(&1, "post_run_mutations", public_mutations))
+  end
+
+  defp mutation_failure(mutation) do
+    %{
+      code: "dirty_worktree",
+      repo: mutation.repo,
+      path: mutation.path,
+      status: mutation.status,
+      expected: "clean_or_allowed_generated_projection_lock",
+      actual: "dirty"
+    }
   end
 
   defp finish(%{status: :failed, code: code} = result) do
