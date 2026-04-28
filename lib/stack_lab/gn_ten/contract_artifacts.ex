@@ -92,21 +92,24 @@ defmodule StackLab.GnTen.ContractArtifacts do
       |> validate_required_fields(ledger.artifacts)
       |> validate_unique_names(ledger.artifacts)
       |> validate_statuses(ledger.artifacts)
+      |> validate_deprecated_consumers(ledger.artifacts)
       |> validate_repo_refs(ledger.artifacts, repo_names)
       |> validate_source_refs(ledger.artifacts)
       |> validate_artifact_refs(ledger.artifacts)
 
-    warnings = validate_source_shas(ledger.artifacts, manifest)
+    sha_findings = validate_source_shas(ledger.artifacts, manifest)
+    sha_failures = Enum.filter(sha_findings, &(&1.severity == "failure"))
+    warnings = Enum.filter(sha_findings, &(&1.severity == "warning"))
 
     %{
       schema_version: ledger.schema_version,
       workspace_ref: ledger.workspace_ref,
       branch_policy: ledger.branch_policy,
       artifact_count: length(ledger.artifacts),
-      stale_count: Enum.count(warnings, &(&1.code == "artifact_source_sha_stale")),
+      stale_count: Enum.count(sha_findings, &(&1.code == "artifact_source_sha_stale")),
       artifacts: Enum.map(ledger.artifacts, &safe_artifact/1),
       warnings: Enum.reverse(warnings),
-      failures: Enum.reverse(failures)
+      failures: Enum.reverse(sha_failures ++ failures)
     }
   end
 
@@ -127,8 +130,7 @@ defmodule StackLab.GnTen.ContractArtifacts do
     Enum.reduce(artifacts, failures, fn artifact, acc ->
       missing =
         Enum.filter(@required_fields, fn field ->
-          value = Map.get(artifact, field)
-          is_nil(value) or value == "" or value == []
+          field_missing?(artifact, field)
         end)
 
       case missing do
@@ -142,6 +144,13 @@ defmodule StackLab.GnTen.ContractArtifacts do
           ]
       end
     end)
+  end
+
+  defp field_missing?(%{status: "deprecated"}, :consumers), do: false
+
+  defp field_missing?(artifact, field) do
+    value = Map.get(artifact, field)
+    is_nil(value) or value == "" or value == []
   end
 
   defp validate_unique_names(failures, artifacts) do
@@ -162,6 +171,22 @@ defmodule StackLab.GnTen.ContractArtifacts do
           failure("artifact_unknown_status", artifact: artifact.name, status: artifact.status)
           | acc
         ]
+      end
+    end)
+  end
+
+  defp validate_deprecated_consumers(failures, artifacts) do
+    Enum.reduce(artifacts, failures, fn artifact, acc ->
+      if artifact.status == "deprecated" and artifact.consumers != [] do
+        [
+          failure("artifact_deprecated_consumers_remain",
+            artifact: artifact.name,
+            consumers: artifact.consumers
+          )
+          | acc
+        ]
+      else
+        acc
       end
     end)
   end
@@ -253,19 +278,38 @@ defmodule StackLab.GnTen.ContractArtifacts do
           acc
 
         {:ok, actual} ->
-          [
-            failure("artifact_source_sha_stale",
-              artifact: artifact.name,
-              expected: artifact.source_sha,
-              actual: actual
-            )
-            | acc
-          ]
+          stale_source_sha(artifact, actual, acc)
 
         :skip ->
           acc
       end
     end)
+  end
+
+  defp stale_source_sha(%{status: "proposed"}, _actual, acc), do: acc
+
+  defp stale_source_sha(%{status: "bootstrap"} = artifact, actual, acc) do
+    [
+      failure("artifact_source_sha_stale",
+        artifact: artifact.name,
+        expected: artifact.source_sha,
+        actual: actual,
+        severity: "warning"
+      )
+      | acc
+    ]
+  end
+
+  defp stale_source_sha(artifact, actual, acc) do
+    [
+      failure("artifact_source_sha_stale",
+        artifact: artifact.name,
+        expected: artifact.source_sha,
+        actual: actual,
+        severity: "failure"
+      )
+      | acc
+    ]
   end
 
   defp local_head(artifact, manifest) do
@@ -292,7 +336,8 @@ defmodule StackLab.GnTen.ContractArtifacts do
       source_ref: artifact.source_ref,
       source_sha: artifact.source_sha,
       status: artifact.status,
-      consumers: artifact.consumers
+      consumers: artifact.consumers,
+      successor: artifact.successor
     }
   end
 
@@ -328,6 +373,7 @@ defmodule StackLab.GnTen.ContractArtifacts do
       source_sha: block_scalar(block, "source_sha"),
       build_command: block_scalar(block, "build_command"),
       status: block_scalar(block, "status"),
+      successor: block_scalar(block, "successor"),
       consumers: block_list(block, "consumers"),
       notes: block_scalar(block, "notes")
     }
