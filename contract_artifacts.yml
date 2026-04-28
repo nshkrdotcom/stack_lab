@@ -1,0 +1,32 @@
+schema_version: gn_ten_contract_artifacts_v1
+workspace_ref: workspace://nshkrdotcom/gn-ten
+branch_policy: main_only
+
+artifacts:
+  - name: ground_plane_repo_refs
+    artifact_ref: artifact://nshkrdotcom/ground_plane/ground_plane_repo_refs
+    producer_repo: ground_plane
+    producer_repo_ref: repo://nshkrdotcom/ground_plane
+    producer_path: /home/home/p/g/n/ground_plane
+    source_ref: main
+    source_sha: 244714b93f035220ee14f03eed2d6acf75d286eb
+    build_command: cd /home/home/p/g/n/ground_plane/core/ground_plane_contracts && mix test
+    status: bootstrap
+    consumers:
+      - stack_lab
+    notes: Universal repo reference primitive used by gn-ten manifest/status work.
+
+  - name: stack_lab_gn_ten_manifest
+    artifact_ref: artifact://nshkrdotcom/stack_lab/stack_lab_gn_ten_manifest
+    producer_repo: stack_lab
+    producer_repo_ref: repo://nshkrdotcom/stack_lab
+    producer_path: /home/home/p/g/n/stack_lab
+    source_ref: main
+    source_sha: 4a2f0951fb3330c14e31a62db10a5c8ce610f61f
+    build_command: cd /home/home/p/g/n/stack_lab && mix gn_ten.validate
+    status: bootstrap
+    consumers:
+      - app_kit
+      - extravaganza
+      - AITrace
+    notes: Canonical local ten-repo workspace manifest and main-only status surface.
