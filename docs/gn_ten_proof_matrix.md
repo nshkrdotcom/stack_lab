@@ -6,6 +6,15 @@ This matrix maps the `gn-ten` contract docset to executable StackLab proof
 ownership. Entries marked `missing-proof` are intentional backlog items, not
 claims of completed behavior.
 
+Machine-readable ledger:
+
+```text
+proof_matrix.yml
+```
+
+The YAML ledger is the source used by `mix gn_ten.proofs.validate`. This
+Markdown file remains the human-readable review surface.
+
 ## Repository Coverage
 
 | Repo | Repo Ref | Current Proof Posture | Command | Evidence |
@@ -44,10 +53,12 @@ claims of completed behavior.
 
 ## Missing Proof Backlog
 
-- `contract_artifact_ledger`: validate projected artifact SHAs against local
-  producer repos.
-- `repo_agent_instruction_drift`: verify repo-local `AGENTS.md` sections match
-  reviewed cleanup drafts.
+- `refactoring_deletion_backlog`: connect each 200-series deletion campaign to
+  a StackLab scenario or explicit no-op proof.
+- `agent_turn_runtime_patterns`: promote session-lineage drills into a named
+  assembled-offline proof.
+- `governed_connector_export_fixture`: prove redacted compliance export and
+  credential lease handling without raw secrets or provider payloads.
 - `single_node_deployment_rehearsal`: prove Coolify-style release, migration,
   health check, trace export, and restore.
 - `compliance_export_fixture`: prove redacted export bundle without raw

@@ -1,0 +1,133 @@
+schema_version: gn_ten_proof_matrix_v1
+workspace_ref: workspace://nshkrdotcom/gn-ten
+branch_policy: main_only
+
+contract_families:
+  - "000 repo contracts"
+  - "100 development process"
+  - "200 refactoring"
+  - "300 architecture"
+  - "400 agent patterns"
+  - "500 governance"
+  - "600 deployment"
+
+proofs:
+  - id: repo_agent_instruction_drift
+    owner_repo: stack_lab
+    contract_family: "000 repo contracts"
+    status: implemented
+    profile: local_quick
+    command: mix gn_ten.repo_agents.validate
+    fixture: repo_agent_instructions/
+    receipt: receipt://stack_lab/repo_agent_instruction_drift/latest
+    proves:
+      - repo-local AGENTS.md marked gn-ten sections match reviewed drafts
+      - CLAUDE.md compatibility shims point to AGENTS.md
+    does_not_prove:
+      - semantic correctness of every human-authored instruction paragraph
+      - future repo-local edits outside marked gn-ten sections
+    next_action: keep validator in mix ci and expand with no-bypass checks in Phase I
+
+  - id: stack_lab_development_loop
+    owner_repo: stack_lab
+    contract_family: "100 development process"
+    status: implemented
+    profile: local_full
+    command: mix ci
+    fixture: support/lab_core
+    receipt: receipt://stack_lab/mix_ci/latest
+    proves:
+      - StackLab workspace commands, support packages, examples, tests, credo, docs, and weld gates compose locally
+      - local development gates can run from the command surface without feature branches
+    does_not_prove:
+      - every repo-local CI gate across all ten repos after future drift
+      - deployment behavior or live-provider behavior
+    next_action: add batch command receipts and resumable ordered execution in Phase G
+
+  - id: refactoring_deletion_backlog
+    owner_repo: stack_lab
+    contract_family: "200 refactoring"
+    status: missing-proof
+    profile: local_quick
+    command: null
+    fixture: null
+    receipt: null
+    proves:
+    does_not_prove:
+      - duplicate DTOs and helpers have been removed across the ten repos
+      - shared primitives have replaced repo-local copies
+    next_action: run Phase H deletion inventory and add no-op proof rows for each consciously retained duplicate
+
+  - id: workspace_manifest_control_plane
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: local_quick
+    command: mix gn_ten.validate
+    fixture: gn-ten.yml
+    receipt: receipt://stack_lab/workspace_manifest_control_plane/latest
+    proves:
+      - gn-ten manifest names the exact ten repos in ranked order
+      - each repo declares main-only branch policy and proof ownership fields
+    does_not_prove:
+      - runtime correctness of any repo
+      - artifact freshness after producer commits
+    next_action: keep manifest validation in mix ci and link Phase G receipts to repo command batches
+
+  - id: contract_artifact_ledger
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: local_quick
+    command: mix gn_ten.artifacts.validate
+    fixture: contract_artifacts.yml
+    receipt: receipt://stack_lab/contract_artifact_ledger/latest
+    proves:
+      - projected artifact producers and consumers resolve through gn-ten.yml
+      - stale source SHA drift is classified by artifact lifecycle status
+    does_not_prove:
+      - artifacts have been published or consumed by package managers
+      - consumer behavior has been assembled through runtime fixtures
+    next_action: add Phase G batch receipts that connect producer commands to ledger refreshes
+
+  - id: agent_turn_runtime_patterns
+    owner_repo: stack_lab
+    contract_family: "400 agent patterns"
+    status: missing-proof
+    profile: assembled_offline
+    command: null
+    fixture: null
+    receipt: null
+    proves:
+    does_not_prove:
+      - multi-turn session recovery across Brain, Spine, and lower runtime boundaries
+      - dynamic tool loading and fallback behavior under fault injection
+    next_action: promote existing session-lineage drills into a named assembled_offline proof with AITrace evidence
+
+  - id: governed_connector_export_fixture
+    owner_repo: stack_lab
+    contract_family: "500 governance"
+    status: missing-proof
+    profile: assembled_offline
+    command: null
+    fixture: null
+    receipt: null
+    proves:
+    does_not_prove:
+      - compliance export is redacted and deterministic
+      - credential lease handling is proven without raw secrets or provider payloads
+    next_action: add an offline compliance export fixture and verify denied public payload keys
+
+  - id: single_node_deployment_rehearsal
+    owner_repo: stack_lab
+    contract_family: "600 deployment"
+    status: missing-proof
+    profile: deployment_single_node
+    command: null
+    fixture: null
+    receipt: null
+    proves:
+    does_not_prove:
+      - clean-host single-node deployment readiness
+      - backup restore and post-deploy trace export
+    next_action: add a Coolify-style deploy, health, trace, backup, and restore rehearsal in Phase J
