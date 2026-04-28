@@ -27,6 +27,7 @@ defmodule Mix.Tasks.GnTen.Validate do
 
   defp print_success(result, _manifest_path, true) do
     result
+    |> Map.drop([:content])
     |> Map.put(:status, :pass)
     |> Jason.encode!(pretty: true)
     |> Mix.shell().info()
@@ -35,6 +36,7 @@ defmodule Mix.Tasks.GnTen.Validate do
   defp print_success(result, manifest_path, false) do
     Mix.shell().info("gn_ten.validate passed")
     Mix.shell().info("manifest=#{manifest_path}")
+    Mix.shell().info("branch_policy=#{result.branch_policy}")
     Mix.shell().info("repos=#{Enum.join(result.repos, ",")}")
     Mix.shell().info("proof_matrix=#{result.proof_matrix}")
   end

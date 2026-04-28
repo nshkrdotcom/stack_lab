@@ -7,7 +7,10 @@ defmodule StackLab.GnTen.ManifestTest do
     assert {:ok, result} = Manifest.validate_file()
     assert result.schema_version == "gn_ten_manifest_v1"
     assert result.workspace_ref == "workspace://nshkrdotcom/gn-ten"
+    assert result.branch_policy == "main_only"
     assert result.repos == Manifest.expected_repos()
+    assert Enum.all?(result.default_branches, &(&1 == Manifest.main_branch()))
+    assert Enum.all?(result.repo_entries, &(&1.default_branch == Manifest.main_branch()))
     assert result.proof_matrix == "docs/gn_ten_proof_matrix.md"
   end
 
@@ -32,6 +35,17 @@ defmodule StackLab.GnTen.ManifestTest do
 
     assert "AITrace" in missing
     assert "app_kit" in missing
+  end
+
+  test "rejects non-main default branches" do
+    manifest_path = temp_manifest!("default_branch: main", "default_branch: feature/test")
+
+    assert {:error, failures} = Manifest.validate_file(manifest_path)
+
+    assert Enum.any?(
+             failures,
+             &match?({:mismatch, :default_branches, _expected, _actual}, &1)
+           )
   end
 
   defp temp_manifest!(from, to) do

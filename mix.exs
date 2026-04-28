@@ -135,6 +135,7 @@ defmodule StackLab.Workspace.MixProject do
         "docs/overview.md",
         "docs/development.md",
         "docs/layout.md",
+        "docs/gn_ten_main_only.md",
         "docs/gn_ten_proof_matrix.md",
         "docs/runbooks/up_single.md",
         "docs/runbooks/up_multi.md",
@@ -145,7 +146,12 @@ defmodule StackLab.Workspace.MixProject do
       ],
       groups_for_extras: [
         Overview: ["README.md", "docs/overview.md"],
-        Development: ["docs/development.md", "docs/layout.md", "docs/gn_ten_proof_matrix.md"],
+        Development: [
+          "docs/development.md",
+          "docs/layout.md",
+          "docs/gn_ten_main_only.md",
+          "docs/gn_ten_proof_matrix.md"
+        ],
         Runbooks: [
           "docs/runbooks/up_single.md",
           "docs/runbooks/up_multi.md",
