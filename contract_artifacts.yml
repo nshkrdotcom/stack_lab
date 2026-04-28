@@ -9,12 +9,12 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 244714b93f035220ee14f03eed2d6acf75d286eb
-    build_command: cd /home/home/p/g/n/ground_plane/core/ground_plane_contracts && mix test
-    status: bootstrap
+    source_sha: 40da869a87ff0de2709977f26dbebd0434452601
+    build_command: mix ci
+    status: deprecated
+    successor: ground_plane_contracts
     consumers:
-      - stack_lab
-    notes: Universal repo reference primitive used by gn-ten manifest/status work.
+    notes: Phase A narrow repo-ref artifact retained as deprecated history.
 
   - name: stack_lab_gn_ten_manifest
     artifact_ref: artifact://nshkrdotcom/stack_lab/stack_lab_gn_ten_manifest
@@ -22,11 +22,158 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/stack_lab
     producer_path: /home/home/p/g/n/stack_lab
     source_ref: main
-    source_sha: 4a2f0951fb3330c14e31a62db10a5c8ce610f61f
-    build_command: cd /home/home/p/g/n/stack_lab && mix gn_ten.validate
+    source_sha: a9394f938b96e754550ed9ba915ed48c3d9d05a7
+    build_command: mix gn_ten.validate
     status: bootstrap
     consumers:
       - app_kit
       - extravaganza
       - AITrace
-    notes: Canonical local ten-repo workspace manifest and main-only status surface.
+    notes: Phase A command-surface manifest artifact retained for history.
+
+  - name: ground_plane_contracts
+    artifact_ref: artifact://nshkrdotcom/ground_plane/ground_plane_contracts
+    producer_repo: ground_plane
+    producer_repo_ref: repo://nshkrdotcom/ground_plane
+    producer_path: /home/home/p/g/n/ground_plane
+    source_ref: main
+    source_sha: 40da869a87ff0de2709977f26dbebd0434452601
+    build_command: mix ci
+    status: bootstrap
+    consumers:
+      - execution_plane
+      - jido_integration
+      - citadel
+      - outer_brain
+      - mezzanine
+      - app_kit
+      - stack_lab
+    notes: Universal primitive and repo/artifact reference contracts.
+
+  - name: execution_plane
+    artifact_ref: artifact://nshkrdotcom/execution_plane/execution_plane
+    producer_repo: execution_plane
+    producer_repo_ref: repo://nshkrdotcom/execution_plane
+    producer_path: /home/home/p/g/n/execution_plane
+    source_ref: main
+    source_sha: a2bd3c09b655f2ca82afc9ac1daa0eb326c079db
+    build_command: mix ci
+    status: bootstrap
+    consumers:
+      - jido_integration
+      - citadel
+      - stack_lab
+    notes: Lower runtime packet, lane, and host execution contracts.
+
+  - name: jido_integration_contracts
+    artifact_ref: artifact://nshkrdotcom/jido_integration/jido_integration_contracts
+    producer_repo: jido_integration
+    producer_repo_ref: repo://nshkrdotcom/jido_integration
+    producer_path: /home/home/p/g/n/jido_integration
+    source_ref: main
+    source_sha: daed2a11a1eff02f022920e7984eb826b1a39c66
+    build_command: mix ci
+    status: bootstrap
+    consumers:
+      - citadel
+      - mezzanine
+      - stack_lab
+    notes: Connector capability and lower invocation contract package.
+
+  - name: citadel_domain_surface
+    artifact_ref: artifact://nshkrdotcom/citadel/citadel_domain_surface
+    producer_repo: citadel
+    producer_repo_ref: repo://nshkrdotcom/citadel
+    producer_path: /home/home/p/g/n/citadel
+    source_ref: main
+    source_sha: c070c54d241d187434ac0e099eb85aa3a0b66cf0
+    build_command: mix ci
+    status: bootstrap
+    consumers:
+      - outer_brain
+      - app_kit
+      - stack_lab
+    notes: Typed domain surface DTOs available to northbound boundaries.
+
+  - name: authority_contract
+    artifact_ref: artifact://nshkrdotcom/citadel/authority_contract
+    producer_repo: citadel
+    producer_repo_ref: repo://nshkrdotcom/citadel
+    producer_path: /home/home/p/g/n/citadel
+    source_ref: main
+    source_sha: c070c54d241d187434ac0e099eb85aa3a0b66cf0
+    build_command: mix ci
+    status: bootstrap
+    consumers:
+      - mezzanine
+      - app_kit
+      - stack_lab
+    notes: Authority posture, policy packet, and governance decision contracts.
+
+  - name: outer_brain_contracts
+    artifact_ref: artifact://nshkrdotcom/outer_brain/outer_brain_contracts
+    producer_repo: outer_brain
+    producer_repo_ref: repo://nshkrdotcom/outer_brain
+    producer_path: /home/home/p/g/n/outer_brain
+    source_ref: main
+    source_sha: f438c5f14ca2efdc295ca477833a7c2500cbe565
+    build_command: mix ci
+    status: bootstrap
+    consumers:
+      - app_kit
+      - stack_lab
+    notes: Semantic runtime DTOs and restart-durability public contracts.
+
+  - name: mezzanine_core
+    artifact_ref: artifact://nshkrdotcom/mezzanine/mezzanine_core
+    producer_repo: mezzanine
+    producer_repo_ref: repo://nshkrdotcom/mezzanine
+    producer_path: /home/home/p/g/n/mezzanine
+    source_ref: main
+    source_sha: ad8fcf763837da1c09e21d17284d1ab2cf992a9f
+    build_command: mix ci
+    status: bootstrap
+    consumers:
+      - app_kit
+      - stack_lab
+    notes: Operational lifecycle, projection, audit, and workflow truth contracts.
+
+  - name: app_kit_core
+    artifact_ref: artifact://nshkrdotcom/app_kit/app_kit_core
+    producer_repo: app_kit
+    producer_repo_ref: repo://nshkrdotcom/app_kit
+    producer_path: /home/home/p/g/n/app_kit
+    source_ref: main
+    source_sha: 03deb310faa614122b7df225b7e52f4f3734dfa8
+    build_command: mix ci
+    status: bootstrap
+    consumers:
+      - extravaganza
+      - stack_lab
+    notes: Product-facing boundary contracts consumed by thin products.
+
+  - name: stack_lab_lab_core
+    artifact_ref: artifact://nshkrdotcom/stack_lab/stack_lab_lab_core
+    producer_repo: stack_lab
+    producer_repo_ref: repo://nshkrdotcom/stack_lab
+    producer_path: /home/home/p/g/n/stack_lab
+    source_ref: main
+    source_sha: a9394f938b96e754550ed9ba915ed48c3d9d05a7
+    build_command: mix ci
+    status: bootstrap
+    consumers:
+      - stack_lab
+    notes: Local assembled-proof harness support package.
+
+  - name: aitrace
+    artifact_ref: artifact://nshkrdotcom/AITrace/aitrace
+    producer_repo: AITrace
+    producer_repo_ref: repo://nshkrdotcom/AITrace
+    producer_path: /home/home/p/g/n/AITrace
+    source_ref: main
+    source_sha: c6ebad094367b199ca4cc0a9efaecfce8397c519
+    build_command: mix deps.get && mix format --check-formatted && mix compile --warnings-as-errors && mix test && mix credo --strict && mix dialyzer --format short && mix docs
+    status: bootstrap
+    consumers:
+      - stack_lab
+    notes: Trace event schema and local execution-cinema evidence model.
