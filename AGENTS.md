@@ -45,3 +45,43 @@ just temporal-ui
 ```
 
 Do not invent raw `temporal server start-dev` commands for normal work. Do not reset local Temporal state unless the user explicitly approves `just temporal-reset-confirm`.
+
+<!-- gn-ten:repo-agent:start repo=stack_lab source_sha=ab276c0640772b73065ab12bf05d77be51f1bb67 -->
+# stack_lab Agent Instructions Draft
+
+## Owns
+
+- Full-graph assembled proofs.
+- Fault injection.
+- Restart drills.
+- Local distributed-development harness.
+- `gn-ten` workspace manifest and proof matrix.
+
+## Does Not Own
+
+- Production business logic.
+- Runtime service ownership.
+- Product UX.
+- Lower execution implementation.
+
+## Allowed Dependencies
+
+- All ranked repos through explicit path dependencies in harness packages.
+- AITrace for proof evidence.
+
+## Forbidden Imports
+
+- Harness helpers must not become production APIs.
+- Proof support packages must not be consumed by product runtime code.
+
+## Verification
+
+- `mix ci`
+- `mix gn_ten.validate`
+- Scenario-specific harness tests.
+
+## Escalation
+
+If a proof requires new product/platform behavior, implement that behavior in
+the owner repo first, then return to StackLab for assembled proof.
+<!-- gn-ten:repo-agent:end -->

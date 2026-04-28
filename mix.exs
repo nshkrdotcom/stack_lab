@@ -71,6 +71,7 @@ defmodule StackLab.Workspace.MixProject do
         "monorepo.format --check-formatted",
         "gn_ten.validate",
         "gn_ten.artifacts.validate",
+        "gn_ten.repo_agents.validate",
         "monorepo.compile",
         "monorepo.test",
         "monorepo.credo --strict",
