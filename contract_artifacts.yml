@@ -39,7 +39,7 @@ artifacts:
     source_ref: main
     source_sha: fb2ee30d5b1c15ad8a6a165eeb54c31823ecc3ce
     build_command: mix ci
-    status: projected
+    status: stable
     consumers:
       - execution_plane
       - jido_integration
@@ -48,7 +48,7 @@ artifacts:
       - mezzanine
       - app_kit
       - stack_lab
-    notes: Universal primitive and repo/artifact reference contracts.
+    notes: Universal primitive and repo/artifact reference contracts. Promoted stable in Phase K after Phase F primitive promotion and seven listed consumers.
 
   - name: execution_plane
     artifact_ref: artifact://nshkrdotcom/execution_plane/execution_plane

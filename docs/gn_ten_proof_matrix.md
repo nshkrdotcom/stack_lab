@@ -28,7 +28,7 @@ not claim authoritative audit truth or production deployment proof.
 
 | Repo | Repo Ref | Current Proof Posture | Command | Evidence |
 | --- | --- | --- | --- | --- |
-| `ground_plane` | `repo://nshkrdotcom/ground_plane` | contract package CI plus future artifact ledger proof | `mix ci` in `ground_plane` | projected `ground_plane_contracts` artifact |
+| `ground_plane` | `repo://nshkrdotcom/ground_plane` | stable primitive contract package plus artifact ledger proof | `mix ci` in `ground_plane` | stable `ground_plane_contracts` artifact |
 | `execution_plane` | `repo://nshkrdotcom/execution_plane` | lower lane and node proofs through StackLab | `mix ci` in `execution_plane`; StackLab lower runtime scenarios | lower outcome refs |
 | `jido_integration` | `repo://nshkrdotcom/jido_integration` | connector/lower gateway proofs through StackLab | `mix ci` in `jido_integration`; StackLab connector scenarios | review packet and lower receipt refs |
 | `citadel` | `repo://nshkrdotcom/citadel` | policy packet and authority proofs through StackLab | `mix ci` in `citadel`; StackLab governance scenarios | authority refs |
