@@ -46,6 +46,12 @@ just temporal-ui
 
 Do not invent raw `temporal server start-dev` commands for normal work. Do not reset local Temporal state unless the user explicitly approves `just temporal-reset-confirm`.
 
+## gn-ten batch review
+
+Use `docs/review/gn_ten_batch_review.md` at every gn-ten batch closeout. The
+batch receipt is the review unit; do not substitute raw logs, private command
+output, or unredacted traces for a reviewed receipt.
+
 <!-- gn-ten:repo-agent:start repo=stack_lab source_sha=ab276c0640772b73065ab12bf05d77be51f1bb67 -->
 # stack_lab Agent Instructions Draft
 

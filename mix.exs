@@ -141,6 +141,7 @@ defmodule StackLab.Workspace.MixProject do
         "docs/layout.md",
         "docs/gn_ten_main_only.md",
         "docs/gn_ten_proof_matrix.md",
+        "docs/review/gn_ten_batch_review.md",
         "docs/runbooks/up_single.md",
         "docs/runbooks/up_multi.md",
         "docs/runbooks/faults.md",
@@ -154,7 +155,8 @@ defmodule StackLab.Workspace.MixProject do
           "docs/development.md",
           "docs/layout.md",
           "docs/gn_ten_main_only.md",
-          "docs/gn_ten_proof_matrix.md"
+          "docs/gn_ten_proof_matrix.md",
+          "docs/review/gn_ten_batch_review.md"
         ],
         Runbooks: [
           "docs/runbooks/up_single.md",
