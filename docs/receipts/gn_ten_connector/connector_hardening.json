@@ -1,0 +1,81 @@
+{
+  "schema_version": "gn_ten_connector_hardening_v1",
+  "profile": "assembled_offline",
+  "provider_free?": true,
+  "proof_posture": {
+    "authoritative_audit?": false,
+    "production_deployment_proven?": false,
+    "live_provider_proven?": false,
+    "raw_provider_payload_public?": false,
+    "safe_action": "use_as_provider_free_connector_fixture"
+  },
+  "scenarios": [
+    {
+      "id": "connector_provider_free",
+      "owner_repo": "stack_lab",
+      "outcome": "passed",
+      "evidence": {
+        "fixture_lane": "provider_free",
+        "normalized_status": 200,
+        "public_body_ref": "fixture://connector/ok"
+      },
+      "does_not_prove": [
+        "live provider behavior",
+        "production credential handling",
+        "audit-grade connector evidence",
+        "provider billing correctness"
+      ]
+    },
+    {
+      "id": "connector_secret_lease",
+      "owner_repo": "stack_lab",
+      "outcome": "passed",
+      "evidence": {
+        "public_seam_keys": [
+          "lease_handle",
+          "expires_in_seconds"
+        ],
+        "raw_secret_available?": false,
+        "lease_expiring?": true
+      },
+      "does_not_prove": [
+        "live provider behavior",
+        "production credential handling",
+        "audit-grade connector evidence",
+        "provider billing correctness"
+      ]
+    },
+    {
+      "id": "connector_token_budget",
+      "owner_repo": "stack_lab",
+      "outcome": "passed",
+      "evidence": {
+        "requested_tokens": 256,
+        "max_tokens": 128,
+        "result": "budget_exhausted_fallback"
+      },
+      "does_not_prove": [
+        "live provider behavior",
+        "production credential handling",
+        "audit-grade connector evidence",
+        "provider billing correctness"
+      ]
+    },
+    {
+      "id": "prompt_injection_defense",
+      "owner_repo": "stack_lab",
+      "outcome": "passed",
+      "evidence": {
+        "untrusted_content_ref": "fixture://connector/injection",
+        "selected_action": "rejected",
+        "policy_changed?": false
+      },
+      "does_not_prove": [
+        "live provider behavior",
+        "production credential handling",
+        "audit-grade connector evidence",
+        "provider billing correctness"
+      ]
+    }
+  ]
+}

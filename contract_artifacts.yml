@@ -71,14 +71,14 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/jido_integration
     producer_path: /home/home/p/g/n/jido_integration
     source_ref: main
-    source_sha: daed2a11a1eff02f022920e7984eb826b1a39c66
+    source_sha: 479caa0ade044822c4cb6415da806bc5c9998ee3
     build_command: mix ci
     status: bootstrap
     consumers:
       - citadel
       - mezzanine
       - stack_lab
-    notes: Connector capability and lower invocation contract package.
+    notes: Connector capability, credential lease, and lower invocation contract package. Refreshed after Phase M tenant-bound credential leases.
 
   - name: citadel_domain_surface
     artifact_ref: artifact://nshkrdotcom/citadel/citadel_domain_surface

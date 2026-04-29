@@ -160,6 +160,98 @@ proofs:
       - credential lease handling is proven without raw secrets or provider payloads
     next_action: add an offline compliance export fixture and verify denied public payload keys
 
+  - id: connector_provider_free
+    owner_repo: stack_lab
+    contract_family: "400 agent patterns"
+    status: implemented
+    profile: assembled_offline
+    command: mix gn_ten.connector.scenarios
+    fixture: docs/receipts/gn_ten_connector/connector_hardening.json
+    receipt: receipt://stack_lab/connector_provider_free/latest
+    proves:
+      - connector contracts can normalize fixture provider responses without live-provider calls
+      - public connector evidence carries fixture refs instead of provider payloads
+    does_not_prove:
+      - live provider behavior
+      - production connector latency or retry behavior
+      - provider billing correctness
+    next_action: add gated live-provider smoke only after provider-free connector receipts stay green
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/connector_hardening/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
+  - id: connector_secret_lease
+    owner_repo: stack_lab
+    contract_family: "500 governance"
+    status: implemented
+    profile: assembled_offline
+    command: mix gn_ten.connector.scenarios
+    fixture: docs/receipts/gn_ten_connector/connector_hardening.json
+    receipt: receipt://stack_lab/connector_secret_lease/latest
+    proves:
+      - public connector seam uses opaque lease handles instead of raw secret values
+      - connector scenario receipts deny secret-shaped public keys
+    does_not_prove:
+      - production secret backend behavior
+      - credential rotation under live providers
+      - audit-grade secret handling
+    next_action: connect lease receipts to JidoIntegration auth events after audit export lands
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/connector_hardening/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
+  - id: connector_token_budget
+    owner_repo: stack_lab
+    contract_family: "400 agent patterns"
+    status: implemented
+    profile: assembled_offline
+    command: mix gn_ten.connector.scenarios
+    fixture: docs/receipts/gn_ten_connector/connector_hardening.json
+    receipt: receipt://stack_lab/connector_token_budget/latest
+    proves:
+      - provider-free model-call fixture halts or falls back when requested tokens exceed budget
+      - connector budget scenario records bounded cost posture without raw prompts
+    does_not_prove:
+      - live provider usage accounting
+      - real invoice correctness
+      - tenant-level monthly budget enforcement
+    next_action: wire budget scenario into agent-turn runtime proof after M2 mechanisms are promoted
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/connector_hardening/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
+  - id: prompt_injection_defense
+    owner_repo: stack_lab
+    contract_family: "500 governance"
+    status: implemented
+    profile: assembled_offline
+    command: mix gn_ten.connector.scenarios
+    fixture: docs/receipts/gn_ten_connector/connector_hardening.json
+    receipt: receipt://stack_lab/prompt_injection_defense/latest
+    proves:
+      - untrusted content cannot alter connector policy or expand tool permissions in the fixture
+      - rejected injection attempts produce public-safe evidence refs
+    does_not_prove:
+      - full semantic prompt-injection resistance
+      - live webpage or ticket ingestion behavior
+      - every future tool manifest source
+    next_action: combine with Citadel route validation when dynamic tool loading proof lands
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/connector_hardening/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
   - id: tenant_isolation_read
     owner_repo: stack_lab
     contract_family: "500 governance"

@@ -47,8 +47,8 @@ not claim authoritative audit truth or production deployment proof.
 | 100 development process | `stack_lab`, `AITrace` | partial source-backed proof | add trace fixtures for local proof loops |
 | 200 refactoring | repo owners | missing-proof | link each deletion campaign to a StackLab scenario or no-op proof |
 | 300 architecture | docs + `stack_lab` | manifest, artifact ledger, and product no-bypass fixtures implemented | keep product fixture proof wired into CI and expand fixtures as product shapes change |
-| 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | partial source-backed proof | add dynamic tool manifest and session proof rows |
-| 500 governance | `citadel`, `mezzanine`, `jido_integration` | tenant isolation scenarios implemented; compliance export remains partial | add incident/compliance export fixtures |
+| 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | connector provider-free and budget scenarios implemented; agent-turn runtime remains missing-proof | add dynamic tool manifest and session proof rows |
+| 500 governance | `citadel`, `mezzanine`, `jido_integration` | tenant isolation, connector secret lease, and prompt-injection fixtures implemented; compliance export remains partial | add incident/compliance export fixtures |
 | 600 deployment | `stack_lab`, `mezzanine`, `AITrace` | local single-node deployment rehearsal implemented | convert local rehearsals into clean-host operator drills once deploy scripts are repo-owned |
 
 ## Release Readiness Proof Profiles
@@ -79,6 +79,15 @@ not claim authoritative audit truth or production deployment proof.
   proves a tenant A lease cannot be used by tenant B, and pairs with
   `mix gn_ten.tenant.scan --root /home/home/p/g/n/jido_integration --mode lease`
   to keep lease records tenant-bound.
+- `connector_provider_free`: runs the provider-free connector hardening
+  scenario that normalizes fixture provider responses without live-provider
+  calls or provider payload receipts.
+- `connector_secret_lease`: runs the connector hardening scenario that exposes
+  only an opaque lease handle and denies public secret-shaped keys.
+- `connector_token_budget`: runs the connector hardening scenario that forces a
+  budget exhaustion fallback before uncontrolled model/provider spend.
+- `prompt_injection_defense`: runs the connector hardening scenario that rejects
+  untrusted content attempting to expand tool permissions or alter policy.
 
 ## Missing Proof Backlog
 
