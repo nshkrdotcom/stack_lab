@@ -3,7 +3,7 @@
 Date: 2026-04-28
 
 This matrix maps the `gn-ten` contract docset to executable StackLab proof
-ownership. Entries marked `missing-proof` are intentional backlog items, not
+ownership. Entries marked `partial` are intentionally bounded evidence rows, not
 claims of completed behavior.
 
 Machine-readable ledger:
@@ -45,9 +45,9 @@ not claim authoritative audit truth or production deployment proof.
 | --- | --- | --- | --- |
 | 000 repo contracts | docs + repo owners | documentation complete | copy reviewed repo-agent instructions into repo roots |
 | 100 development process | `stack_lab`, `AITrace` | partial source-backed proof | add trace fixtures for local proof loops |
-| 200 refactoring | repo owners | missing-proof | link each deletion campaign to a StackLab scenario or no-op proof |
+| 200 refactoring | repo owners | partial | link each deletion campaign to a StackLab scenario or no-op proof |
 | 300 architecture | docs + `stack_lab` | manifest, artifact ledger, and product no-bypass fixtures implemented | keep product fixture proof wired into CI and expand fixtures as product shapes change |
-| 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | connector provider-free and budget scenarios implemented; agent-turn runtime remains missing-proof | add dynamic tool manifest and session proof rows |
+| 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | connector provider-free and budget scenarios implemented; agent-turn runtime is partial through session-lineage drill | add dynamic tool manifest and session proof rows |
 | 500 governance | `citadel`, `mezzanine`, `jido_integration` | tenant isolation, connector secret lease, and prompt-injection fixtures implemented; compliance export remains partial | add incident/compliance export fixtures |
 | 600 deployment | `stack_lab`, `mezzanine`, `AITrace` | local single-node deployment rehearsal implemented | convert local rehearsals into clean-host operator drills once deploy scripts are repo-owned |
 
@@ -89,13 +89,12 @@ not claim authoritative audit truth or production deployment proof.
 - `prompt_injection_defense`: runs the connector hardening scenario that rejects
   untrusted content attempting to expand tool permissions or alter policy.
 
-## Missing Proof Backlog
+## Partial Proof Backlog
 
-- `refactoring_deletion_backlog`: connect each 200-series deletion campaign to
-  a StackLab scenario or explicit no-op proof.
-- `agent_turn_runtime_patterns`: promote session-lineage drills into a named
-  assembled-offline proof.
-- `governed_connector_export_fixture`: prove redacted compliance export and
-  credential export handling without raw secrets or provider payloads.
-- `compliance_export_fixture`: prove redacted export bundle without raw
-  prompts, provider payloads, secrets, or workflow histories.
+- `refactoring_deletion_backlog`: reviewed batch receipt machinery exists, but
+  each 200-series deletion campaign still needs a StackLab scenario or explicit
+  no-op proof.
+- `agent_turn_runtime_patterns`: session-lineage drills exist, but the named
+  assembled-offline proof still needs AITrace evidence and fault injection.
+- `governed_connector_export_fixture`: connector hardening denies raw secrets
+  and provider payloads, but deterministic compliance export is still unproven.

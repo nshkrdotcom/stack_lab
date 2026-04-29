@@ -53,16 +53,18 @@ proofs:
   - id: refactoring_deletion_backlog
     owner_repo: stack_lab
     contract_family: "200 refactoring"
-    status: missing-proof
+    status: partial
     profile: local_quick
-    command: null
-    fixture: null
-    receipt: null
+    command: mix gn_ten.review.summary --batch 20260428-phase-g-smoke
+    fixture: docs/receipts/gn_ten_batches/20260428_phase-g-smoke.json
+    receipt: receipt://stack_lab/phase_o_partial_snapshot/latest
     proves:
+      - repo-local CI batch receipts and review summary machinery exist for deletion-campaign evidence
+      - deletion work can be tied to reviewed batch receipts instead of unstructured notes
     does_not_prove:
       - duplicate DTOs and helpers have been removed across the ten repos
       - shared primitives have replaced repo-local copies
-    next_action: run Phase H deletion inventory and add no-op proof rows for each consciously retained duplicate
+    next_action: run deletion-specific Phase H batches and attach explicit no-op receipts for consciously retained duplicates
 
   - id: workspace_manifest_control_plane
     owner_repo: stack_lab
@@ -135,29 +137,33 @@ proofs:
   - id: agent_turn_runtime_patterns
     owner_repo: stack_lab
     contract_family: "400 agent patterns"
-    status: missing-proof
+    status: partial
     profile: assembled_offline
-    command: null
-    fixture: null
-    receipt: null
+    command: cd examples/session_lineage_drill && mix test
+    fixture: examples/session_lineage_drill
+    receipt: receipt://stack_lab/phase_o_partial_snapshot/latest
     proves:
+      - session-lineage drill exists and is exercised through StackLab CI
+      - agent-turn runtime proof has a concrete local harness entrypoint
     does_not_prove:
       - multi-turn session recovery across Brain, Spine, and lower runtime boundaries
       - dynamic tool loading and fallback behavior under fault injection
-    next_action: promote existing session-lineage drills into a named assembled_offline proof with AITrace evidence
+    next_action: promote session-lineage drills into a named assembled_offline proof with AITrace evidence and failure injection
 
   - id: governed_connector_export_fixture
     owner_repo: stack_lab
     contract_family: "500 governance"
-    status: missing-proof
+    status: partial
     profile: assembled_offline
-    command: null
-    fixture: null
-    receipt: null
+    command: mix gn_ten.connector.scenarios
+    fixture: docs/receipts/gn_ten_connector/connector_hardening.json
+    receipt: receipt://stack_lab/phase_o_partial_snapshot/latest
     proves:
+      - connector evidence fixtures already deny raw secrets and provider payloads
+      - credential lease handling has provider-free scenario coverage
     does_not_prove:
       - compliance export is redacted and deterministic
-      - credential lease handling is proven without raw secrets or provider payloads
+      - a governed compliance export bundle can be regenerated deterministically
     next_action: add an offline compliance export fixture and verify denied public payload keys
 
   - id: connector_provider_free

@@ -88,8 +88,9 @@ defmodule StackLab.GnTen.ProofMatrixTest do
     assert report.branch_policy == "main_only"
     assert report.proof_count == 16
     assert report.implemented_count == 13
-    assert report.missing_proof_count == 3
-    assert report.highest_risk_missing_proof == "agent_turn_runtime_patterns"
+    assert report.partial_count == 3
+    assert report.missing_proof_count == 0
+    assert report.highest_risk_missing_proof == nil
   end
 
   defp failure_code?(report, code) do

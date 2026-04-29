@@ -43,24 +43,40 @@ defmodule StackLab.GnTen.RepoAgentInstructions do
     repo_path = repo_path(repo)
     draft_path = Path.join(drafts_root, "#{repo_name}.md")
     agents_path = Path.join(repo_path, "AGENTS.md")
+    onboarding_path = Path.join(repo_path, "ONBOARDING.md")
+    claude_path = Path.join(repo_path, "CLAUDE.md")
 
     with {:ok, draft_body} <- read_draft(draft_path),
-         {:ok, section} <- read_section(agents_path) do
-      failures = section_failures(repo_name, draft_body, section)
-      repo_result(repo_name, draft_path, agents_path, section, failures)
+         {:ok, agents_content} <- read_agents(agents_path),
+         {:ok, section} <- extract_section(agents_content) do
+      failures =
+        repo_name
+        |> section_failures(draft_body, section)
+        |> onboarding_failures(repo_name, agents_content, onboarding_path)
+        |> claude_failures(repo_name, claude_path)
+
+      repo_result(
+        repo_name,
+        draft_path,
+        agents_path,
+        onboarding_path,
+        claude_path,
+        section,
+        failures
+      )
     else
       {:error, :draft_missing} ->
-        repo_result(repo_name, draft_path, agents_path, nil, [
+        repo_result(repo_name, draft_path, agents_path, onboarding_path, claude_path, nil, [
           failure("repo_agent_source_missing", repo: repo_name)
         ])
 
       {:error, :agents_missing} ->
-        repo_result(repo_name, draft_path, agents_path, nil, [
+        repo_result(repo_name, draft_path, agents_path, onboarding_path, claude_path, nil, [
           failure("repo_agent_missing_agents", repo: repo_name)
         ])
 
       {:error, :section_missing} ->
-        repo_result(repo_name, draft_path, agents_path, nil, [
+        repo_result(repo_name, draft_path, agents_path, onboarding_path, claude_path, nil, [
           failure("repo_agent_missing_section", repo: repo_name)
         ])
     end
@@ -90,11 +106,50 @@ defmodule StackLab.GnTen.RepoAgentInstructions do
     end
   end
 
-  defp repo_result(repo_name, draft_path, agents_path, section, failures) do
+  defp onboarding_failures(failures, repo_name, agents_content, onboarding_path) do
+    cond do
+      not File.regular?(onboarding_path) ->
+        [failure("repo_agent_missing_onboarding", repo: repo_name) | failures]
+
+      not String.contains?(agents_content, "ONBOARDING.md") ->
+        [failure("repo_agent_agents_missing_onboarding_reference", repo: repo_name) | failures]
+
+      true ->
+        failures
+    end
+  end
+
+  defp claude_failures(failures, repo_name, claude_path) do
+    case File.read(claude_path) do
+      {:ok, content} when content in ["@AGENTS.md", "@AGENTS.md\n"] ->
+        failures
+
+      {:ok, _content} ->
+        [failure("repo_agent_bad_claude_shim", repo: repo_name) | failures]
+
+      {:error, :enoent} ->
+        [failure("repo_agent_missing_claude", repo: repo_name) | failures]
+
+      {:error, reason} ->
+        [failure("repo_agent_claude_read_failed", repo: repo_name, reason: reason) | failures]
+    end
+  end
+
+  defp repo_result(
+         repo_name,
+         draft_path,
+         agents_path,
+         onboarding_path,
+         claude_path,
+         section,
+         failures
+       ) do
     %{
       repo: repo_name,
       draft_path: draft_path,
       agents_path: agents_path,
+      onboarding_path: onboarding_path,
+      claude_path: claude_path,
       marker_repo: if(section, do: section.marker_repo),
       source_sha: if(section, do: section.source_sha),
       status: if(failures == [], do: "ok", else: "fail"),
@@ -107,13 +162,6 @@ defmodule StackLab.GnTen.RepoAgentInstructions do
       {:ok, body} -> {:ok, body}
       {:error, :enoent} -> {:error, :draft_missing}
       {:error, reason} -> {:error, {:draft_read_failed, reason}}
-    end
-  end
-
-  defp read_section(path) do
-    case read_agents(path) do
-      {:ok, content} -> extract_section(content)
-      {:error, reason} -> {:error, reason}
     end
   end
 

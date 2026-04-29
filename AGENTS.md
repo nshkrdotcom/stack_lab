@@ -18,6 +18,11 @@
 
 # AGENTS.md
 
+## Onboarding
+
+Read `ONBOARDING.md` first for the repo's one-screen ownership, first command,
+and proof path.
+
 ## Execution Plane dependency wiring
 
 - `support/citadel_spine_harness` consumes `:execution_plane` from

@@ -1,0 +1,52 @@
+{
+  "schema_version": "gn_ten_phase_o_partial_snapshot_v1",
+  "date": "2026-04-28",
+  "workspace_ref": "workspace://nshkrdotcom/gn-ten",
+  "branch_policy": "main_only",
+  "status": "partial_only_no_completion_claim",
+  "proofs": [
+    {
+      "id": "refactoring_deletion_backlog",
+      "status": "partial",
+      "evidence": "docs/receipts/gn_ten_batches/20260428_phase-g-smoke.json",
+      "proves": [
+        "reviewed batch receipt machinery exists for deletion-campaign evidence"
+      ],
+      "does_not_prove": [
+        "duplicates have been deleted across all repos",
+        "shared primitives have replaced repo-local copies"
+      ],
+      "next_action": "run deletion-specific Phase H batches"
+    },
+    {
+      "id": "agent_turn_runtime_patterns",
+      "status": "partial",
+      "evidence": "examples/session_lineage_drill",
+      "proves": [
+        "session-lineage drill has a local harness entrypoint"
+      ],
+      "does_not_prove": [
+        "full multi-turn recovery across Brain, Spine, and lower runtime boundaries",
+        "dynamic tool loading under fault injection"
+      ],
+      "next_action": "add named assembled-offline proof with AITrace evidence"
+    },
+    {
+      "id": "governed_connector_export_fixture",
+      "status": "partial",
+      "evidence": "docs/receipts/gn_ten_connector/connector_hardening.json",
+      "proves": [
+        "connector fixtures deny raw secrets and provider payloads"
+      ],
+      "does_not_prove": [
+        "deterministic governed compliance export"
+      ],
+      "next_action": "add offline compliance export fixture"
+    }
+  ],
+  "posture": {
+    "authoritative_audit?": false,
+    "production_deployment_proven?": false,
+    "live_provider_proven?": false
+  }
+}
