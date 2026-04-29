@@ -74,6 +74,8 @@ defmodule StackLab.Workspace.MixProject do
         "gn_ten.artifacts.validate",
         "gn_ten.proofs.validate",
         "gn_ten.repo_agents.validate",
+        "gn_ten.tenant.scan --all-repos",
+        "gn_ten.tenant.scenarios",
         "monorepo.compile",
         "monorepo.test",
         "monorepo.credo --strict",

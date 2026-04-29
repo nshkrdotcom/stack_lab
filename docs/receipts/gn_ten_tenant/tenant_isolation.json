@@ -1,0 +1,58 @@
+{
+  "schema_version": "gn_ten_tenant_isolation_v1",
+  "profile": "assembled_offline",
+  "provider_free": true,
+  "proof_posture": {
+    "authoritative_audit": false,
+    "production_deployment_proven": false,
+    "row_level_security_proven": false,
+    "safe_action": "use_as_provider_free_tenant_fixture"
+  },
+  "scenarios": [
+    {
+      "id": "tenant_isolation_read",
+      "owner_repo": "stack_lab",
+      "tenant_id": "tenant-a",
+      "outcome": "passed",
+      "evidence": {
+        "visible_ids": ["doc-a"],
+        "cross_tenant_read": "denied"
+      },
+      "does_not_prove": [
+        "production row-level security",
+        "audit-grade tenant isolation",
+        "live provider credential handling"
+      ]
+    },
+    {
+      "id": "tenant_isolation_write",
+      "owner_repo": "stack_lab",
+      "tenant_id": "tenant-a",
+      "outcome": "passed",
+      "evidence": {
+        "cross_tenant_write": "tenant_mismatch",
+        "same_tenant_write": "allowed"
+      },
+      "does_not_prove": [
+        "production row-level security",
+        "audit-grade tenant isolation",
+        "live provider credential handling"
+      ]
+    },
+    {
+      "id": "tenant_lease_handling",
+      "owner_repo": "stack_lab",
+      "tenant_id": "tenant-a",
+      "outcome": "passed",
+      "evidence": {
+        "same_tenant_use": "allowed",
+        "cross_tenant_use": "denied"
+      },
+      "does_not_prove": [
+        "production row-level security",
+        "audit-grade tenant isolation",
+        "live provider credential handling"
+      ]
+    }
+  ]
+}

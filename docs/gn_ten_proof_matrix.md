@@ -48,7 +48,7 @@ not claim authoritative audit truth or production deployment proof.
 | 200 refactoring | repo owners | missing-proof | link each deletion campaign to a StackLab scenario or no-op proof |
 | 300 architecture | docs + `stack_lab` | manifest, artifact ledger, and product no-bypass fixtures implemented | keep product fixture proof wired into CI and expand fixtures as product shapes change |
 | 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | partial source-backed proof | add dynamic tool manifest and session proof rows |
-| 500 governance | `citadel`, `mezzanine`, `jido_integration` | partial source-backed proof | add incident/compliance export fixtures |
+| 500 governance | `citadel`, `mezzanine`, `jido_integration` | tenant isolation scenarios implemented; compliance export remains partial | add incident/compliance export fixtures |
 | 600 deployment | `stack_lab`, `mezzanine`, `AITrace` | local single-node deployment rehearsal implemented | convert local rehearsals into clean-host operator drills once deploy scripts are repo-owned |
 
 ## Release Readiness Proof Profiles
@@ -71,6 +71,14 @@ not claim authoritative audit truth or production deployment proof.
   cold deploy, backup/restore, substrate health, zero-downtime migration, and
   websocket reconnect. Each receipt carries
   `production_deployment_proven?: false`.
+- `tenant_isolation_read`: runs the provider-free StackLab tenant scenario that
+  proves a tenant A read cannot see the tenant B fixture record.
+- `tenant_isolation_write`: runs the provider-free StackLab tenant scenario that
+  proves a tenant A write cannot mutate a tenant B fixture record.
+- `tenant_lease_handling`: runs the provider-free StackLab tenant scenario that
+  proves a tenant A lease cannot be used by tenant B, and pairs with
+  `mix gn_ten.tenant.scan --root /home/home/p/g/n/jido_integration --mode lease`
+  to keep lease records tenant-bound.
 
 ## Missing Proof Backlog
 
@@ -79,6 +87,6 @@ not claim authoritative audit truth or production deployment proof.
 - `agent_turn_runtime_patterns`: promote session-lineage drills into a named
   assembled-offline proof.
 - `governed_connector_export_fixture`: prove redacted compliance export and
-  credential lease handling without raw secrets or provider payloads.
+  credential export handling without raw secrets or provider payloads.
 - `compliance_export_fixture`: prove redacted export bundle without raw
   prompts, provider payloads, secrets, or workflow histories.

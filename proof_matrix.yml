@@ -160,6 +160,75 @@ proofs:
       - credential lease handling is proven without raw secrets or provider payloads
     next_action: add an offline compliance export fixture and verify denied public payload keys
 
+  - id: tenant_isolation_read
+    owner_repo: stack_lab
+    contract_family: "500 governance"
+    status: implemented
+    profile: assembled_offline
+    command: mix gn_ten.tenant.scenarios
+    fixture: docs/receipts/gn_ten_tenant/tenant_isolation.json
+    receipt: receipt://stack_lab/tenant_isolation_read/latest
+    proves:
+      - provider-free tenant read fixture denies cross-tenant record reads
+      - tenant read scenario carries conservative proof posture
+    does_not_prove:
+      - production row-level security
+      - audit-grade tenant isolation
+      - live provider tenant isolation
+    next_action: keep tenant scenarios wired into StackLab CI and expand after real tenant stores land
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/tenant_isolation/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
+  - id: tenant_isolation_write
+    owner_repo: stack_lab
+    contract_family: "500 governance"
+    status: implemented
+    profile: assembled_offline
+    command: mix gn_ten.tenant.scenarios
+    fixture: docs/receipts/gn_ten_tenant/tenant_isolation.json
+    receipt: receipt://stack_lab/tenant_isolation_write/latest
+    proves:
+      - provider-free tenant write fixture denies cross-tenant record writes
+      - same-tenant write fixture remains allowed
+    does_not_prove:
+      - production row-level security
+      - audit-grade tenant isolation
+      - live provider tenant isolation
+    next_action: connect to repo-local write paths when tenant stores move beyond fixtures
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/tenant_isolation/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
+  - id: tenant_lease_handling
+    owner_repo: stack_lab
+    contract_family: "500 governance"
+    status: implemented
+    profile: assembled_offline
+    command: mix gn_ten.tenant.scenarios
+    fixture: docs/receipts/gn_ten_tenant/tenant_isolation.json
+    receipt: receipt://stack_lab/tenant_lease_handling/latest
+    proves:
+      - provider-free tenant lease fixture denies cross-tenant lease use
+      - jido_integration credential lease records now carry tenant_id directly
+    does_not_prove:
+      - production row-level security
+      - audit-grade tenant isolation
+      - live provider credential handling
+    next_action: keep tenant lease scanner in StackLab CI and expand after provider connector hardening
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/tenant_isolation/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
   - id: single_node_deployment_rehearsal
     owner_repo: stack_lab
     contract_family: "600 deployment"
