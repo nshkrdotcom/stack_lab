@@ -86,7 +86,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/citadel
     producer_path: /home/home/p/g/n/citadel
     source_ref: main
-    source_sha: c070c54d241d187434ac0e099eb85aa3a0b66cf0
+    source_sha: 1ccdc295a8e43079b8a5213480b13feb65377de0
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -101,7 +101,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/citadel
     producer_path: /home/home/p/g/n/citadel
     source_ref: main
-    source_sha: c070c54d241d187434ac0e099eb85aa3a0b66cf0
+    source_sha: 1ccdc295a8e43079b8a5213480b13feb65377de0
     build_command: mix ci
     status: bootstrap
     consumers:
