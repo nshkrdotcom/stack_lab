@@ -108,6 +108,30 @@ proofs:
         authoritative_audit?: false
         production_deployment_proven?: false
 
+  - id: product_no_bypass
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: assembled_offline
+    command: mix test test/stack_lab/gn_ten_product_no_bypass_test.exs
+    fixture: fixtures/products/
+    receipt: receipt://stack_lab/product_no_bypass/latest
+    proves:
+      - AppKit-owned scanner accepts a product fixture using only product-safe surfaces
+      - AppKit-owned scanner rejects a hostile product fixture that imports lower or bridge internals directly
+      - product-shaped proof does not require Extravaganza-specific source layout
+    does_not_prove:
+      - runtime correctness of any AppKit surface backend
+      - full product UI behavior
+      - every future product path unless wired into CI
+    next_action: keep scanner in AppKit, Extravaganza, and StackLab CI and expand fixtures as new product shapes appear
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/local_quick/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
   - id: agent_turn_runtime_patterns
     owner_repo: stack_lab
     contract_family: "400 agent patterns"

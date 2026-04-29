@@ -86,8 +86,8 @@ defmodule StackLab.GnTen.ProofMatrixTest do
     assert report.schema_version == "gn_ten_proof_matrix_v1"
     assert report.workspace_ref == "workspace://nshkrdotcom/gn-ten"
     assert report.branch_policy == "main_only"
-    assert report.proof_count == 8
-    assert report.implemented_count == 4
+    assert report.proof_count == 9
+    assert report.implemented_count == 5
     assert report.missing_proof_count == 4
     assert report.highest_risk_missing_proof == "single_node_deployment_rehearsal"
   end
@@ -216,6 +216,19 @@ defmodule StackLab.GnTen.ProofMatrixTest do
         proves: ["artifact producers and consumers resolve"],
         does_not_prove: ["package publishing"],
         next_action: "add batch receipts"
+      },
+      %{
+        id: "product_no_bypass",
+        owner_repo: "stack_lab",
+        contract_family: "300 architecture",
+        status: "implemented",
+        profile: "assembled_offline",
+        command: "mix test test/stack_lab/gn_ten_product_no_bypass_test.exs",
+        fixture: "fixtures/products/",
+        receipt: "receipt://stack_lab/product_no_bypass/latest",
+        proves: ["product no-bypass scanner accepts and rejects expected fixtures"],
+        does_not_prove: ["runtime correctness of AppKit backend surfaces"],
+        next_action: "keep scanner in CI"
       },
       missing("agent_turn_runtime_patterns", "400 agent patterns"),
       missing("governed_connector_export_fixture", "500 governance"),

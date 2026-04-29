@@ -34,8 +34,8 @@ not claim authoritative audit truth or production deployment proof.
 | `citadel` | `repo://nshkrdotcom/citadel` | policy packet and authority proofs through StackLab | `mix ci` in `citadel`; StackLab governance scenarios | authority refs |
 | `outer_brain` | `repo://nshkrdotcom/outer_brain` | restart durability and semantic failure proofs | `mix ci` in `outer_brain`; StackLab restart scenarios | semantic failure and journal refs |
 | `mezzanine` | `repo://nshkrdotcom/mezzanine` | lifecycle, projection, audit, Temporal/Postgres drift proofs | `mix ci` in `mezzanine`; StackLab projection drift scenarios | projection and incident refs |
-| `app_kit` | `repo://nshkrdotcom/app_kit` | product no-bypass and DTO conformance proofs | `mix ci` in `app_kit`; StackLab product-boundary scenarios | no-bypass scan receipts |
-| `extravaganza` | `repo://nshkrdotcom/extravaganza` | thin product and headless parity proofs | `mix ci` in `extravaganza`; StackLab product lane fixture | AppKit DTO receipt refs |
+| `app_kit` | `repo://nshkrdotcom/app_kit` | product no-bypass and DTO conformance proofs | `mix ci` in `app_kit`; `mix test test/stack_lab/gn_ten_product_no_bypass_test.exs` in `stack_lab` | no-bypass scan receipts and fixture proof |
+| `extravaganza` | `repo://nshkrdotcom/extravaganza` | thin product and headless parity proofs | `mix ci` in `extravaganza`; StackLab product lane fixture | AppKit DTO and no-bypass receipt refs |
 | `stack_lab` | `repo://nshkrdotcom/stack_lab` | assembled proof owner | `mix ci`; `mix gn_ten.validate` | proof matrix and scenario receipts |
 | `AITrace` | `repo://nshkrdotcom/AITrace` | trace export and single-node proof-trace fixture | AITrace equivalent CI gate | `aitrace.single_node_proof_trace.v1` |
 
@@ -46,7 +46,7 @@ not claim authoritative audit truth or production deployment proof.
 | 000 repo contracts | docs + repo owners | documentation complete | copy reviewed repo-agent instructions into repo roots |
 | 100 development process | `stack_lab`, `AITrace` | partial source-backed proof | add trace fixtures for local proof loops |
 | 200 refactoring | repo owners | missing-proof | link each deletion campaign to a StackLab scenario or no-op proof |
-| 300 architecture | docs + `stack_lab` | manifest validator starts proof | add contract artifact ledger |
+| 300 architecture | docs + `stack_lab` | manifest, artifact ledger, and product no-bypass fixtures implemented | keep product fixture proof wired into CI and expand fixtures as product shapes change |
 | 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | partial source-backed proof | add dynamic tool manifest and session proof rows |
 | 500 governance | `citadel`, `mezzanine`, `jido_integration` | partial source-backed proof | add incident/compliance export fixtures |
 | 600 deployment | `stack_lab`, `mezzanine`, `AITrace` | missing-proof | add single-node deployment rehearsal receipt |
@@ -59,6 +59,13 @@ not claim authoritative audit truth or production deployment proof.
 | `local_full` | all repo-local CI gates in manifest order | command receipts and clean worktrees |
 | `assembled_offline` | StackLab fixture-backed full graph | StackLab scenario receipts and AITrace fixture |
 | `deployment_single_node` | single-node production rehearsal | deployment receipt, backup/restore receipt, trace export |
+
+## Implemented Fixture Proofs
+
+- `product_no_bypass`: runs the AppKit-owned scanner against StackLab-owned
+  fixtures in `fixtures/products/`. The minimal fixture imports only product-safe AppKit
+  surfaces. The hostile fixture imports direct bridge/lower-layer modules and
+  must fail before a product can bypass AppKit.
 
 ## Missing Proof Backlog
 

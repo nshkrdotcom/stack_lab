@@ -144,7 +144,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/app_kit
     producer_path: /home/home/p/g/n/app_kit
     source_ref: main
-    source_sha: 03deb310faa614122b7df225b7e52f4f3734dfa8
+    source_sha: db3c4c291c6d59a42ddfb265c6a24c7ba58ba460
     build_command: mix ci
     status: bootstrap
     consumers:
