@@ -4,7 +4,7 @@
   "commands": [
     {
       "command": "mix ci",
-      "duration_ms": 28785,
+      "duration_ms": 25038,
       "evidence_ref": "repo-local-ci-status",
       "exit_status": 0,
       "repo": "ground_plane",
@@ -13,7 +13,7 @@
     },
     {
       "command": "mix ci",
-      "duration_ms": 211396,
+      "duration_ms": 19146,
       "evidence_ref": "repo-local-ci-status",
       "exit_status": 0,
       "repo": "execution_plane",
@@ -22,7 +22,7 @@
     },
     {
       "command": "mix ci",
-      "duration_ms": 103792,
+      "duration_ms": 100681,
       "evidence_ref": "repo-local-ci-status",
       "exit_status": 0,
       "repo": "citadel",
@@ -31,7 +31,7 @@
     },
     {
       "command": "mix ci",
-      "duration_ms": 380991,
+      "duration_ms": 129947,
       "evidence_ref": "repo-local-ci-status",
       "exit_status": 0,
       "repo": "jido_integration",
@@ -40,7 +40,7 @@
     },
     {
       "command": "mix ci",
-      "duration_ms": 243348,
+      "duration_ms": 223633,
       "evidence_ref": "repo-local-ci-status",
       "exit_status": 0,
       "repo": "mezzanine",
@@ -49,7 +49,7 @@
     },
     {
       "command": "mix ci",
-      "duration_ms": 65982,
+      "duration_ms": 57196,
       "evidence_ref": "repo-local-ci-status",
       "exit_status": 0,
       "repo": "outer_brain",
@@ -58,7 +58,7 @@
     },
     {
       "command": "mix ci",
-      "duration_ms": 210186,
+      "duration_ms": 145032,
       "evidence_ref": "repo-local-ci-status",
       "exit_status": 0,
       "repo": "app_kit",
@@ -67,7 +67,7 @@
     },
     {
       "command": "mix ci",
-      "duration_ms": 48800,
+      "duration_ms": 53121,
       "evidence_ref": "repo-local-ci-status",
       "exit_status": 0,
       "repo": "extravaganza",
@@ -76,7 +76,7 @@
     },
     {
       "command": "mix deps.get && mix format --check-formatted && mix compile --warnings-as-errors && mix test && mix credo --strict && mix dialyzer --format short && mix docs",
-      "duration_ms": 6042,
+      "duration_ms": 6280,
       "evidence_ref": "repo-local-ci-status",
       "exit_status": 0,
       "repo": "AITrace",
@@ -85,7 +85,7 @@
     },
     {
       "command": "mix ci",
-      "duration_ms": 387826,
+      "duration_ms": 380878,
       "evidence_ref": "repo-local-ci-status",
       "exit_status": 0,
       "repo": "stack_lab",
@@ -98,6 +98,14 @@
   "date": "2026-04-28",
   "git_closeout": [],
   "notes": [],
+  "post_run_mutations": [
+    {
+      "classification": "repo_owned_generated_projection_lock",
+      "path": "dist/hex/citadel/projection.lock.json",
+      "repo": "citadel",
+      "status": "M"
+    }
+  ],
   "primary_owner_repo": "stack_lab",
   "proof": {
     "does_not_prove": [
@@ -109,7 +117,7 @@
     "scenario": "gn-ten repo-local CI batch"
   },
   "resume": null,
-  "run_status": "failed",
+  "run_status": "ok",
   "schema_version": "gn_ten_batch_receipt_v1",
   "slug": "phase-g-smoke",
   "trace_evidence": [],
