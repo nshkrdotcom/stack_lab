@@ -12,5 +12,6 @@ It exists to make these seams executable:
 - Extravaganza non-UI coding-ops fixture coverage
 - session-lineage and failover drills
 - governed-memory substrate simulations
+- shared-library plus governed-adapter integration receipts
 
 This repo is a harness workspace, not a shipping product surface.

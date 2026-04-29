@@ -3,6 +3,9 @@
 Use this checklist at every gn-ten batch closeout. The receipt is the unit
 of review; raw logs and private command output are not.
 
+For shared-library plus governed-adapter work, also use
+[`shared_library_governed_adapter_review.md`](shared_library_governed_adapter_review.md).
+
 ## Batch Identity
 
 - [ ] Batch receipt path is named.
