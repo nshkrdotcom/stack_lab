@@ -127,7 +127,10 @@ defmodule StackLab.GnTen.TraceFixtures do
     profile_spans("assembled_offline") ++
       [
         span("deploy_rehearsal", "single-node deploy rehearsal"),
-        span("restore_rehearsal", "single-node restore rehearsal")
+        span("restore_rehearsal", "single-node restore rehearsal"),
+        span("substrate_health_rehearsal", "single-node substrate health rehearsal"),
+        span("migration_rehearsal", "single-node zero-downtime migration rehearsal"),
+        span("websocket_reconnect_rehearsal", "single-node websocket reconnect rehearsal")
       ]
   end
 

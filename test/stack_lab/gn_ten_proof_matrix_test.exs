@@ -87,9 +87,9 @@ defmodule StackLab.GnTen.ProofMatrixTest do
     assert report.workspace_ref == "workspace://nshkrdotcom/gn-ten"
     assert report.branch_policy == "main_only"
     assert report.proof_count == 9
-    assert report.implemented_count == 5
-    assert report.missing_proof_count == 4
-    assert report.highest_risk_missing_proof == "single_node_deployment_rehearsal"
+    assert report.implemented_count == 6
+    assert report.missing_proof_count == 3
+    assert report.highest_risk_missing_proof == "agent_turn_runtime_patterns"
   end
 
   defp failure_code?(report, code) do
@@ -232,7 +232,25 @@ defmodule StackLab.GnTen.ProofMatrixTest do
       },
       missing("agent_turn_runtime_patterns", "400 agent patterns"),
       missing("governed_connector_export_fixture", "500 governance"),
-      missing("single_node_deployment_rehearsal", "600 deployment")
+      %{
+        id: "single_node_deployment_rehearsal",
+        owner_repo: "stack_lab",
+        contract_family: "600 deployment",
+        status: "implemented",
+        profile: "deployment_single_node",
+        command: "mix gn_ten.deploy.report",
+        fixture: "docs/receipts/gn_ten_deployment/",
+        receipt: "receipt://stack_lab/single_node_deployment_rehearsal/latest",
+        proves: ["deployment drill receipts exist"],
+        does_not_prove: ["production deployment"],
+        next_action: "promote to clean-host operator drills",
+        trace_receipt: %{
+          schema: "aitrace.single_node_proof_trace.v1",
+          ref: "trace://stack_lab/deployment_single_node/latest",
+          authoritative_audit?: "false",
+          production_deployment_proven?: "false"
+        }
+      }
     ]
   end
 

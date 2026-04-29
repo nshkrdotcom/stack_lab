@@ -1,0 +1,97 @@
+{
+  "branch_policy": "main_only",
+  "command": "mix gn_ten.deploy.rehearse --drill cold_deploy",
+  "date": "2026-04-28",
+  "does_not_prove": [
+    "clean-host production deployment",
+    "Coolify server behavior",
+    "container image provenance"
+  ],
+  "drill": "cold_deploy",
+  "not_proven": [
+    "production_deployment",
+    "multi_node_failover",
+    "multi_region_disaster_recovery",
+    "authoritative_audit_truth",
+    "live_provider_behavior"
+  ],
+  "notes": [
+    "This is a deterministic local rehearsal receipt.",
+    "It is intentionally not a production deployment proof."
+  ],
+  "owner_repo": "stack_lab",
+  "paths": {
+    "json": "docs/receipts/gn_ten_deployment/cold_deploy.json",
+    "markdown": "docs/receipts/gn_ten_deployment/cold_deploy.md",
+    "trace": "tmp/gn_ten_traces/deploy_cold.json"
+  },
+  "profile": "deployment_single_node",
+  "proof_posture": {
+    "authoritative_audit?": false,
+    "production_deployment_proven?": false,
+    "safe_action": "use_as_local_single_node_deployment_rehearsal"
+  },
+  "proves": [
+    "single-node cold-deploy checklist has a deterministic receipt",
+    "health endpoint and trace-export evidence are recorded together"
+  ],
+  "required_spans": [
+    "local_container_teardown_rehearsed",
+    "deploy_script_invoked_rehearsal",
+    "health_endpoints_checked",
+    "deployment_trace_exported"
+  ],
+  "schema_version": "gn_ten_deployment_rehearsal_receipt_v1",
+  "source_contracts": [
+    "600_deployment/600_Single_Node_Coolify.md"
+  ],
+  "spans": [
+    {
+      "attributes": {
+        "drill": "cold_deploy",
+        "evidence_ref": "receipt://stack_lab/single_node_deployment_rehearsal/cold_deploy/local_container_teardown_rehearsed",
+        "repo_ref": "repo://nshkrdotcom/stack_lab",
+        "workspace_ref": "workspace://nshkrdotcom/gn-ten"
+      },
+      "name": "local_container_teardown_rehearsed",
+      "status": "pass"
+    },
+    {
+      "attributes": {
+        "drill": "cold_deploy",
+        "evidence_ref": "receipt://stack_lab/single_node_deployment_rehearsal/cold_deploy/deploy_script_invoked_rehearsal",
+        "repo_ref": "repo://nshkrdotcom/stack_lab",
+        "workspace_ref": "workspace://nshkrdotcom/gn-ten"
+      },
+      "name": "deploy_script_invoked_rehearsal",
+      "status": "pass"
+    },
+    {
+      "attributes": {
+        "drill": "cold_deploy",
+        "evidence_ref": "receipt://stack_lab/single_node_deployment_rehearsal/cold_deploy/health_endpoints_checked",
+        "repo_ref": "repo://nshkrdotcom/stack_lab",
+        "workspace_ref": "workspace://nshkrdotcom/gn-ten"
+      },
+      "name": "health_endpoints_checked",
+      "status": "pass"
+    },
+    {
+      "attributes": {
+        "drill": "cold_deploy",
+        "evidence_ref": "receipt://stack_lab/single_node_deployment_rehearsal/cold_deploy/deployment_trace_exported",
+        "repo_ref": "repo://nshkrdotcom/stack_lab",
+        "workspace_ref": "workspace://nshkrdotcom/gn-ten"
+      },
+      "name": "deployment_trace_exported",
+      "status": "pass"
+    }
+  ],
+  "supporting_repos": [
+    "stack_lab",
+    "mezzanine",
+    "app_kit"
+  ],
+  "title": "Cold deploy",
+  "workspace_ref": "workspace://nshkrdotcom/gn-ten"
+}

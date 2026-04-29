@@ -130,7 +130,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/mezzanine
     producer_path: /home/home/p/g/n/mezzanine
     source_ref: main
-    source_sha: ad8fcf763837da1c09e21d17284d1ab2cf992a9f
+    source_sha: 1bef7c2cbef8ce18cfcf21260cd4f359182d0451
     build_command: mix ci
     status: bootstrap
     consumers:

@@ -57,6 +57,19 @@ defmodule StackLab.GnTen.TraceFixturesTest do
     assert :ok = TraceFixtures.validate_export(decoded)
   end
 
+  test "deployment profile names every Phase J drill class" do
+    assert {:ok, trace} = TraceFixtures.build(:deployment_single_node)
+
+    span_names = Enum.map(trace["spans"], & &1["name"])
+    assert "deploy_rehearsal" in span_names
+    assert "restore_rehearsal" in span_names
+    assert "substrate_health_rehearsal" in span_names
+    assert "migration_rehearsal" in span_names
+    assert "websocket_reconnect_rehearsal" in span_names
+    assert trace["proof_posture"]["production_deployment_proven?"] == false
+    assert :ok = TraceFixtures.validate_export(trace)
+  end
+
   defp temp_dir! do
     dir = Path.join(System.tmp_dir!(), "stack_lab_trace_#{System.unique_integer([:positive])}")
     File.rm_rf!(dir)

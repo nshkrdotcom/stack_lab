@@ -49,7 +49,7 @@ not claim authoritative audit truth or production deployment proof.
 | 300 architecture | docs + `stack_lab` | manifest, artifact ledger, and product no-bypass fixtures implemented | keep product fixture proof wired into CI and expand fixtures as product shapes change |
 | 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | partial source-backed proof | add dynamic tool manifest and session proof rows |
 | 500 governance | `citadel`, `mezzanine`, `jido_integration` | partial source-backed proof | add incident/compliance export fixtures |
-| 600 deployment | `stack_lab`, `mezzanine`, `AITrace` | missing-proof | add single-node deployment rehearsal receipt |
+| 600 deployment | `stack_lab`, `mezzanine`, `AITrace` | local single-node deployment rehearsal implemented | convert local rehearsals into clean-host operator drills once deploy scripts are repo-owned |
 
 ## Release Readiness Proof Profiles
 
@@ -66,6 +66,11 @@ not claim authoritative audit truth or production deployment proof.
   fixtures in `fixtures/products/`. The minimal fixture imports only product-safe AppKit
   surfaces. The hostile fixture imports direct bridge/lower-layer modules and
   must fail before a product can bypass AppKit.
+- `single_node_deployment_rehearsal`: validates five separate Phase J local
+  deployment rehearsal receipts under `docs/receipts/gn_ten_deployment/`:
+  cold deploy, backup/restore, substrate health, zero-downtime migration, and
+  websocket reconnect. Each receipt carries
+  `production_deployment_proven?: false`.
 
 ## Missing Proof Backlog
 
@@ -75,7 +80,5 @@ not claim authoritative audit truth or production deployment proof.
   assembled-offline proof.
 - `governed_connector_export_fixture`: prove redacted compliance export and
   credential lease handling without raw secrets or provider payloads.
-- `single_node_deployment_rehearsal`: prove Coolify-style release, migration,
-  health check, trace export, and restore.
 - `compliance_export_fixture`: prove redacted export bundle without raw
   prompts, provider payloads, secrets, or workflow histories.
