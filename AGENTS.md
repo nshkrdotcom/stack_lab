@@ -34,6 +34,29 @@ and proof path.
 - Do not point `:execution_plane` at the sibling repo root. That root is the
   non-published Blitz workspace project, not the Hex package.
 
+## BEAM distribution prerequisite
+
+`support/citadel_spine_harness` starts short-name distributed BEAM nodes with
+`:peer` for remote Spine proofs. Ensure EPMD is running before `mix ci` or any
+multi-node/restart-authority harness command:
+
+```bash
+epmd -daemon
+epmd -names
+```
+
+If EPMD is not reachable, the affected tests can fail while starting the local
+distributed node with an `:econnrefused`-style reason. Do not work around that
+by weakening the harness; start EPMD and rerun the same command.
+
+## Blitz concurrency
+
+The root Blitz profile is tuned for high-core local workstations while keeping
+database-heavy test and Credo work below the point where extra package fanout
+adds contention. Prefer the checked-in `mix.exs` defaults. Use
+`STACK_LAB_MONOREPO_MAX_CONCURRENCY=<n>` only for explicit local measurement or
+temporary diagnosis.
+
 ## Temporal developer environment
 
 Temporal CLI is implicitly available on this workstation as `temporal` for local durable-workflow development. Do not make repo code silently depend on that implicit machine state; prefer explicit scripts, documented versions, and README-tracked ergonomics work.

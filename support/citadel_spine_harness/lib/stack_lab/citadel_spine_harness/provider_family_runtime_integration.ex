@@ -497,7 +497,12 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
          },
          gemini_cli_sdk: %{
            scope: :package_fixture_only,
-           inspected_paths: ["gemini_cli_sdk/guides/testing.md", "gemini_cli_sdk/test"]
+           inspected_paths: [
+             "gemini_cli_sdk/guides/testing.md",
+             "gemini_cli_sdk/test/gemini_cli_sdk/cli_test.exs",
+             "gemini_cli_sdk/test/gemini_cli_sdk/forbidden_tokens_test.exs",
+             "gemini_cli_sdk/test/support/test_support.ex"
+           ]
          },
          amp_sdk: %{
            scope: :package_fixture_only,
@@ -548,8 +553,20 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
     testing_doc = read_repo_file!("gemini_cli_sdk", "guides/testing.md")
     cli_test = read_repo_file!("gemini_cli_sdk", "test/gemini_cli_sdk/cli_test.exs")
 
-    if String.contains?(testing_doc, "GEMINI_CLI_PATH") and
-         String.contains?(cli_test, "remote execution surface") do
+    forbidden_tokens_test =
+      read_repo_file!("gemini_cli_sdk", "test/gemini_cli_sdk/forbidden_tokens_test.exs")
+
+    test_support = read_repo_file!("gemini_cli_sdk", "test/support/test_support.ex")
+
+    if String.contains?(testing_doc, "cli_command") and
+         String.contains?(testing_doc, "JSONL Fixtures") and
+         String.contains?(cli_test, "remote execution surface") and
+         String.contains?(forbidden_tokens_test, "@sdk_env_var_tokens") and
+         String.contains?(
+           forbidden_tokens_test,
+           "SDK-owned code and docs do not expose SDK env-var controls"
+         ) and
+         String.contains?(test_support, "does not read test-control environment") do
       :ok
     else
       {:error, :gemini_fixture_scope_not_package_local}

@@ -131,8 +131,21 @@ AppKit/Mezzanine/Citadel/Jido causal chain.
 
 ```bash
 mix deps.get
+epmd -daemon
+epmd -names
 mix ci
 ```
+
+`mix ci` includes remote Spine and restart-authority proofs that start
+short-name distributed BEAM nodes through `:peer`. EPMD must be running before
+those tests execute; if it is not, the harness can fail while starting the
+local distributed node instead of reaching the proof logic.
+
+Workspace package fanout is managed by Blitz. On large local machines the
+default StackLab profile fans compile/docs/dependency work across the full
+active package set while keeping Credo and test work below the database-heavy
+harness saturation point. Override temporarily with
+`STACK_LAB_MONOREPO_MAX_CONCURRENCY=<n>` when measuring a specific local box.
 
 Proof scenarios must not mutate committed fixtures or leave generated archive
 bundles in tracked paths. Harnesses use OS temp roots or ignored generated

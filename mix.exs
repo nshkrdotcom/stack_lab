@@ -109,12 +109,12 @@ defmodule StackLab.Workspace.MixProject do
         env: "STACK_LAB_MONOREPO_MAX_CONCURRENCY",
         multiplier: :auto,
         base: [
-          deps_get: 3,
+          deps_get: 4,
           format: 4,
-          compile: 2,
-          test: 2,
+          compile: 4,
+          test: 3,
           credo: 2,
-          docs: 1
+          docs: 4
         ],
         overrides: []
       ],
