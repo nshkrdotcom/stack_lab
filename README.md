@@ -89,10 +89,11 @@ stale installation revisions under lease activation, Scenario 40 exercises
 LifecycleContinuation retry/dead-letter/operator recovery, Scenario 41 proves
 archival plus archived-trace lookup, and Scenario 43 proves duplicate-safe
 lease and worker fencing behavior.
-Scenario 34 proves the internal/operator extension authoring path: a valid
-signed bundle activates through Mezzanine config registry and invalid bundle
-schema, lifecycle hint, policy ref, platform migration, checksum, signature,
-and stale revision cases all fail before runtime activation.
+Scenario 34 currently covers the internal/operator extension authoring path as
+a deterministic checksum/schema fixture. Signature verification is not a v1
+release claim unless Phase 1 source-verifies signing modules and tests or Phase
+7 implements signing; until then, signing cases remain source-verification
+required before runtime activation.
 Scenario 35 proves operational runbook drift cannot close silently: the harness
 checks that every Phase-3 scenario 29-43 names an indexed runbook filename,
 that every indexed runbook exists, and that no required runbook remains in
@@ -199,9 +200,9 @@ Copyright (c) 2026 nshkrdotcom.
 
 ## Temporal developer environment
 
-Temporal CLI is expected to be available as `temporal` on this developer workstation for local durable-workflow development. Current provisioning is machine-level dotfiles setup, not a repo-local dependency.
-
-TODO: make Temporal ergonomics explicit for developers by adding repo-local setup scripts, version expectations, and fallback instructions so the tool is not silently assumed from the workstation.
+Temporal runtime development is managed from `/home/home/p/g/n/mezzanine`
+through the repo-owned `just` workflow. Do not start ad hoc Temporal processes
+or rely on the `temporal` CLI as the implementation runbook.
 
 ## Native Temporal development substrate
 
