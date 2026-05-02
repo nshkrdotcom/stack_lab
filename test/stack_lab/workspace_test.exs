@@ -11,6 +11,8 @@ defmodule StackLab.WorkspaceTest do
     package_paths = StackLab.Workspace.package_paths()
 
     assert "support/lab_core" in package_paths
+    assert "support/spec_cell" in package_paths
+    assert "support/gn_ten_control_plane" in package_paths
     assert "support/citadel_spine_harness" in package_paths
     assert "examples/single_node_roundtrip" in package_paths
     assert "examples/lower_facts_roundtrip" in package_paths

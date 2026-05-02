@@ -189,6 +189,8 @@ just fault net-cut
 - [docs/runbooks/up_multi.md](./docs/runbooks/up_multi.md)
 - [docs/runbooks/faults.md](./docs/runbooks/faults.md)
 - [docs/runbooks/extravaganza_non_ui_lane.md](./docs/runbooks/extravaganza_non_ui_lane.md)
+- [support/spec_cell/README.md](./support/spec_cell/README.md)
+- [support/gn_ten_control_plane/README.md](./support/gn_ten_control_plane/README.md)
 - [support/citadel_spine_harness/README.md](./support/citadel_spine_harness/README.md)
 - [support/memsim_harness/README.md](./support/memsim_harness/README.md)
 

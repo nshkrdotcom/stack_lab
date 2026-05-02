@@ -8,6 +8,10 @@ The workspace is organized as:
   - compose, fault-injection, and OTLP configs
 - `support/lab_core/`
   - shared harness helpers
+- `support/spec_cell/`
+  - executable requirement cells for release gates
+- `support/gn_ten_control_plane/`
+  - bounded gn-ten receipt records for release gates
 - `support/citadel_spine_harness/`
   - harness-only sibling assembly for `citadel -> jido_integration`
 - `support/memsim_harness/`
