@@ -327,6 +327,30 @@ proofs:
         authoritative_audit?: false
         production_deployment_proven?: false
 
+  - id: restart_fencing_provider_free
+    owner_repo: stack_lab
+    contract_family: "500 governance"
+    status: implemented
+    profile: assembled_offline
+    command: mix gn_ten.restart_fencing.scenarios
+    fixture: test/stack_lab/gn_ten_restart_fencing_scenarios_test.exs
+    receipt: receipt://stack_lab/restart_fencing_provider_free/latest
+    proves:
+      - provider-free restart fixture denies duplicate dispatch while a delayed active execution exists
+      - stale installation revision attempts are denied before dispatch
+      - revoked GroundPlane leases are denied after restart before reuse
+    does_not_prove:
+      - production restart orchestration
+      - live provider credential handling
+      - audit-grade lease revocation
+    next_action: keep restart fencing scenarios wired into StackLab CI and pair with Mezzanine lifecycle proof
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/restart_fencing/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
   - id: single_node_deployment_rehearsal
     owner_repo: stack_lab
     contract_family: "600 deployment"

@@ -1123,7 +1123,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
       payload: %{
         "identifier" => "PRELIM-1",
         "title" => "Prove PRELIM service-mode contract join",
-        "source_kind" => "linear_issue"
+        "source_kind" => "linear"
       }
     })
   end
@@ -1148,7 +1148,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
       work_class_kind: "coding_task",
       placement_profile_id: "local_default",
       execution_timeout_ms: 300_000,
-      linear_source_kind: "linear_issue",
+      linear_source_kind: "linear",
       operator_surface_enabled?: true
     }
   end

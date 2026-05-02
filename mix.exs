@@ -76,6 +76,7 @@ defmodule StackLab.Workspace.MixProject do
         "gn_ten.repo_agents.validate",
         "gn_ten.tenant.scan --all-repos",
         "gn_ten.tenant.scenarios",
+        "gn_ten.restart_fencing.scenarios",
         "gn_ten.connector.scan --all-repos",
         "gn_ten.connector.scenarios",
         "monorepo.compile",

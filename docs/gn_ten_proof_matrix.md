@@ -79,6 +79,10 @@ not claim authoritative audit truth or production deployment proof.
   proves a tenant A lease cannot be used by tenant B, and pairs with
   `mix gn_ten.tenant.scan --root /home/home/p/g/n/jido_integration --mode lease`
   to keep lease records tenant-bound.
+- `restart_fencing_provider_free`: runs the provider-free StackLab restart and
+  fencing scenario that denies duplicate dispatch during active delayed retry,
+  stale installation revision dispatch, and revoked GroundPlane lease reuse
+  after restart.
 - `connector_provider_free`: runs the provider-free connector hardening
   scenario that normalizes fixture provider responses without live-provider
   calls or provider payload receipts.

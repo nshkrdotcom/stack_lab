@@ -45,9 +45,12 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
   @archivable_terminal_at ~U[2026-03-01 09:00:00Z]
   @tenant_id "tenant-stage14-memory"
   @pack_slug "memory_binding_demo"
+  @pack_slug_ref :memory_binding_demo
   @execution_binding_key "hindsight_runtime"
+  @execution_binding_ref :hindsight_runtime
   @context_binding_key "workspace_memory"
   @subject_binding_key "turn_consolidation"
+  @subject_binding_ref :turn_consolidation
   @observer_binding_key "hindsight_observer"
   @external_system_ref "hindsight.primary"
 
@@ -196,6 +199,9 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
       "execution_bindings" => %{
         @execution_binding_key => %{
           "placement_ref" => "memory_reasoner",
+          "authority_decision_ref" => "authority-decision://stage14-memory/hindsight-runtime",
+          "connector_binding_ref" => "connector-binding://stage14-memory/hindsight-runtime",
+          "credential_lease_ref" => "credential-lease://stage14-memory/hindsight-runtime",
           "execution_params" => %{
             "timeout_ms" => 120_000,
             "reasoning_tier" => "deliberate"
@@ -319,7 +325,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
 
   defp compiled_pack_fixture(pack_version) do
     manifest = %Manifest{
-      pack_slug: String.to_atom(@pack_slug),
+      pack_slug: @pack_slug_ref,
       version: pack_version,
       max_supersession_depth: 8,
       profile_slots:
@@ -330,7 +336,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
         ),
       subject_kind_specs: [
         %SubjectKindSpec{name: :expense_request},
-        %SubjectKindSpec{name: String.to_atom(@subject_binding_key)}
+        %SubjectKindSpec{name: @subject_binding_ref}
       ],
       lifecycle_specs: [
         %LifecycleSpec{
@@ -341,53 +347,51 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
             %{
               from: :submitted,
               to: :processing,
-              trigger: {:execution_requested, String.to_atom(@execution_binding_key)}
+              trigger: {:execution_requested, @execution_binding_ref}
             },
             %{
               from: :processing,
               to: :paid,
-              trigger: {:execution_completed, String.to_atom(@execution_binding_key)}
+              trigger: {:execution_completed, @execution_binding_ref}
             },
             %{
               from: :processing,
               to: :needs_correction,
-              trigger:
-                {:execution_failed, String.to_atom(@execution_binding_key), :semantic_failure}
+              trigger: {:execution_failed, @execution_binding_ref, :semantic_failure}
             }
           ]
         },
         %LifecycleSpec{
-          subject_kind: String.to_atom(@subject_binding_key),
+          subject_kind: @subject_binding_ref,
           initial_state: :submitted,
           terminal_states: [:consolidated],
           transitions: [
             %{
               from: :submitted,
               to: :consolidating,
-              trigger: {:execution_requested, String.to_atom(@execution_binding_key)}
+              trigger: {:execution_requested, @execution_binding_ref}
             },
             %{
               from: :consolidating,
               to: :consolidated,
-              trigger: {:execution_completed, String.to_atom(@execution_binding_key)}
+              trigger: {:execution_completed, @execution_binding_ref}
             },
             %{
               from: :consolidating,
               to: :needs_retry,
-              trigger:
-                {:execution_failed, String.to_atom(@execution_binding_key), :semantic_failure}
+              trigger: {:execution_failed, @execution_binding_ref, :semantic_failure}
             },
             %{
               from: :needs_retry,
               to: :consolidating,
-              trigger: {:execution_requested, String.to_atom(@execution_binding_key)}
+              trigger: {:execution_requested, @execution_binding_ref}
             }
           ]
         }
       ],
       execution_recipe_specs: [
         %ExecutionRecipeSpec{
-          recipe_ref: String.to_atom(@execution_binding_key),
+          recipe_ref: @execution_binding_ref,
           runtime_class: :inference,
           placement_ref: :memory_reasoner,
           execution_params: %{
@@ -411,7 +415,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
         %ProjectionSpec{name: :memory_queue, subject_kinds: [:expense_request]},
         %ProjectionSpec{
           name: :turn_consolidation_queue,
-          subject_kinds: [String.to_atom(@subject_binding_key)]
+          subject_kinds: [@subject_binding_ref]
         }
       ]
     }
