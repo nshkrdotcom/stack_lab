@@ -67,6 +67,12 @@ defmodule StackLab.GnTenControlPlaneTest do
     assert :spec_cell in errors
   end
 
+  test "raises from bang constructor with validation errors" do
+    assert_raise ArgumentError, fn ->
+      GnTenControlPlane.new!(owner_repo: "stack_lab")
+    end
+  end
+
   defp spec_cell(closeout_state) do
     SpecCell.new!(
       requirement_id: "UAA-028",

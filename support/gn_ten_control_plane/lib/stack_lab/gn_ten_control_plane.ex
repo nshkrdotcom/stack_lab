@@ -51,6 +51,14 @@ defmodule StackLab.GnTenControlPlane do
     end
   end
 
+  @spec new!(map() | keyword()) :: t()
+  def new!(attrs) do
+    case new(attrs) do
+      {:ok, receipt} -> receipt
+      {:error, errors} -> raise ArgumentError, "invalid gn-ten receipt: #{inspect(errors)}"
+    end
+  end
+
   @spec validate(t()) :: [atom()]
   def validate(%__MODULE__{} = receipt) do
     []

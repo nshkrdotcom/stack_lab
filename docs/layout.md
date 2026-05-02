@@ -23,6 +23,7 @@ The workspace is organized as:
   - `mezzanine_restart_recovery`
   - `multi_node_roundtrip`
   - `restart_authority_drill`
+  - `atom_cleanup_harness`
   - `pressure_failover_drill`
 - `packaging/`
   - weld verification support

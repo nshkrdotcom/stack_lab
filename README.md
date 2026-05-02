@@ -193,6 +193,7 @@ just fault net-cut
 - [support/gn_ten_control_plane/README.md](./support/gn_ten_control_plane/README.md)
 - [support/citadel_spine_harness/README.md](./support/citadel_spine_harness/README.md)
 - [support/memsim_harness/README.md](./support/memsim_harness/README.md)
+- [examples/atom_cleanup_harness/README.md](./examples/atom_cleanup_harness/README.md)
 
 ## License
 

@@ -11,6 +11,7 @@ defmodule StackLab.Build.WeldContract do
     "examples/multi_node_roundtrip",
     "examples/restart_authority_drill",
     "examples/governed_run_roundtrip",
+    "examples/atom_cleanup_harness",
     "examples/session_lineage_drill",
     "examples/pressure_failover_drill"
   ]
