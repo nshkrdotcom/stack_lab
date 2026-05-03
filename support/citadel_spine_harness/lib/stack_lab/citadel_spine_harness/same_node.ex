@@ -1,14 +1,12 @@
 defmodule StackLab.CitadelSpineHarness.SameNode do
   @moduledoc false
 
-  alias Citadel.JidoIntegrationBridge
   alias Citadel.Kernel.SessionDirectory
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
   alias Jido.Integration.V2.StoreLocal
   alias Jido.Integration.V2.StoreLocal.Server, as: StoreLocalServer
   alias Jido.Integration.V2.StoreLocal.Storage, as: StoreLocalStorage
   alias Jido.Integration.V2.StoreLocal.SubmissionLedger
-  alias StackLab.CitadelSpineHarness.InProcessTransport
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
@@ -200,9 +198,6 @@ defmodule StackLab.CitadelSpineHarness.SameNode do
     storage_dir = store_local_dir(case_name)
     ensure_store_local_ready!(storage_dir)
 
-    previous_transport = Application.get_env(:citadel_jido_integration_bridge, :transport_module)
-    :ok = JidoIntegrationBridge.put_transport_module(InProcessTransport)
-
     config = transport_config(case_name, listener)
     :ok = TransportRuntime.put!(config)
 
@@ -215,16 +210,6 @@ defmodule StackLab.CitadelSpineHarness.SameNode do
       :ok = TransportRuntime.reset!()
       stop_store_local()
       File.rm_rf!(storage_dir)
-
-      if is_nil(previous_transport) do
-        Application.delete_env(:citadel_jido_integration_bridge, :transport_module)
-      else
-        Application.put_env(
-          :citadel_jido_integration_bridge,
-          :transport_module,
-          previous_transport
-        )
-      end
     end
   end
 

@@ -4,6 +4,7 @@ defmodule StackLab.CitadelSpineHarness.DispatchProbe do
   alias Mezzanine.Execution.ExecutionRecord
   alias Mezzanine.LowerGateway
   alias Mezzanine.Objects.SubjectRecord
+  alias StackLab.CitadelSpineHarness.LowerGatewayStub
 
   @type result :: %{
           execution: ExecutionRecord.t(),
@@ -215,7 +216,8 @@ defmodule StackLab.CitadelSpineHarness.DispatchProbe do
       submission_dedupe_key: execution.submission_dedupe_key,
       compiled_pack_revision: execution.compiled_pack_revision,
       binding_snapshot: execution.binding_snapshot,
-      dispatch_envelope: execution.dispatch_envelope
+      dispatch_envelope: execution.dispatch_envelope,
+      lower_gateway_impl: LowerGatewayStub
     }
   end
 

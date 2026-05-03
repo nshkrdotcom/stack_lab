@@ -738,7 +738,7 @@ defmodule StackLab.CitadelSpineHarness do
         deterministic_offline_fixture: %{kind: :true_production_path},
         live_provider_mutation: %{
           kind: :true_production_path,
-          requires_env: "EXTRAVAGANZA_LIVE_E2E=1"
+          requires_explicit_authorization: :live_provider_mutation_authorized?
         },
         temporal_unavailable: %{kind: :fail_closed_guard}
       }

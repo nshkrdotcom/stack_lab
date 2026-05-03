@@ -5,15 +5,13 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
   alias AppKit.ScopeObjects
   alias Citadel.DomainSurface.Adapters.CitadelAdapter
   alias Citadel.InvocationBridge
-  alias Citadel.JidoIntegrationBridge
-  alias Citadel.JidoIntegrationBridge.InvocationDownstream
   alias Citadel.Kernel.SessionDirectory
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
   alias Jido.Integration.V2.StoreLocal
   alias Jido.Integration.V2.StoreLocal.Server, as: StoreLocalServer
   alias Jido.Integration.V2.StoreLocal.Storage, as: StoreLocalStorage
   alias Jido.Integration.V2.StoreLocal.SubmissionLedger
-  alias StackLab.CitadelSpineHarness.InProcessTransport
+  alias StackLab.CitadelSpineHarness.InProcessInvocationDownstream
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
@@ -198,14 +196,11 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
     storage_dir = store_local_dir(case_name)
     ensure_store_local_ready!(storage_dir)
 
-    previous_transport = Application.get_env(:citadel_jido_integration_bridge, :transport_module)
-    :ok = JidoIntegrationBridge.put_transport_module(InProcessTransport)
-
     :ok =
       TransportRuntime.put!(transport_config(case_name, listener))
 
-    Code.ensure_loaded!(InvocationDownstream)
-    bridge = InvocationBridge.new!(downstream: InvocationDownstream)
+    Code.ensure_loaded!(InProcessInvocationDownstream)
+    bridge = InvocationBridge.new!(downstream: InProcessInvocationDownstream)
 
     env =
       RoundtripRuntime.start_runtime_env({:semantic_host, case_name},
@@ -219,16 +214,6 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
       :ok = TransportRuntime.reset!()
       stop_store_local()
       File.rm_rf!(storage_dir)
-
-      if is_nil(previous_transport) do
-        Application.delete_env(:citadel_jido_integration_bridge, :transport_module)
-      else
-        Application.put_env(
-          :citadel_jido_integration_bridge,
-          :transport_module,
-          previous_transport
-        )
-      end
     end
   end
 

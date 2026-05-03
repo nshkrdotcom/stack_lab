@@ -9,7 +9,6 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
   alias Citadel.HostIngress.InvocationPayload
   alias Citadel.InvocationBridge
   alias Citadel.InvocationRequest.V2, as: InvocationRequestV2
-  alias Citadel.JidoIntegrationBridge.InvocationDownstream
   alias Citadel.Kernel.BoundaryLeaseTracker
   alias Citadel.Kernel.KernelSnapshot
   alias Citadel.Kernel.ServiceCatalog
@@ -21,6 +20,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
   alias Citadel.StalenessRequirements
   alias Citadel.TopologyIntent
   alias StackLab.CitadelSpineHarness.BoundedNames
+  alias StackLab.CitadelSpineHarness.InProcessInvocationDownstream
 
   defmodule TestSignalSource do
     @moduledoc false
@@ -103,8 +103,9 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
 
     session_id = "stack-lab-session-#{case_label(case_name)}"
 
-    Code.ensure_loaded!(InvocationDownstream)
-    bridge = InvocationBridge.new!(downstream: InvocationDownstream)
+    downstream = Keyword.get(opts, :downstream, InProcessInvocationDownstream)
+    Code.ensure_loaded!(downstream)
+    bridge = InvocationBridge.new!(downstream: downstream)
 
     invocation_handler =
       Keyword.get_lazy(opts, :invocation_handler, fn ->

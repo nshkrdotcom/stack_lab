@@ -5,8 +5,6 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   alias AppKit.RunGovernance
   alias Ash
   alias Citadel.InvocationBridge
-  alias Citadel.JidoIntegrationBridge
-  alias Citadel.JidoIntegrationBridge.InvocationDownstream
   alias Citadel.Kernel.TracePublisher
   alias Citadel.TraceEnvelope
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
@@ -74,7 +72,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   alias StackLab.CitadelSpineHarness.{
     AITraceClaimCheckTraceContinuity,
     DispatchProbe,
-    InProcessTransport,
+    InProcessInvocationDownstream,
     LowerGatewayStub,
     MezzanineOperationalStack,
     ProfileSlots,
@@ -1576,12 +1574,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     MezzanineOperationalStack.with_store(case_name, fn _repo_config ->
       store_local_dir = store_local_dir(case_name)
 
-      previous_transport =
-        Application.get_env(:citadel_jido_integration_bridge, :transport_module)
-
       RoundtripRuntime.flush_transport_messages()
       ensure_store_local_ready!(store_local_dir)
-      :ok = JidoIntegrationBridge.put_transport_module(InProcessTransport)
 
       try do
         activate_fixture_registration!("1.0.1")
@@ -1655,16 +1649,6 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         :ok = TransportRuntime.reset!()
         stop_store_local()
         File.rm_rf!(store_local_dir)
-
-        if is_nil(previous_transport) do
-          Application.delete_env(:citadel_jido_integration_bridge, :transport_module)
-        else
-          Application.put_env(
-            :citadel_jido_integration_bridge,
-            :transport_module,
-            previous_transport
-          )
-        end
       end
     end)
   end
@@ -2272,7 +2256,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         actor_ref: %{kind: :scheduler}
       })
 
-    bridge = InvocationBridge.new!(downstream: InvocationDownstream)
+    bridge = InvocationBridge.new!(downstream: InProcessInvocationDownstream)
 
     dispatch =
       LowerGatewayStub.with_handlers(

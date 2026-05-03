@@ -368,7 +368,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5LineageContextMissing do
   end
 
   defp prove_aitrace_envelope(lineage, canonical_key, execution_plane) do
-    with_aitrace_exporter(fn ->
+    with_aitrace_exporter(fn aitrace_exporters ->
       envelope =
         TraceEnvelope.new!(%{
           trace_envelope_id: "scenario208-#{System.unique_integer([:positive])}",
@@ -401,7 +401,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5LineageContextMissing do
           }
         })
 
-      :ok = TraceBridge.publish_trace(envelope)
+      :ok = TraceBridge.publish_trace(envelope, legacy_exporters: aitrace_exporters)
 
       exported_trace =
         receive do
@@ -538,15 +538,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5LineageContextMissing do
     })
   end
 
-  defp with_aitrace_exporter(fun) when is_function(fun, 0) do
-    previous_exporters = Application.get_env(:aitrace, :exporters)
-    Application.put_env(:aitrace, :exporters, [{TestExporter, test_pid: self()}])
-
-    try do
-      fun.()
-    after
-      Application.put_env(:aitrace, :exporters, previous_exporters)
-    end
+  defp with_aitrace_exporter(fun) when is_function(fun, 1) do
+    fun.([{TestExporter, test_pid: self()}])
   end
 
   defp admission_policy do

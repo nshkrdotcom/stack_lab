@@ -258,7 +258,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
       when is_binary(trace_id) and is_binary(tenant_id) and is_binary(execution_id) do
     label = Keyword.get(opts, :label, :trace_surfaces)
 
-    with_aitrace_exporter(fn ->
+    with_aitrace_exporter(fn aitrace_exporters ->
       with_claim_check_store(label, trace_id, fn ->
         inline_result = record_inline_inference(trace_id)
         large_result = record_large_inference(trace_id)
@@ -266,7 +266,13 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
         execution_plane_result = execution_plane_lineage(trace_id, execution_id)
 
         aitrace_result =
-          publish_aitrace_trace(trace_id, tenant_id, execution_id, execution_plane_result)
+          publish_aitrace_trace(
+            trace_id,
+            tenant_id,
+            execution_id,
+            execution_plane_result,
+            aitrace_exporters
+          )
 
         {:ok,
          %{
@@ -459,7 +465,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
     }
   end
 
-  defp publish_aitrace_trace(trace_id, tenant_id, request_id, execution_lineage) do
+  defp publish_aitrace_trace(trace_id, tenant_id, request_id, execution_lineage, exporters) do
     envelope =
       TraceEnvelope.new!(%{
         trace_envelope_id: "scenario25-#{System.unique_integer([:positive])}",
@@ -490,7 +496,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
         }
       })
 
-    :ok = TraceBridge.publish_trace(envelope)
+    :ok = TraceBridge.publish_trace(envelope, legacy_exporters: exporters)
 
     exported_trace =
       receive do
@@ -516,15 +522,8 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
     }
   end
 
-  defp with_aitrace_exporter(fun) when is_function(fun, 0) do
-    previous_exporters = Application.get_env(:aitrace, :exporters)
-    Application.put_env(:aitrace, :exporters, [{TestExporter, test_pid: self()}])
-
-    try do
-      fun.()
-    after
-      Application.put_env(:aitrace, :exporters, previous_exporters)
-    end
+  defp with_aitrace_exporter(fun) when is_function(fun, 1) do
+    fun.([{TestExporter, test_pid: self()}])
   end
 
   defp with_claim_check_store(label, trace_id, fun) when is_function(fun, 0) do

@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Phase5.DocsetDrift do
   @moduledoc """
   Checks Phase 5 Stack Lab docset drift evidence.
 
-  Set `PHASE5_DOCS_ROOT` when the docs checkout is not at the local sibling path.
+  Pass `--docs-root` when the docs checkout is not at the local sibling path.
   """
 
   use Mix.Task

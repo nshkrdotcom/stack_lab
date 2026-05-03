@@ -29,7 +29,10 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
            }
 
     assert scenario.cases.deterministic_offline_fixture.kind == :true_production_path
-    assert scenario.cases.live_provider_mutation.requires_env == "EXTRAVAGANZA_LIVE_E2E=1"
+
+    assert scenario.cases.live_provider_mutation.requires_explicit_authorization ==
+             :live_provider_mutation_authorized?
+
     assert scenario.cases.temporal_unavailable.kind == :fail_closed_guard
   end
 
@@ -144,14 +147,25 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
              )
   end
 
-  test "live provider mutation leg requires explicit env and carries live provider refs" do
+  test "ambient env map cannot authorize live provider mutation" do
+    command_runner = fn _command, _args, _opts -> {:ok, "SERVING"} end
+
+    assert {:error, {:live_provider_mutation_disabled, _message}} =
+             CitadelSpineHarness.exercise_production_e2e(
+               :live_provider_mutation,
+               command_runner: command_runner,
+               env: %{"EXTRAVAGANZA_LIVE_E2E" => "1"}
+             )
+  end
+
+  test "live provider mutation leg requires explicit option and carries live provider refs" do
     command_runner = fn _command, _args, _opts -> {:ok, "SERVING"} end
 
     assert {:ok, receipt} =
              CitadelSpineHarness.exercise_production_e2e(
                :live_provider_mutation,
                command_runner: command_runner,
-               env: %{"EXTRAVAGANZA_LIVE_E2E" => "1"}
+               live_provider_mutation_authorized?: true
              )
 
     assert receipt.live_provider_mutation == true

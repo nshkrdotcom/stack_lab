@@ -93,14 +93,12 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
   defp authorize_live_provider_mode(:deterministic_offline_fixture, _opts), do: :ok
 
   defp authorize_live_provider_mode(:live_provider_mutation, opts) do
-    env = Keyword.get(opts, :env, System.get_env())
-
-    if Map.get(env, "EXTRAVAGANZA_LIVE_E2E") == "1" do
+    if Keyword.get(opts, :live_provider_mutation_authorized?, false) == true do
       :ok
     else
       {:error,
        {:live_provider_mutation_disabled,
-        "Set EXTRAVAGANZA_LIVE_E2E=1 to permit live provider mutation."}}
+        "Pass live_provider_mutation_authorized?: true to permit live provider mutation."}}
     end
   end
 

@@ -6,4 +6,4 @@ case StackLab.CitadelSpineHarness.RemoteSupport.ensure_distribution_started() do
     raise StackLab.CitadelSpineHarness.RemoteSupport.distribution_start_error_message(reason)
 end
 
-ExUnit.start(capture_log: true)
+ExUnit.start(capture_log: true, max_cases: 1)

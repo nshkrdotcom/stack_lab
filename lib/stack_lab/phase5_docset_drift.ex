@@ -37,9 +37,7 @@ defmodule StackLab.Phase5DocsetDrift do
 
   @spec run(keyword()) :: check_result()
   def run(opts \\ []) do
-    docs_root =
-      Keyword.get(opts, :docs_root) || System.get_env("PHASE5_DOCS_ROOT") ||
-        default_docs_root()
+    docs_root = Keyword.get(opts, :docs_root) || default_docs_root()
 
     stack_lab_root = Keyword.get(opts, :stack_lab_root) || Path.expand("../..", __DIR__)
 

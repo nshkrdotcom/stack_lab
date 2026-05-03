@@ -1,12 +1,11 @@
 defmodule StackLab.CitadelSpineHarness.RestartAuthority do
   @moduledoc false
 
-  alias Citadel.JidoIntegrationBridge
   alias Citadel.Kernel.SessionServer
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
+  alias StackLab.CitadelSpineHarness.RemoteInvocationDownstream
   alias StackLab.CitadelSpineHarness.RemoteSpine
   alias StackLab.CitadelSpineHarness.RemoteSupport
-  alias StackLab.CitadelSpineHarness.RemoteTransport
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
@@ -161,13 +160,13 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
        when is_function(transport_config_fun, 2) and is_function(fun, 1) do
     listener = self()
     RoundtripRuntime.flush_transport_messages()
-    previous_transport = Application.get_env(:citadel_jido_integration_bridge, :transport_module)
     remote = RemoteSupport.start_remote_spine!(case_name)
-    :ok = JidoIntegrationBridge.put_transport_module(RemoteTransport)
     :ok = TransportRuntime.put!(transport_config_fun.(listener, remote.remote_node))
 
     env =
-      RoundtripRuntime.start_runtime_env({:restart_authority, case_name})
+      RoundtripRuntime.start_runtime_env({:restart_authority, case_name},
+        downstream: RemoteInvocationDownstream
+      )
       |> Map.put(:remote_node, remote.remote_node)
       |> Map.put(:remote_spine, remote)
 
@@ -177,16 +176,6 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
       :ok = RoundtripRuntime.shutdown_runtime_env(env)
       :ok = TransportRuntime.reset!()
       RemoteSupport.stop_remote_spine(remote)
-
-      if is_nil(previous_transport) do
-        Application.delete_env(:citadel_jido_integration_bridge, :transport_module)
-      else
-        Application.put_env(
-          :citadel_jido_integration_bridge,
-          :transport_module,
-          previous_transport
-        )
-      end
     end
   end
 
