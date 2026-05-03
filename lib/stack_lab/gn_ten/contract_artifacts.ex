@@ -8,7 +8,7 @@ defmodule StackLab.GnTen.ContractArtifacts do
   """
 
   alias GroundPlane.Contracts.{ArtifactRef, WorkspaceRef}
-  alias StackLab.GnTen.Manifest
+  alias StackLab.GnTen.{Manifest, TextRules}
 
   @schema_version "gn_ten_contract_artifacts_v1"
   @workspace_ref WorkspaceRef.new!("nshkrdotcom", "gn-ten").ref
@@ -343,24 +343,7 @@ defmodule StackLab.GnTen.ContractArtifacts do
   end
 
   defp artifact_blocks(content) do
-    content
-    |> String.split("\n")
-    |> Enum.reduce([], fn line, blocks ->
-      cond do
-        Regex.match?(~r/^\s+- name:\s*.+$/, line) ->
-          [[line] | blocks]
-
-        blocks == [] ->
-          blocks
-
-        true ->
-          [current | rest] = blocks
-          [[line | current] | rest]
-      end
-    end)
-    |> Enum.reverse()
-    |> Enum.map(&Enum.reverse/1)
-    |> Enum.map(&Enum.join(&1, "\n"))
+    TextRules.list_blocks(content, "name")
   end
 
   defp artifact(block) do
@@ -381,39 +364,19 @@ defmodule StackLab.GnTen.ContractArtifacts do
   end
 
   defp scalar(content, key) do
-    case Regex.run(~r/^#{Regex.escape(key)}:\s*(.+?)\s*$/m, content) do
-      [_match, value] -> value
-      nil -> nil
-    end
+    TextRules.scalar(content, key)
   end
 
   defp block_scalar(block, "name") do
-    case Regex.run(~r/^\s*-\s*name:\s*(.+?)\s*$/m, block) do
-      [_match, value] -> value
-      nil -> nil
-    end
+    TextRules.block_scalar(block, "name")
   end
 
   defp block_scalar(block, key) do
-    case Regex.run(~r/^\s*#{Regex.escape(key)}:\s*(.+?)\s*$/m, block) do
-      [_match, value] -> value
-      nil -> nil
-    end
+    TextRules.block_scalar(block, key)
   end
 
   defp block_list(block, key) do
-    case Regex.run(~r/^\s*#{Regex.escape(key)}:\s*\n(?<items>(?:\s+- .+\n?)*)/m, block,
-           capture: ["items"]
-         ) do
-      [items] ->
-        items
-        |> String.split("\n", trim: true)
-        |> Enum.map(&String.trim/1)
-        |> Enum.map(&String.replace_prefix(&1, "- ", ""))
-
-      nil ->
-        []
-    end
+    TextRules.block_list(block, key)
   end
 
   defp manifest_report(failures) do

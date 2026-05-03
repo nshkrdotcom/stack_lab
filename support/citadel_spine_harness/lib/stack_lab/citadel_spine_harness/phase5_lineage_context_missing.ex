@@ -10,6 +10,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5LineageContextMissing do
   alias Mezzanine.Audit.{ExecutionLineage, ExecutionLineageStore}
   alias Mezzanine.Idempotency
   alias OuterBrain.Contracts.SemanticFailure
+  alias StackLab.CitadelSpineHarness.BoundedNames
 
   @scenario 208
   @tenant_id "tenant-scenario-208"
@@ -588,7 +589,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5LineageContextMissing do
     |> Base.encode16(case: :lower)
   end
 
-  defp unique_name(prefix), do: :"#{prefix}_#{System.unique_integer([:positive, :monotonic])}"
+  defp unique_name(prefix), do: BoundedNames.global_name(prefix)
 
   defp stop_process(pid) when is_pid(pid) do
     if Process.alive?(pid) do

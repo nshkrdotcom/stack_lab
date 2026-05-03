@@ -1,12 +1,10 @@
 defmodule StackLab.GnTen.BatchReceipt do
   @moduledoc false
 
-  alias StackLab.GnTen.Manifest
+  alias StackLab.GnTen.{Manifest, TextRules}
 
   @schema_version "gn_ten_batch_receipt_v1"
   @branch_policy "main_only"
-
-  @safe_slug ~r/^[a-z0-9][a-z0-9-]*$/
 
   @spec default_out_dir() :: String.t()
   def default_out_dir do
@@ -24,7 +22,7 @@ defmodule StackLab.GnTen.BatchReceipt do
   end
 
   defp validate_slug(slug) do
-    if Regex.match?(@safe_slug, slug) do
+    if TextRules.safe_slug?(slug) do
       :ok
     else
       {:error, {:unsafe_slug, slug}}

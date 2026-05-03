@@ -439,13 +439,29 @@ defmodule StackLab.CitadelSpineHarnessTest do
       refute contents =~ "Mezzanine.OpsDomain.Repo",
              "#{path} still references Mezzanine.OpsDomain.Repo"
 
-      refute Regex.match?(
-               ~r/Mezzanine\.(Programs|Work|Runs|Review|Evidence|Control)\b/,
-               contents
-             ),
+      refute direct_ops_namespace?(contents),
              "#{path} still references direct ops_domain namespaces"
     end)
   end
+
+  defp direct_ops_namespace?(contents) do
+    Enum.any?(~w(Programs Work Runs Review Evidence Control), fn namespace ->
+      contains_namespace?("Mezzanine.#{namespace}", contents)
+    end)
+  end
+
+  defp contains_namespace?(namespace, contents) do
+    contents
+    |> String.split(namespace)
+    |> Enum.drop(1)
+    |> Enum.any?(fn
+      "" -> true
+      rest -> rest |> :binary.first() |> namespace_boundary?()
+    end)
+  end
+
+  defp namespace_boundary?(byte),
+    do: not (byte in ?a..?z or byte in ?A..?Z or byte in ?0..?9 or byte == ?_)
 
   test "remote spine startup returns only after the remote service is callable" do
     try do

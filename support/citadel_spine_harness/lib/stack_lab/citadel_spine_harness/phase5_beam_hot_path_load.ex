@@ -7,6 +7,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
   alias Citadel.KernelEpochUpdate
   alias Citadel.RuntimeObservation
   alias Jido.Integration.V2.SubjectRef
+  alias StackLab.CitadelSpineHarness.BoundedNames
 
   @scenario_202_duration_ms 15_000
   @scenario_202_minimum_operations 500
@@ -728,5 +729,5 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
   end
 
   defp monotonic_ms, do: System.monotonic_time(:millisecond)
-  defp unique_name(prefix), do: :"#{prefix}_#{System.unique_integer([:positive, :monotonic])}"
+  defp unique_name(prefix), do: BoundedNames.global_name(prefix)
 end

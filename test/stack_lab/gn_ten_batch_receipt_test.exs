@@ -7,9 +7,12 @@ defmodule StackLab.GnTen.BatchReceiptTest do
   @date ~D[2026-04-28]
 
   test "task requires --name" do
-    assert_raise Mix.Error, ~r/expected --name <slug>/, fn ->
-      New.run([])
-    end
+    error =
+      assert_raise Mix.Error, fn ->
+        New.run([])
+      end
+
+    assert Exception.message(error) =~ "expected --name <slug>"
   end
 
   test "rejects unsafe slugs" do

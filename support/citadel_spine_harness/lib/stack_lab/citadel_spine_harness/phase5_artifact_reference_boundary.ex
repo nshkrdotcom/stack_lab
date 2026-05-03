@@ -8,7 +8,6 @@ defmodule StackLab.CitadelSpineHarness.Phase5ArtifactReferenceBoundary do
   @schema_name "stack_lab.scenario204.artifact_ref.v1"
   @schema_hash "sha256:" <> Base.encode16(:crypto.hash(:sha256, @schema_name), case: :lower)
   @release_ref "phase5-v7-m4-artifact-boundary"
-  @hash_regex ~r/\Asha256:[0-9a-f]{64}\z/
 
   @spec run_case(:payload_boundary_fault_matrix) :: {:ok, map()}
   def run_case(:payload_boundary_fault_matrix) do
@@ -157,7 +156,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5ArtifactReferenceBoundary do
     actual = sha256_ref(bytes)
 
     cond do
-      not (is_binary(expected) and Regex.match?(@hash_regex, expected)) ->
+      not sha256_ref?(expected) ->
         {:error, :invalid_primary_hash}
 
       actual == expected ->
@@ -198,4 +197,12 @@ defmodule StackLab.CitadelSpineHarness.Phase5ArtifactReferenceBoundary do
   defp sha256_ref(bytes) do
     "sha256:" <> Base.encode16(:crypto.hash(:sha256, bytes), case: :lower)
   end
+
+  defp sha256_ref?("sha256:" <> digest) when byte_size(digest) == 64 do
+    digest
+    |> :binary.bin_to_list()
+    |> Enum.all?(fn byte -> byte in ?0..?9 or byte in ?a..?f end)
+  end
+
+  defp sha256_ref?(_value), do: false
 end

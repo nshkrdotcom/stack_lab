@@ -23,12 +23,24 @@ defmodule StackLab.GnTen.ConnectorScanner do
           }
   end
 
-  @secret_re ~r/\b(api_key|access_token|refresh_token|client_secret|secret|provider_token)\s*[:=>]\s*"([^"]+)"/i
-  @safe_secret_value_re ~r/(demo|fixture|test|sample|redacted|example|mock|dummy)/i
-  @safe_secret_line_re ~r/(lease_fields|durable_secret_fields|secret_names|secret_ref|external_secret_ref|auth_binding|digest|fingerprint|redacted|hash)/i
-  @provider_call_re ~r/\b(Provider|OpenAI|Anthropic|Model|LLM)\.(call|chat|complete|completion|stream)\b|\b(model_call|provider_call|live_provider_call)\b/
-  @budget_re ~r/\b(token_budget|max_tokens|max_output_tokens|budget_ref|budget_gate|spend_limit)\b/
-  @live_provider_re ~r/\b(live_provider:\s*true|profile:\s*live_provider)\b/
+  @secret_keys ~w(api_key access_token refresh_token client_secret secret provider_token)
+  @safe_secret_values ~w(demo fixture test sample redacted example mock dummy)
+  @safe_secret_line_terms ~w(
+    lease_fields
+    durable_secret_fields
+    secret_names
+    secret_ref
+    external_secret_ref
+    auth_binding
+    digest
+    fingerprint
+    redacted
+    hash
+  )
+  @provider_call_names ~w(Provider OpenAI Anthropic Model LLM)
+  @provider_call_methods ~w(call chat complete completion stream)
+  @provider_call_terms ~w(model_call provider_call live_provider_call)
+  @budget_terms ~w(token_budget max_tokens max_output_tokens budget_ref budget_gate spend_limit)
   @ignored_segments MapSet.new([".git", "_build", "deps", "doc", "dist", "test"])
   @source_roots ~w(lib core apps connectors bridges surfaces)
   @source_repos ~w(jido_integration outer_brain citadel)
@@ -217,13 +229,12 @@ defmodule StackLab.GnTen.ConnectorScanner do
   end
 
   defp unwrapped_secret?(line) do
-    case Regex.run(@secret_re, line) do
-      [_match, _key, value] ->
-        not (line =~ @safe_secret_line_re or value =~ @safe_secret_value_re or
-               env_var_name?(value))
-
-      _other ->
+    case secret_literal_value(line) do
+      nil ->
         false
+
+      value ->
+        not (safe_secret_line?(line) or safe_secret_value?(value) or env_var_name?(value))
     end
   end
 
@@ -234,7 +245,7 @@ defmodule StackLab.GnTen.ConnectorScanner do
   defp token_budget_violations(path, lines) do
     lines
     |> Enum.with_index(1)
-    |> Enum.filter(fn {line, _line_no} -> line =~ @provider_call_re end)
+    |> Enum.filter(fn {line, _line_no} -> provider_call?(line) end)
     |> Enum.reject(fn {_line, line_no} -> budget_context?(lines, line_no) end)
     |> Enum.map(fn {line, line_no} ->
       violation("connector_unbounded_token_budget", path, line_no, line)
@@ -245,14 +256,14 @@ defmodule StackLab.GnTen.ConnectorScanner do
     lines
     |> window(line_no, 8)
     |> Enum.join("\n")
-    |> String.match?(@budget_re)
+    |> contains_any_downcased?(@budget_terms)
   end
 
   defp live_provider_proof_violations(path, lines, content) do
     if live_provider_claim?(content) and not provider_free_baseline?(content) do
       lines
       |> Enum.with_index(1)
-      |> Enum.filter(fn {line, _line_no} -> line =~ @live_provider_re end)
+      |> Enum.filter(fn {line, _line_no} -> live_provider_claim?(line) end)
       |> Enum.map(fn {line, line_no} ->
         violation("connector_no_provider_free_proof", path, line_no, line)
       end)
@@ -261,11 +272,76 @@ defmodule StackLab.GnTen.ConnectorScanner do
     end
   end
 
-  defp live_provider_claim?(content), do: content =~ @live_provider_re
+  defp live_provider_claim?(content) do
+    downcased = String.downcase(content)
+
+    (String.contains?(downcased, "live_provider:") and String.contains?(downcased, "true")) or
+      (String.contains?(downcased, "profile:") and String.contains?(downcased, "live_provider"))
+  end
 
   defp provider_free_baseline?(content) do
     String.contains?(content, "connector_provider_free") and
       String.contains?(content, "status: implemented")
+  end
+
+  defp secret_literal_value(line) do
+    downcased = String.downcase(line)
+
+    Enum.find_value(@secret_keys, fn key ->
+      case :binary.match(downcased, key) do
+        {index, size} ->
+          binary_part(line, index + size, byte_size(line) - index - size)
+          |> quoted_value_after_separator()
+
+        :nomatch ->
+          nil
+      end
+    end)
+  end
+
+  defp quoted_value_after_separator(after_key) do
+    after_key = String.trim_leading(after_key)
+
+    cond do
+      String.starts_with?(after_key, "=>") ->
+        after_key |> String.replace_prefix("=>", "") |> quoted_value()
+
+      String.starts_with?(after_key, ":") ->
+        after_key |> String.replace_prefix(":", "") |> quoted_value()
+
+      true ->
+        nil
+    end
+  end
+
+  defp quoted_value(text) do
+    text = String.trim_leading(text)
+
+    if String.starts_with?(text, "\"") do
+      text
+      |> String.replace_prefix("\"", "")
+      |> String.split("\"", parts: 2)
+      |> List.first()
+    end
+  end
+
+  defp safe_secret_line?(line), do: contains_any_downcased?(line, @safe_secret_line_terms)
+  defp safe_secret_value?(value), do: contains_any_downcased?(value, @safe_secret_values)
+
+  defp provider_call?(line) do
+    dotted_call? =
+      Enum.any?(@provider_call_names, fn name ->
+        Enum.any?(@provider_call_methods, fn method ->
+          String.contains?(line, "#{name}.#{method}")
+        end)
+      end)
+
+    dotted_call? or contains_any_downcased?(line, @provider_call_terms)
+  end
+
+  defp contains_any_downcased?(content, terms) do
+    content = String.downcase(content)
+    Enum.any?(terms, &String.contains?(content, &1))
   end
 
   defp window(lines, line_no, radius) do

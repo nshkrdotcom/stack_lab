@@ -167,7 +167,7 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
     :ok = TransportRuntime.put!(transport_config_fun.(listener, remote.remote_node))
 
     env =
-      RoundtripRuntime.start_runtime_env(:"restart_authority_#{case_name}")
+      RoundtripRuntime.start_runtime_env({:restart_authority, case_name})
       |> Map.put(:remote_node, remote.remote_node)
       |> Map.put(:remote_spine, remote)
 

@@ -231,9 +231,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacket do
 
     missing_required_fields =
       InvocationRequestV2.required_fields()
-      |> Enum.map(&to_string/1)
-      |> Enum.reject(&Map.has_key?(string_attrs, &1))
-      |> Enum.map(&String.to_atom/1)
+      |> Enum.reject(fn field -> Map.has_key?(string_attrs, to_string(field)) end)
 
     unknown_extension_namespaces =
       case Map.get(string_attrs, "extensions") do

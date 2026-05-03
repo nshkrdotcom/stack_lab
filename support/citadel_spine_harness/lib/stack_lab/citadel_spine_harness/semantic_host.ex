@@ -208,7 +208,7 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
     bridge = InvocationBridge.new!(downstream: InvocationDownstream)
 
     env =
-      RoundtripRuntime.start_runtime_env(:"semantic_host_#{case_name}",
+      RoundtripRuntime.start_runtime_env({:semantic_host, case_name},
         invocation_handler: RoundtripRuntime.host_ingress_invocation_handler(bridge, listener)
       )
 

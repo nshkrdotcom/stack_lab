@@ -131,7 +131,7 @@ defmodule StackLab.CitadelSpineHarness.MultiNode do
     :ok = TransportRuntime.put!(transport_config(case_name, listener, remote.remote_node))
 
     env =
-      RoundtripRuntime.start_runtime_env(:"multi_node_#{case_name}")
+      RoundtripRuntime.start_runtime_env({:multi_node, case_name})
       |> Map.put(:remote_node, remote.remote_node)
       |> Map.put(:remote_spine, remote)
 

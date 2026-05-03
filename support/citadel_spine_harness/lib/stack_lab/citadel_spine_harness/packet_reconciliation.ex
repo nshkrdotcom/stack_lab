@@ -11,30 +11,30 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
   @trace_doc "v4/0026_trace_identity_contract.md"
 
   @app_kit_bypass_patterns [
-    ~r/\bJido\.Integration\b/,
-    ~r/\bExecutionPlane\b/,
-    ~r/\bHostIngress\b/,
-    ~r/\bInvocationBridge\b/
+    "Jido.Integration",
+    "ExecutionPlane",
+    "HostIngress",
+    "InvocationBridge"
   ]
 
   @stale_harness_patterns [
-    ~r/jido_integration_v2_contracts/,
-    ~r/\bDispatchOutboxEntry\b/,
-    ~r/\bDispatcher\b/,
-    ~r/dispatch_outbox_entry_id/
+    "jido_integration_v2_contracts",
+    "DispatchOutboxEntry",
+    "Dispatcher",
+    "dispatch_outbox_entry_id"
   ]
 
   @substrate_ingress_host_patterns [
-    ~r/\bCitadel\.HostIngress\b/,
-    ~r/\bHostIngress\.compile_run_request\b/,
-    ~r/\bMezzanine\.CitadelBridge\.\{AuthorityAssembler,\s*RunIntentCompiler\}/,
-    ~r/\bAuthorityAssembler\b/,
-    ~r/\bRunIntentCompiler\b/,
-    ~r/\bSessionServer\b/,
-    ~r/\bSessionDirectory\b/,
-    ~r/\bSessionContinuityCommit\b/,
-    ~r/\bPersistedSessionBlob\b/,
-    ~r/\bPersistedSessionEnvelope\b/
+    "Citadel.HostIngress",
+    "HostIngress.compile_run_request",
+    "Mezzanine.CitadelBridge.{AuthorityAssembler, RunIntentCompiler}",
+    "AuthorityAssembler",
+    "RunIntentCompiler",
+    "SessionServer",
+    "SessionDirectory",
+    "SessionContinuityCommit",
+    "PersistedSessionBlob",
+    "PersistedSessionEnvelope"
   ]
 
   @spec run_case(
@@ -410,9 +410,9 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
   defp assert_absent!(path, banned_patterns) do
     contents = File.read!(path)
 
-    Enum.each(banned_patterns, fn banned_pattern ->
-      if Regex.match?(banned_pattern, contents) do
-        raise "#{path} still matches banned pattern #{inspect(banned_pattern)}"
+    Enum.each(banned_patterns, fn banned_fragment ->
+      if String.contains?(contents, banned_fragment) do
+        raise "#{path} still contains banned fragment #{inspect(banned_fragment)}"
       end
     end)
   end
@@ -435,26 +435,51 @@ defmodule StackLab.CitadelSpineHarness.PacketReconciliation do
     docs_root
     |> Path.join("runbooks/README.md")
     |> File.read!()
-    |> then(&Regex.scan(~r/- `([^`]+\.md)`/, &1))
-    |> Enum.map(fn [_, runbook] -> runbook end)
+    |> String.split("\n")
+    |> Enum.filter(fn line -> line |> String.trim_leading() |> String.starts_with?("- `") end)
+    |> Enum.flat_map(&markdown_code_spans/1)
+    |> Enum.filter(&String.ends_with?(&1, ".md"))
   end
 
   defp phase3_scenario_runbooks(stack_lab_spec) do
     stack_lab_spec
     |> File.read!()
-    |> String.split(~r/^### Scenario /m, trim: true)
+    |> String.split("### Scenario ", trim: true)
     |> Enum.flat_map(&scenario_runbook/1)
   end
 
   defp scenario_runbook(section) do
-    with [_, scenario] <- Regex.run(~r/^(\d+)\./, section),
-         scenario_number <- String.to_integer(scenario),
+    with {scenario_number, rest} <- Integer.parse(section),
+         true <- String.starts_with?(rest, "."),
          true <- scenario_number in 29..43,
-         [_, runbook] <- Regex.run(~r/Runbook:\n\n- `([^`]+\.md)`/, section) do
+         {:ok, runbook} <- scenario_runbook_path(section) do
       [%{scenario: scenario_number, runbook: runbook}]
     else
       _ -> []
     end
+  end
+
+  defp scenario_runbook_path(section) do
+    case String.split(section, "Runbook:", parts: 2) do
+      [_before, after_heading] ->
+        after_heading
+        |> markdown_code_spans()
+        |> Enum.find(&String.ends_with?(&1, ".md"))
+        |> case do
+          nil -> :error
+          runbook -> {:ok, runbook}
+        end
+
+      _other ->
+        :error
+    end
+  end
+
+  defp markdown_code_spans(text) do
+    text
+    |> String.split("`")
+    |> Enum.drop(1)
+    |> Enum.take_every(2)
   end
 
   defp placeholder_runbook?(path) do

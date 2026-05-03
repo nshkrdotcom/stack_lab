@@ -7,7 +7,7 @@ defmodule StackLab.GnTen.RepoAgentInstructions do
                  "/home/home/p/g/j/jido_brainstorm/nshkrdotcom/docs/20260428/gn-ten_cleanup/repo_agent_instructions"
                )
 
-  @start ~r/<!-- gn-ten:repo-agent:start repo=(?<repo>[A-Za-z0-9_]+)(?: source_sha=(?<sha>[0-9a-f]+))? -->/
+  @start_prefix "<!-- gn-ten:repo-agent:start "
   @finish "<!-- gn-ten:repo-agent:end -->"
 
   @spec default_drafts_root() :: String.t()
@@ -175,7 +175,7 @@ defmodule StackLab.GnTen.RepoAgentInstructions do
 
   defp extract_section(content) do
     lines = String.split(content, "\n")
-    start = Enum.find_index(lines, &Regex.match?(@start, &1))
+    start = Enum.find_index(lines, &start_marker?/1)
 
     if is_nil(start) do
       {:error, :section_missing}
@@ -191,7 +191,7 @@ defmodule StackLab.GnTen.RepoAgentInstructions do
 
         {_line, finish_index} ->
           marker = Enum.at(lines, start)
-          captures = Regex.named_captures(@start, marker)
+          captures = marker_fields(marker)
 
           body =
             lines
@@ -206,6 +206,25 @@ defmodule StackLab.GnTen.RepoAgentInstructions do
            }}
       end
     end
+  end
+
+  defp start_marker?(line) do
+    line = String.trim(line)
+    String.starts_with?(line, @start_prefix) and String.ends_with?(line, " -->")
+  end
+
+  defp marker_fields(marker) do
+    marker
+    |> String.trim()
+    |> String.replace_prefix(@start_prefix, "")
+    |> String.replace_suffix(" -->", "")
+    |> String.split(" ", trim: true)
+    |> Map.new(fn field ->
+      case String.split(field, "=", parts: 2) do
+        [key, value] -> {key, value}
+        [key] -> {key, ""}
+      end
+    end)
   end
 
   defp blank_to_nil(""), do: nil

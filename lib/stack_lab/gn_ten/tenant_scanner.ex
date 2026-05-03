@@ -23,10 +23,10 @@ defmodule StackLab.GnTen.TenantScanner do
           }
   end
 
-  @query_re ~r/\bRepo\.(all|one|get|get_by|exists\?)\b/
-  @query_file_marker_re ~r/@gn_ten_tenant_scoped\s+true|@tenant_scoped\s+true/
-  @lease_re ~r/\b(CredentialLease|LeaseRecord)\.(new!?|new)\b|schema\s*\(?\s*"credential_leases"/
-  @tenant_re ~r/\b(tenant_id|tenant_ref|TenantScope)\b/
+  @query_terms ~w(Repo.all Repo.one Repo.get Repo.get_by Repo.exists?)
+  @query_file_markers ["@gn_ten_tenant_scoped", "@tenant_scoped"]
+  @lease_constructor_terms ~w(CredentialLease.new CredentialLease.new! LeaseRecord.new LeaseRecord.new!)
+  @tenant_terms ~w(tenant_id tenant_ref TenantScope)
   @ignored_segments MapSet.new([".git", "_build", "deps", "doc", "dist", "test"])
   @source_roots ~w(lib core apps connectors bridges surfaces)
   @query_repos ~w(mezzanine citadel outer_brain app_kit)
@@ -185,7 +185,7 @@ defmodule StackLab.GnTen.TenantScanner do
 
   defp maybe_scan_queries(violations, path, lines, content, mode)
        when mode in [:all, :query] do
-    if content =~ @query_file_marker_re do
+    if query_marker?(content) do
       query_violations(path, lines) ++ violations
     else
       violations
@@ -197,7 +197,7 @@ defmodule StackLab.GnTen.TenantScanner do
   defp query_violations(path, lines) do
     lines
     |> Enum.with_index(1)
-    |> Enum.filter(fn {line, _line_no} -> line =~ @query_re end)
+    |> Enum.filter(fn {line, _line_no} -> query_call?(line) end)
     |> Enum.reject(fn {_line, line_no} -> tenant_context?(lines, line_no) end)
     |> Enum.map(fn {line, line_no} ->
       violation("tenant_unscoped_query", path, line_no, line)
@@ -235,7 +235,7 @@ defmodule StackLab.GnTen.TenantScanner do
   defp lease_constructor_violations(path, lines) do
     lines
     |> Enum.with_index(1)
-    |> Enum.filter(fn {line, _line_no} -> line =~ @lease_re end)
+    |> Enum.filter(fn {line, _line_no} -> lease_entry?(line) end)
     |> Enum.reject(fn {line, line_no} -> lease_block_scoped?(line, block(lines, line_no, 32)) end)
     |> Enum.map(fn {line, line_no} ->
       violation("tenant_lease_no_tenant_ref", path, line_no, line)
@@ -267,7 +267,20 @@ defmodule StackLab.GnTen.TenantScanner do
     |> Enum.join("\n")
   end
 
-  defp scoped?(content), do: content =~ @tenant_re
+  defp scoped?(content), do: Enum.any?(@tenant_terms, &String.contains?(content, &1))
+
+  defp query_marker?(content) do
+    Enum.any?(@query_file_markers, fn marker ->
+      String.contains?(content, "#{marker} true")
+    end)
+  end
+
+  defp query_call?(line), do: Enum.any?(@query_terms, &String.contains?(line, &1))
+
+  defp lease_entry?(line) do
+    Enum.any?(@lease_constructor_terms, &String.contains?(line, &1)) or
+      (String.contains?(line, "schema") and String.contains?(line, "\"credential_leases\""))
+  end
 
   defp violation(code, path, line_no, line) do
     %Violation{

@@ -99,6 +99,14 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     :route_id,
     :idempotency_key
   ]
+  @bounded_lookup_atom_keys %{
+    "carrier" => :carrier,
+    "error" => :error,
+    "kind" => :kind,
+    "last_dispatch_error_payload" => :last_dispatch_error_payload,
+    "request_trace_id" => :request_trace_id,
+    "retry_class" => :retry_class
+  }
 
   defmodule LowerFactsStub do
     @moduledoc false
@@ -3279,18 +3287,19 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   end
 
   defp map_value(map, key) when is_map(map) do
-    Map.get(map, key) || Map.get(map, to_string(key)) || atom_key_value(map, key)
+    Map.get(map, key) || Map.get(map, to_string(key)) || bounded_atom_key_value(map, key)
   end
 
   defp map_value(_value, _key), do: nil
 
-  defp atom_key_value(map, key) when is_binary(key) do
-    Map.get(map, String.to_existing_atom(key))
-  rescue
-    ArgumentError -> nil
+  defp bounded_atom_key_value(map, key) when is_binary(key) do
+    case Map.fetch(@bounded_lookup_atom_keys, key) do
+      {:ok, atom_key} -> Map.get(map, atom_key)
+      :error -> nil
+    end
   end
 
-  defp atom_key_value(_map, _key), do: nil
+  defp bounded_atom_key_value(_map, _key), do: nil
 
   defp normalize_runtime_class(value) when value in [:direct, :session, :stream], do: value
   defp normalize_runtime_class("direct"), do: :direct

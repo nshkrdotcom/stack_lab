@@ -1,6 +1,7 @@
 defmodule StackLab.CitadelSpineHarness.RemoteSupport do
   @moduledoc false
 
+  alias StackLab.CitadelSpineHarness.BoundedNames
   alias StackLab.CitadelSpineHarness.RemoteSpine
 
   @default_timeout_ms 5_000
@@ -16,7 +17,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
   def start_remote_spine!(case_name) when is_atom(case_name) do
     ensure_distribution_started!()
     _ = Application.ensure_all_started(:telemetry)
-    {:ok, peer_pid, remote_node} = :peer.start_link(%{name: unique_name(:stack_lab_spine)})
+    {:ok, peer_pid, remote_node} = start_peer()
     storage_dir = remote_store_local_dir(case_name)
 
     :ok = wait_for_remote_node!(remote_node)
@@ -55,11 +56,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
     if Node.alive?() do
       :ok
     else
-      case Node.start(unique_name(:stack_lab_local), name_domain: :shortnames) do
-        {:ok, _pid} -> :ok
-        {:error, {:already_started, _pid}} -> :ok
-        {:error, reason} -> {:error, reason}
-      end
+      start_distribution(BoundedNames.local_node_slots())
     end
   end
 
@@ -133,15 +130,22 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
     )
   end
 
-  @spec unique_name(atom()) :: atom()
-  def unique_name(prefix) do
-    token =
-      :erlang.phash2(
-        {:os.getpid(), System.unique_integer([:positive]), System.monotonic_time(), make_ref()},
-        1_000_000_000
-      )
+  defp start_peer do
+    case :peer.start_link(%{name: :peer.random_name(:stack_lab_spine)}) do
+      {:ok, _peer_pid, _remote_node} = peer -> peer
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
-    :"#{prefix}_#{token}"
+  defp start_distribution([]), do: {:error, :no_local_node_slot_available}
+
+  defp start_distribution([name | rest]) do
+    case Node.start(name, name_domain: :shortnames) do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+      {:error, _reason} when rest != [] -> start_distribution(rest)
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp wait_for_remote_node!(remote_node, attempts \\ 40)

@@ -31,7 +31,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacketTest do
     assert result.positive.citadel_invocation_request.execution_intent_invocation_schema_version ==
              2
 
-    assert result.positive.citadel_invocation_request.schema_hash =~ ~r/\Asha256:[0-9a-f]{64}\z/
+    assert sha256_ref?(result.positive.citadel_invocation_request.schema_hash)
 
     assert result.positive.mezzanine_operator_workflow_signal.schema_version ==
              "Mezzanine.OperatorWorkflowSignal.v1"
@@ -101,4 +101,12 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacketTest do
     refute result.stop_condition_evidence.unknown_field_primary_when_missing_required?
     refute result.stop_condition_evidence.active_workflow_old_shape_without_pin_accepted?
   end
+
+  defp sha256_ref?("sha256:" <> digest) when byte_size(digest) == 64 do
+    digest
+    |> :binary.bin_to_list()
+    |> Enum.all?(fn byte -> byte in ?0..?9 or byte in ?a..?f end)
+  end
+
+  defp sha256_ref?(_value), do: false
 end

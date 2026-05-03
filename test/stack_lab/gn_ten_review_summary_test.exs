@@ -60,9 +60,12 @@ defmodule StackLab.GnTen.ReviewSummaryTest do
   end
 
   test "mix task requires --batch" do
-    assert_raise Mix.Error, ~r/expected --batch <slug>/, fn ->
-      Summary.run([])
-    end
+    error =
+      assert_raise Mix.Error, fn ->
+        Summary.run([])
+      end
+
+    assert Exception.message(error) =~ "expected --batch <slug>"
   end
 
   defp write_batch!(root, receipt_dir) do

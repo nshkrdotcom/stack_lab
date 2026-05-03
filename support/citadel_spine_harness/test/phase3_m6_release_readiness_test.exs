@@ -9,7 +9,7 @@ defmodule StackLab.CitadelSpineHarness.Phase3M6ReleaseReadinessTest do
 
   @now ~U[2026-04-18 19:00:00Z]
 
-  defmodule ContinuationDispatcher do
+  defmodule ContinuationHandler do
     @moduledoc false
 
     def dispatch_lifecycle_continuation(continuation, _target) do
@@ -168,15 +168,15 @@ defmodule StackLab.CitadelSpineHarness.Phase3M6ReleaseReadinessTest do
 
   defp process_continuation(continuation_id, opts) do
     {handler, opts} = Keyword.pop!(opts, :handler)
-    Process.put({ContinuationDispatcher, :handler}, handler)
+    Process.put({ContinuationHandler, :handler}, handler)
 
     try do
       LifecycleContinuation.process(
         continuation_id,
-        Keyword.put(opts, :dispatcher, ContinuationDispatcher)
+        Keyword.put(opts, :dispatcher, ContinuationHandler)
       )
     after
-      Process.delete({ContinuationDispatcher, :handler})
+      Process.delete({ContinuationHandler, :handler})
     end
   end
 end

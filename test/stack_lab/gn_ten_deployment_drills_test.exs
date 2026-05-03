@@ -10,18 +10,23 @@ defmodule StackLab.GnTen.DeploymentDrillsTest do
   @date "2026-04-28"
 
   test "rehearse task requires --drill" do
-    assert_raise Mix.Error, ~r/expected --drill <id>/, fn ->
-      Rehearse.run([])
-    end
+    error =
+      assert_raise Mix.Error, fn ->
+        Rehearse.run([])
+      end
+
+    assert Exception.message(error) =~ "expected --drill <id>"
   end
 
   test "unknown drill aborts before writing a receipt" do
     out_dir = temp_dir!()
 
-    assert_raise Mix.Error, ~r/deploy_drill_unknown/, fn ->
-      Rehearse.run(["--drill", "unknown", "--out", out_dir])
-    end
+    error =
+      assert_raise Mix.Error, fn ->
+        Rehearse.run(["--drill", "unknown", "--out", out_dir])
+      end
 
+    assert Exception.message(error) =~ "deploy_drill_unknown"
     assert File.ls!(out_dir) == []
   end
 

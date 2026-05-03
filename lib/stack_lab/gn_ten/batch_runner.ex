@@ -1,7 +1,7 @@
 defmodule StackLab.GnTen.BatchRunner do
   @moduledoc false
 
-  alias StackLab.GnTen.{BatchReceipt, Manifest, Status}
+  alias StackLab.GnTen.{BatchReceipt, Manifest, Status, TextRules}
 
   @receipt_schema "gn_ten_batch_receipt_v1"
   @trace_schema "gn_ten_batch_trace_v1"
@@ -15,8 +15,6 @@ defmodule StackLab.GnTen.BatchRunner do
     ["app_kit", "extravaganza"],
     ["stack_lab", "AITrace"]
   ]
-  @safe_slug ~r/^[a-z0-9][a-z0-9-]*$/
-
   @type run_result :: {:ok, map()} | {:error, map()}
 
   @spec run(String.t(), keyword()) :: run_result()
@@ -42,7 +40,7 @@ defmodule StackLab.GnTen.BatchRunner do
   end
 
   defp validate_slug(slug) do
-    if Regex.match?(@safe_slug, slug) do
+    if TextRules.safe_slug?(slug) do
       :ok
     else
       {:error, error("unsafe_slug", slug: slug)}
@@ -304,7 +302,14 @@ defmodule StackLab.GnTen.BatchRunner do
   end
 
   defp allowed_generated_mutation?(%{status: "M", path: path}) do
-    Regex.match?(~r/^dist\/(hex|monolith)\/[^\/]+\/projection\.lock\.json$/, path)
+    case Path.split(path) do
+      ["dist", kind, package, "projection.lock.json"]
+      when kind in ["hex", "monolith"] and package != "" ->
+        true
+
+      _other ->
+        false
+    end
   end
 
   defp allowed_generated_mutation?(_mutation), do: false

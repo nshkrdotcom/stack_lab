@@ -61,6 +61,19 @@ defmodule StackLab.CitadelSpineHarness do
                       "../j/jido_brainstorm/nshkrdotcom/docs/20260418/ecosystem_buildout_phase3",
                       @repo_parent
                     )
+  @repo_atoms %{
+    "AITrace" => :AITrace,
+    "agent_session_manager" => :agent_session_manager,
+    "app_kit" => :app_kit,
+    "citadel" => :citadel,
+    "execution_plane" => :execution_plane,
+    "extravaganza" => :extravaganza,
+    "ground_plane" => :ground_plane,
+    "jido_integration" => :jido_integration,
+    "mezzanine" => :mezzanine,
+    "outer_brain" => :outer_brain,
+    "stack_lab" => :stack_lab
+  }
 
   @type repo_roots :: %{
           required(:stack_lab) => String.t(),
@@ -233,8 +246,8 @@ defmodule StackLab.CitadelSpineHarness do
       runbook: "outer_brain_semantic_durability.md",
       repo_roots: repo_roots(),
       contract: contract.id,
-      owner_repo: String.to_existing_atom(contract.owner),
-      primary_repos: Enum.map(contract.primary_repos, &String.to_existing_atom/1),
+      owner_repo: repo_atom!(contract.owner),
+      primary_repos: Enum.map(contract.primary_repos, &repo_atom!/1),
       real_durability_scenario: :outer_brain_restart_durability,
       cases: %{
         semantic_gateway_owner_evidence: %{kind: :semantic_gateway_owner_evidence}
@@ -246,6 +259,16 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()}
   def exercise_semantic_gateway_contract(:semantic_gateway_owner_evidence) do
     SemanticGatewayContractEvidence.run_case(:semantic_gateway_owner_evidence)
+  end
+
+  defp repo_atom!(repo) do
+    case Map.fetch(@repo_atoms, repo) do
+      {:ok, repo_atom} ->
+        repo_atom
+
+      :error ->
+        raise ArgumentError, "unknown StackLab contract repo: #{inspect(repo)}"
+    end
   end
 
   @spec authority_tenant_propagation_scenario() :: map()

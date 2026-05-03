@@ -4,6 +4,7 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
   alias Citadel.JidoIntegrationBridge
   alias Citadel.Kernel.SessionServer
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
+  alias StackLab.CitadelSpineHarness.BoundedNames
   alias StackLab.CitadelSpineHarness.RemoteSpine
   alias StackLab.CitadelSpineHarness.RemoteSupport
   alias StackLab.CitadelSpineHarness.RemoteTransport
@@ -156,7 +157,7 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
     :ok = TransportRuntime.put!(transport_configs.initial)
 
     env =
-      RoundtripRuntime.start_runtime_env(:"pressure_failover_#{case_name}")
+      RoundtripRuntime.start_runtime_env({:pressure_failover, case_name})
       |> Map.put(:remote_node, remote.remote_node)
       |> Map.put(:remote_spine, remote)
       |> Map.put(:transport_configs, transport_configs)
@@ -221,12 +222,6 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
   end
 
   defp unavailable_node do
-    host =
-      Node.self()
-      |> Atom.to_string()
-      |> String.split("@", parts: 2)
-      |> List.last()
-
-    String.to_atom("stack_lab_missing_#{System.unique_integer([:positive])}@#{host}")
+    BoundedNames.unavailable_node()
   end
 end

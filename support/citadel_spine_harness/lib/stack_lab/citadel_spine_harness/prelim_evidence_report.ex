@@ -571,7 +571,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimEvidenceReport do
   defp validate_scenario_results(results) when is_list(results) and results != [] do
     Enum.reduce_while(results, :ok, fn result, :ok ->
       with {:ok, scenario_id} <- required_string(result, :scenario_id),
-           true <- Regex.match?(~r/^P5P-[0-9]{3}$/, scenario_id),
+           true <- scenario_id?(scenario_id),
            {:ok, status} <- required_string(result, :status),
            true <- status in @allowed_statuses,
            {:ok, _positive} <- required_string(result, :positive_evidence_ref),
@@ -586,6 +586,14 @@ defmodule StackLab.CitadelSpineHarness.PrelimEvidenceReport do
 
   defp validate_scenario_results(_results),
     do: {:error, {:missing_required_refs, [:scenario_results]}}
+
+  defp scenario_id?("P5P-" <> digits) when byte_size(digits) == 3 do
+    digits
+    |> :binary.bin_to_list()
+    |> Enum.all?(fn byte -> byte in ?0..?9 end)
+  end
+
+  defp scenario_id?(_value), do: false
 
   defp validate_source_commit_refs(commit_refs)
        when is_map(commit_refs) and map_size(commit_refs) > 0 do

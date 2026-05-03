@@ -8,6 +8,7 @@ defmodule StackLab.GnTen.Manifest do
   """
 
   alias GroundPlane.Contracts.{RepoRef, WorkspaceRef}
+  alias StackLab.GnTen.TextRules
 
   @expected_repos ~w(
     ground_plane
@@ -173,16 +174,12 @@ defmodule StackLab.GnTen.Manifest do
   end
 
   defp scalar(content, key) do
-    case Regex.run(~r/^#{Regex.escape(key)}:\s*(.+?)\s*$/m, content) do
-      [_match, value] -> value
-      nil -> nil
-    end
+    TextRules.scalar(content, key)
   end
 
   defp repo_entries(content) do
-    ~r/^\s+- name:\s*[A-Za-z0-9_]+\s*$.*?(?=^\s+- name:\s*[A-Za-z0-9_]+\s*$|\z)/ms
-    |> Regex.scan(content)
-    |> List.flatten()
+    content
+    |> TextRules.list_blocks("name")
     |> Enum.map(&repo_entry/1)
   end
 
@@ -205,31 +202,14 @@ defmodule StackLab.GnTen.Manifest do
   end
 
   defp block_scalar(block, "name") do
-    case Regex.run(~r/^\s*-\s*name:\s*(.+?)\s*$/m, block) do
-      [_match, value] -> value
-      nil -> nil
-    end
+    TextRules.block_scalar(block, "name")
   end
 
   defp block_scalar(block, key) do
-    case Regex.run(~r/^\s*#{Regex.escape(key)}:\s*(.+?)\s*$/m, block) do
-      [_match, value] -> value
-      nil -> nil
-    end
+    TextRules.block_scalar(block, key)
   end
 
   defp block_list(block, key) do
-    case Regex.run(~r/^\s*#{Regex.escape(key)}:\s*\n(?<items>(?:\s+- .+\n?)*)/m, block,
-           capture: ["items"]
-         ) do
-      [items] ->
-        items
-        |> String.split("\n", trim: true)
-        |> Enum.map(&String.trim/1)
-        |> Enum.map(&String.replace_prefix(&1, "- ", ""))
-
-      nil ->
-        []
-    end
+    TextRules.block_list(block, key)
   end
 end

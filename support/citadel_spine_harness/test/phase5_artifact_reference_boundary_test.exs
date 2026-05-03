@@ -30,7 +30,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5ArtifactReferenceBoundaryTest do
     assert result.positive.valid_execution_ref.content_hash_alg == "sha256"
     assert result.positive.valid_execution_ref.schema_hash_alg == "sha256"
     assert result.positive.valid_reply_ref.preview_byte_size <= 2_048
-    assert result.positive.valid_reply_ref.body_hash =~ ~r/\Asha256:[0-9a-f]{64}\z/
+    assert sha256_ref?(result.positive.valid_reply_ref.body_hash)
 
     assert result.negative_failures.store_unavailable.safe_action == :unavailable_fail_closed
     assert result.negative_failures.store_unavailable.bytes_accepted? == false
@@ -50,4 +50,12 @@ defmodule StackLab.CitadelSpineHarness.Phase5ArtifactReferenceBoundaryTest do
     assert result.no_generic_shared_cas_fallback?
     assert result.accepted_bytes_on_failure? == false
   end
+
+  defp sha256_ref?("sha256:" <> digest) when byte_size(digest) == 64 do
+    digest
+    |> :binary.bin_to_list()
+    |> Enum.all?(fn byte -> byte in ?0..?9 or byte in ?a..?f end)
+  end
+
+  defp sha256_ref?(_value), do: false
 end

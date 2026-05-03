@@ -555,7 +555,16 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
   defp slug(value) do
     value
     |> String.downcase()
-    |> String.replace(~r/[^a-z0-9_.-]+/, "-")
+    |> String.to_charlist()
+    |> Enum.map(fn
+      byte when byte in ?a..?z -> byte
+      byte when byte in ?0..?9 -> byte
+      ?. -> ?.
+      ?_ -> ?_
+      ?- -> ?-
+      _other -> ?-
+    end)
+    |> List.to_string()
     |> String.trim("-")
   end
 end

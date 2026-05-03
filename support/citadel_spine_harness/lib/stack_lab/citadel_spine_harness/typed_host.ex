@@ -203,7 +203,7 @@ defmodule StackLab.CitadelSpineHarness.TypedHost do
     bridge = InvocationBridge.new!(downstream: InvocationDownstream)
 
     env =
-      RoundtripRuntime.start_runtime_env(:"typed_host_#{case_name}",
+      RoundtripRuntime.start_runtime_env({:typed_host, case_name},
         invocation_handler: RoundtripRuntime.host_ingress_invocation_handler(bridge, listener)
       )
 

@@ -18,12 +18,7 @@ defmodule StackLab.Phase5DocsetDrift do
     "Code Reduction Expectation",
     "Stop Conditions"
   ]
-  @credential_patterns [
-    ~r/\bAKIA[0-9A-Z]{16}\b/,
-    ~r/\bghp_[A-Za-z0-9_]{20,}\b/,
-    ~r/\bsk-[A-Za-z0-9]{20,}\b/,
-    ~r/-----BEGIN [A-Z ]*PRIVATE KEY-----/
-  ]
+  @sensitive_prefixes ["AKIA", "ghp_", "sk-"]
 
   @type check_result :: {:ok, map()} | {:error, map()}
 
@@ -141,17 +136,23 @@ defmodule StackLab.Phase5DocsetDrift do
   end
 
   defp spec_runbook_names(spec) do
-    ~r/`runbooks\/([^`]+\.md)`/
-    |> Regex.scan(section(spec, "## Scenario Matrix", "## Runtime Envelope Matrix"))
-    |> Enum.map(fn [_match, name] -> name end)
+    spec
+    |> section("## Scenario Matrix", "## Runtime Envelope Matrix")
+    |> markdown_code_spans()
+    |> Enum.filter(&String.starts_with?(&1, "runbooks/"))
+    |> Enum.map(&String.replace_prefix(&1, "runbooks/", ""))
+    |> Enum.filter(&String.ends_with?(&1, ".md"))
     |> Enum.uniq()
     |> Enum.sort()
   end
 
   defp runbook_readme_index(readme) do
-    ~r/- `([^`]+\.md)`/
-    |> Regex.scan(section(readme, "## Runbook Index", "## Standard Fields"))
-    |> Enum.map(fn [_match, name] -> name end)
+    readme
+    |> section("## Runbook Index", "## Standard Fields")
+    |> String.split("\n")
+    |> Enum.filter(fn line -> line |> String.trim_leading() |> String.starts_with?("- `") end)
+    |> Enum.flat_map(&markdown_code_spans/1)
+    |> Enum.filter(&String.ends_with?(&1, ".md"))
     |> Enum.uniq()
     |> Enum.sort()
   end
@@ -213,8 +214,7 @@ defmodule StackLab.Phase5DocsetDrift do
 
   defp checklist_scenario_refs(checklist, scenario_ids) do
     Map.new(scenario_ids, fn scenario_id ->
-      pattern = ~r/\b#{Regex.escape(scenario_id)}\b/
-      {scenario_id, length(Regex.scan(pattern, checklist))}
+      {scenario_id, token_count(checklist, scenario_id)}
     end)
   end
 
@@ -410,9 +410,10 @@ defmodule StackLab.Phase5DocsetDrift do
 
   defp operator_steps_failures(runbook, body) do
     steps =
-      ~r/^\d+\.\s+/m
-      |> Regex.scan(section(body, "## Operator Procedure", "## Evidence To Collect"))
-      |> length()
+      body
+      |> section("## Operator Procedure", "## Evidence To Collect")
+      |> String.split("\n")
+      |> Enum.count(&numbered_step?/1)
 
     if steps >= 4 do
       []
@@ -527,12 +528,103 @@ defmodule StackLab.Phase5DocsetDrift do
   end
 
   defp sensitive_literal_failures(path, body, stack_lab_root) do
-    @credential_patterns
-    |> Enum.filter(&Regex.match?(&1, body))
-    |> Enum.map(fn _pattern ->
-      %{check: :fixture_sensitive_literal_match, path: Path.relative_to(path, stack_lab_root)}
+    if sensitive_literal?(body) do
+      [
+        %{check: :fixture_sensitive_literal_match, path: Path.relative_to(path, stack_lab_root)}
+      ]
+    else
+      []
+    end
+  end
+
+  defp markdown_code_spans(text) do
+    text
+    |> String.split("`")
+    |> Enum.drop(1)
+    |> Enum.take_every(2)
+  end
+
+  defp token_count(text, token) do
+    text
+    |> String.split(token)
+    |> case do
+      [_only] ->
+        0
+
+      parts ->
+        parts
+        |> Enum.chunk_every(2, 1, :discard)
+        |> Enum.count(fn [before_token, after_token] ->
+          token_boundary_before?(before_token) and token_boundary_after?(after_token)
+        end)
+    end
+  end
+
+  defp token_boundary_before?(""), do: true
+
+  defp token_boundary_before?(text) do
+    text
+    |> :binary.last()
+    |> token_boundary_byte?()
+  end
+
+  defp token_boundary_after?(""), do: true
+
+  defp token_boundary_after?(text) do
+    text
+    |> :binary.first()
+    |> token_boundary_byte?()
+  end
+
+  defp token_boundary_byte?(byte) do
+    not (byte in ?a..?z or byte in ?A..?Z or byte in ?0..?9 or byte == ?- or byte == ?_)
+  end
+
+  defp numbered_step?(line) do
+    line = String.trim_leading(line)
+
+    with {number, rest} when number > 0 <- Integer.parse(line),
+         true <- String.starts_with?(rest, ". ") do
+      true
+    else
+      _other -> false
+    end
+  end
+
+  defp sensitive_literal?(body) do
+    (String.contains?(body, "-----BEGIN ") and String.contains?(body, "PRIVATE KEY-----")) or
+      Enum.any?(@sensitive_prefixes, &prefixed_sensitive_literal?(body, &1))
+  end
+
+  defp prefixed_sensitive_literal?(body, "AKIA") do
+    prefixed_token?(body, "AKIA", 16, &upper_alnum?/1)
+  end
+
+  defp prefixed_sensitive_literal?(body, "ghp_") do
+    prefixed_token?(body, "ghp_", 20, &github_token_byte?/1)
+  end
+
+  defp prefixed_sensitive_literal?(body, "sk-") do
+    prefixed_token?(body, "sk-", 20, &alnum?/1)
+  end
+
+  defp prefixed_token?(body, prefix, min_tail_size, byte_predicate) do
+    body
+    |> String.split(prefix)
+    |> Enum.drop(1)
+    |> Enum.any?(fn after_prefix ->
+      tail =
+        after_prefix
+        |> :binary.bin_to_list()
+        |> Enum.take_while(byte_predicate)
+
+      length(tail) >= min_tail_size
     end)
   end
+
+  defp github_token_byte?(byte), do: alnum?(byte) or byte == ?_
+  defp upper_alnum?(byte), do: byte in ?A..?Z or byte in ?0..?9
+  defp alnum?(byte), do: byte in ?a..?z or byte in ?A..?Z or byte in ?0..?9
 
   defp diff_failure(kind, expected, actual) do
     if expected == actual do

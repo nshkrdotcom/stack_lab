@@ -1,7 +1,7 @@
 defmodule StackLab.GnTen.ReviewSummary do
   @moduledoc false
 
-  alias StackLab.GnTen.{BatchReceipt, Manifest}
+  alias StackLab.GnTen.{BatchReceipt, Manifest, TextRules}
 
   @receipt_schema "gn_ten_batch_receipt_v1"
   @batch_trace_schema "gn_ten_batch_trace_v1"
@@ -239,7 +239,7 @@ defmodule StackLab.GnTen.ReviewSummary do
   end
 
   defp validate_closeout_green(failures, entry, index) when is_map(entry) do
-    sha_ok? = is_binary(entry["sha"]) and Regex.match?(~r/^[0-9a-f]{40}$/, entry["sha"])
+    sha_ok? = TextRules.lower_hex?(entry["sha"], 40)
     state_ok? = entry["branch"] == "main" and entry["pushed"] == true and entry["clean"] == true
 
     if sha_ok? and state_ok? do

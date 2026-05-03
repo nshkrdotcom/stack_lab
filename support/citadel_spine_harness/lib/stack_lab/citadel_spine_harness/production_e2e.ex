@@ -75,7 +75,9 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
 
   defp temporal_serving?(output) do
     output
-    |> String.split(~r/\R/, trim: true)
+    |> String.replace("\r\n", "\n")
+    |> String.replace("\r", "\n")
+    |> String.split("\n", trim: true)
     |> Enum.any?(&(&1 == "SERVING"))
   end
 

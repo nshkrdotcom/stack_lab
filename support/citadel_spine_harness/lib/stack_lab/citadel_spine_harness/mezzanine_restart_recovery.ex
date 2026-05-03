@@ -13,6 +13,13 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
     "execution_params" => %{"timeout_ms" => 600_000},
     "connector_bindings" => %{"github_write" => %{"connector_key" => "github_app"}}
   }
+  @handoff_state_atoms %{
+    "available" => :available,
+    "scheduled" => :scheduled,
+    "completed" => :completed,
+    "terminal" => :terminal,
+    "cancelled" => :cancelled
+  }
 
   @spec run_case(:temporal_replay_after_restart) :: {:ok, map()}
   def run_case(:temporal_replay_after_restart) do
@@ -246,5 +253,12 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
     %{submission_ref: submission_ref, lower_receipt: lower_receipt}
   end
 
-  defp normalize_handoff_state(state) when is_binary(state), do: String.to_atom(state)
+  defp normalize_handoff_state(state) when is_binary(state) do
+    case Map.fetch(@handoff_state_atoms, state) do
+      {:ok, state_atom} -> state_atom
+      :error -> {:unknown_handoff_state, state}
+    end
+  end
+
+  defp normalize_handoff_state(state) when is_atom(state), do: state
 end

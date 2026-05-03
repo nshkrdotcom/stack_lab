@@ -20,6 +20,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
   alias Citadel.SessionOutbox
   alias Citadel.StalenessRequirements
   alias Citadel.TopologyIntent
+  alias StackLab.CitadelSpineHarness.BoundedNames
 
   defmodule TestSignalSource do
     @moduledoc false
@@ -31,7 +32,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
 
   @logical_workspace_ref "workspace://stack_lab/root"
 
-  @spec start_runtime_env(atom(), keyword()) :: map()
+  @spec start_runtime_env(term(), keyword()) :: map()
   def start_runtime_env(case_name, opts \\ []) do
     kernel_snapshot_name = unique_name(:kernel_snapshot)
     session_directory_name = unique_name(:session_directory)
@@ -100,7 +101,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
 
     Process.unlink(signal_ingress_pid)
 
-    session_id = "stack-lab-session-#{case_name}"
+    session_id = "stack-lab-session-#{case_label(case_name)}"
 
     Code.ensure_loaded!(InvocationDownstream)
     bridge = InvocationBridge.new!(downstream: InvocationDownstream)
@@ -448,8 +449,14 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
   end
 
   defp unique_name(prefix) do
-    :"#{prefix}_#{System.unique_integer([:positive])}"
+    BoundedNames.global_name(prefix)
   end
+
+  defp case_label({scope, name}) when is_atom(scope) and is_atom(name),
+    do: "#{scope}_#{name}"
+
+  defp case_label(name) when is_atom(name), do: Atom.to_string(name)
+  defp case_label(name) when is_binary(name), do: name
 
   defp submission_dedupe_key(request_id), do: "submission/#{request_id}"
 

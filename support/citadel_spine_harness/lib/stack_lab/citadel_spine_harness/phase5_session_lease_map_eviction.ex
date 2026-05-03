@@ -8,6 +8,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
   alias Citadel.Kernel.SignalIngress
   alias Citadel.RuntimeObservation
   alias Jido.Integration.V2.SubjectRef
+  alias StackLab.CitadelSpineHarness.BoundedNames
 
   defmodule TestSignalSource do
     @moduledoc false
@@ -395,5 +396,5 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
     :exit, _reason -> :ok
   end
 
-  defp unique_name(prefix), do: :"#{prefix}_#{System.unique_integer([:positive, :monotonic])}"
+  defp unique_name(prefix), do: BoundedNames.global_name(prefix)
 end
