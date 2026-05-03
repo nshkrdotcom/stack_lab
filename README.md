@@ -194,6 +194,7 @@ just fault net-cut
 - [support/citadel_spine_harness/README.md](./support/citadel_spine_harness/README.md)
 - [support/memsim_harness/README.md](./support/memsim_harness/README.md)
 - [examples/atom_cleanup_harness/README.md](./examples/atom_cleanup_harness/README.md)
+- [examples/env_remediation_harness/README.md](./examples/env_remediation_harness/README.md)
 
 ## License
 

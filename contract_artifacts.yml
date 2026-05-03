@@ -9,7 +9,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 5508e23fb029fbbc1d4c82399cef333bda643d6a
+    source_sha: 4eb6f1de28eb21f8974dfcb656afd86b82c48f68
     build_command: mix ci
     status: deprecated
     successor: ground_plane_contracts
@@ -22,7 +22,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/stack_lab
     producer_path: /home/home/p/g/n/stack_lab
     source_ref: main
-    source_sha: 94ece373188d1e39de0d90670bcbd9a89fae0b3a
+    source_sha: 4f4cea23e3a5df2ce5f31979d2dea515886c7b80
     build_command: mix gn_ten.validate
     status: bootstrap
     consumers:
@@ -37,7 +37,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 5508e23fb029fbbc1d4c82399cef333bda643d6a
+    source_sha: 4eb6f1de28eb21f8974dfcb656afd86b82c48f68
     build_command: mix ci
     status: stable
     consumers:
@@ -56,7 +56,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/execution_plane
     producer_path: /home/home/p/g/n/execution_plane
     source_ref: main
-    source_sha: 1b22331c84e517400b1c589c9fa9ddb9d1931ab3
+    source_sha: 0307e8ba7894320d75c0a91908109507e772bcf6
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -71,7 +71,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/jido_integration
     producer_path: /home/home/p/g/n/jido_integration
     source_ref: main
-    source_sha: ed79a20556e3ddc2dc30c2f7c412852bbf093f7c
+    source_sha: c2685cd3dc7467f7bdfc6e4d473e3e78fba4d62c
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -86,7 +86,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/citadel
     producer_path: /home/home/p/g/n/citadel
     source_ref: main
-    source_sha: 918e5bf979d2f1e58bcbefe3de7b02a332fb0c5d
+    source_sha: e8fd5b92563254effcaa0d92ef7bd8f0cb447b71
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -101,7 +101,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/citadel
     producer_path: /home/home/p/g/n/citadel
     source_ref: main
-    source_sha: 918e5bf979d2f1e58bcbefe3de7b02a332fb0c5d
+    source_sha: e8fd5b92563254effcaa0d92ef7bd8f0cb447b71
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -116,7 +116,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/outer_brain
     producer_path: /home/home/p/g/n/outer_brain
     source_ref: main
-    source_sha: 65dea002dcfbc16a3c9a4c3c776c92dc051a93b6
+    source_sha: 54b383920da5292757b94020b8c38ee40633d2a9
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -130,7 +130,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/mezzanine
     producer_path: /home/home/p/g/n/mezzanine
     source_ref: main
-    source_sha: d42d099b245ec38a9dcaa59f941f36e18c963ddc
+    source_sha: 56531d6b9eb06298b99bfdecf953ef795477fc71
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -144,7 +144,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/app_kit
     producer_path: /home/home/p/g/n/app_kit
     source_ref: main
-    source_sha: 63fab7b184eea7cb0adbb084146b702f695dcbae
+    source_sha: 375ba88f595b5961dbe04b7e1371607936fa490a
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -158,7 +158,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/stack_lab
     producer_path: /home/home/p/g/n/stack_lab
     source_ref: main
-    source_sha: 94ece373188d1e39de0d90670bcbd9a89fae0b3a
+    source_sha: 4f4cea23e3a5df2ce5f31979d2dea515886c7b80
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -171,7 +171,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/AITrace
     producer_path: /home/home/p/g/n/AITrace
     source_ref: main
-    source_sha: e4063f75847cc59e47a04e07585ae7d573adcde2
+    source_sha: a59035c9bd536d3e6ce6e3046cfeb224f820b49d
     build_command: mix deps.get && mix format --check-formatted && mix compile --warnings-as-errors && mix test && mix credo --strict && mix dialyzer --format short && mix docs
     status: bootstrap
     consumers:
