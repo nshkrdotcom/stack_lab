@@ -6,6 +6,7 @@ defmodule StackLab.Build.WeldContract do
   @proof_projects [
     "support/spec_cell",
     "support/gn_ten_control_plane",
+    "support/connector_hardening_scanner",
     "examples/single_node_roundtrip",
     "examples/outer_brain_restart_durability",
     "examples/multi_node_roundtrip",
