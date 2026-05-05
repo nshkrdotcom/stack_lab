@@ -227,7 +227,7 @@ defmodule StackLab.CitadelSpineHarness.ExecutionPlaneNodeBoundaryTest do
   end
 
   defp start_node! do
-    name = :"stack_lab_execution_plane_node_#{System.unique_integer([:positive])}"
+    name = StackLab.CitadelSpineHarness.ExecutionPlaneNodeBoundaryTest.Server
     start_supervised!({ExecutionPlane.Node.Server, name: name, node_id: Atom.to_string(name)})
   end
 
