@@ -9,12 +9,12 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 70f71bce3d45bd1cdc4334fef585a407ca64461e
+    source_sha: 0b1cbb54cff7399a4d11dab77028680a5248cfae
     build_command: mix ci
     status: deprecated
     successor: ground_plane_contracts
     consumers:
-    notes: Phase A narrow repo-ref artifact retained as deprecated history.
+    notes: Phase A narrow repo-ref artifact retained as deprecated history. Source SHA refreshed during Phase 15 after Phase 14 GroundPlane restart-fence updates.
 
   - name: stack_lab_gn_ten_manifest
     artifact_ref: artifact://nshkrdotcom/stack_lab/stack_lab_gn_ten_manifest
@@ -37,7 +37,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 70f71bce3d45bd1cdc4334fef585a407ca64461e
+    source_sha: 0b1cbb54cff7399a4d11dab77028680a5248cfae
     build_command: mix ci
     status: stable
     consumers:
@@ -48,7 +48,7 @@ artifacts:
       - mezzanine
       - app_kit
       - stack_lab
-    notes: Universal primitive and repo/artifact reference contracts. Promoted stable in Phase K after Phase F primitive promotion and seven listed consumers.
+    notes: Universal primitive and repo/artifact reference contracts. Promoted stable in Phase K after Phase F primitive promotion and refreshed during Phase 15 after Phase 14 restart-fence updates.
 
   - name: execution_plane
     artifact_ref: artifact://nshkrdotcom/execution_plane/execution_plane
