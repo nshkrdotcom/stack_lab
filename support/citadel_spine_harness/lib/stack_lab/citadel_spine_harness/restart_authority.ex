@@ -2,6 +2,8 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
   @moduledoc false
 
   alias Citadel.Kernel.SessionServer
+  alias GroundPlane.Contracts.Fence
+  alias GroundPlane.Contracts.Lease
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
   alias StackLab.CitadelSpineHarness.RemoteInvocationDownstream
   alias StackLab.CitadelSpineHarness.RemoteSpine
@@ -11,8 +13,26 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
 
   @logical_workspace_ref "workspace://stack_lab/root"
   @restart_recovery_timeout_ms 60_000
+  @restart_events [
+    :target_detach,
+    :sandbox_restart,
+    :process_crash,
+    :stream_reconnect,
+    :workflow_resume
+  ]
 
-  @spec run_case(:delayed_acceptance | :node_restart_recovery) :: {:ok, map()}
+  @spec run_case(
+          :delayed_acceptance
+          | :node_restart_recovery
+          | :revoked_credentials_after_restart
+          | :expired_lease_after_restart
+          | :rotated_handle_epoch_after_restart
+          | :stale_installation_revision_after_restart
+          | :stale_target_grant_after_restart
+          | :duplicate_old_lease_materialization
+          | :delayed_retry_revalidates_authority
+          | :restart_event_revalidation
+        ) :: {:ok, map()}
   def run_case(:delayed_acceptance) do
     with_remote_case(
       :delayed_acceptance,
@@ -156,6 +176,111 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
     )
   end
 
+  def run_case(:revoked_credentials_after_restart) do
+    rejected_retry(:revoked_credentials_after_restart, :lease_revoked_after_restart, fn attrs,
+                                                                                        now ->
+      attrs
+      |> Map.put(:revoked_at, now)
+      |> Map.put(:revocation_ref, "revocation://tenant-1/codex/restart")
+    end)
+  end
+
+  def run_case(:expired_lease_after_restart) do
+    rejected_retry(:expired_lease_after_restart, :lease_expired_after_restart, fn attrs, now ->
+      Map.put(attrs, :expires_at, DateTime.add(now, -1, :second))
+    end)
+  end
+
+  def run_case(:rotated_handle_epoch_after_restart) do
+    rejected_retry(
+      :rotated_handle_epoch_after_restart,
+      :rotation_epoch_mismatch,
+      fn attrs, _now -> attrs end,
+      %{rotation_epoch: 0}
+    )
+  end
+
+  def run_case(:stale_installation_revision_after_restart) do
+    rejected_retry(
+      :stale_installation_revision_after_restart,
+      :stale_installation_revision,
+      fn attrs, _now -> attrs end,
+      %{installation_revision_ref: "installation-revision://tenant-1/app/0"}
+    )
+  end
+
+  def run_case(:stale_target_grant_after_restart) do
+    rejected_retry(
+      :stale_target_grant_after_restart,
+      :stale_target_grant,
+      fn attrs, _now -> attrs end,
+      %{target_grant_revision: "target-grant-revision://tenant-1/sandbox/0"}
+    )
+  end
+
+  def run_case(:duplicate_old_lease_materialization) do
+    rejected_retry(
+      :duplicate_old_lease_materialization,
+      :duplicate_dispatch_old_lease_reuse,
+      fn attrs, _now -> attrs end,
+      %{materialized_credential_lease_ref: "credential-lease://tenant-1/codex/old"}
+    )
+  end
+
+  def run_case(:delayed_retry_revalidates_authority) do
+    now = DateTime.from_unix!(1_700_000_000)
+    {:ok, lease} = Lease.new(lease_attrs(now))
+    fence = Fence.from_lease(lease)
+
+    {:ok, result} =
+      Fence.authorize_retry_dispatch(
+        lease,
+        fence,
+        retry_context(%{restart_event: :workflow_resume}),
+        now
+      )
+
+    {:ok,
+     %{
+       case: :delayed_retry_revalidates_authority,
+       status: :authorized,
+       retry_dispatch_status: result.retry_dispatch_status,
+       active_execution_ref: result.active_execution_ref,
+       idempotency_key: result.idempotency_key,
+       credential_lease_ref: result.credential_lease_ref,
+       target_ref: result.target_ref,
+       restart_event: result.restart_event,
+       redacted?: result.redacted
+     }}
+  end
+
+  def run_case(:restart_event_revalidation) do
+    now = DateTime.from_unix!(1_700_000_000)
+    {:ok, lease} = Lease.new(lease_attrs(now))
+    fence = Fence.from_lease(lease)
+
+    events =
+      Map.new(@restart_events, fn event ->
+        {:ok, result} =
+          Fence.authorize_retry_dispatch(
+            lease,
+            fence,
+            retry_context(%{restart_event: event}),
+            now
+          )
+
+        {event, result.retry_dispatch_status}
+      end)
+
+    {:ok,
+     %{
+       case: :restart_event_revalidation,
+       status: :authorized,
+       events: events,
+       redacted?: true
+     }}
+  end
+
   defp with_remote_case(case_name, transport_config_fun, fun)
        when is_function(transport_config_fun, 2) and is_function(fun, 1) do
     listener = self()
@@ -221,5 +346,91 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
       timeout_ms ->
         raise "timed out waiting for restart-authority transport result"
     end
+  end
+
+  defp rejected_retry(case_name, expected_reason, lease_fun, context_overrides \\ %{}) do
+    now = DateTime.from_unix!(1_700_000_000)
+    attrs = lease_fun.(lease_attrs(now), now)
+    {:ok, lease} = Lease.new(attrs)
+    fence = Fence.from_lease(lease)
+
+    {:error, {reason, details}} =
+      Fence.authorize_retry_dispatch(
+        lease,
+        fence,
+        retry_context(context_overrides),
+        now
+      )
+
+    if reason != expected_reason do
+      raise "expected #{inspect(expected_reason)} for #{case_name}, got: #{inspect(reason)}"
+    end
+
+    {:ok,
+     %{
+       case: case_name,
+       status: :rejected,
+       reason: reason,
+       credential_lease_ref: Map.get(details, :credential_lease_ref),
+       target_ref: Map.get(details, :target_ref),
+       mismatch_field: Map.get(details, :mismatch_field),
+       redacted?: Map.get(details, :redacted, true)
+     }}
+  end
+
+  defp lease_attrs(now) do
+    %{
+      resource: "credential:codex:tenant-1:account-a",
+      holder: "materializer-a",
+      lease_id: "lease_active",
+      epoch: 4,
+      expires_at: DateTime.add(now, 30, :second),
+      tenant_id: "tenant-1",
+      subject_ref: "subject://tenant-1/codex/user-a",
+      provider_family: "codex",
+      provider_account_ref: "provider-account://tenant-1/codex/account-a",
+      connector_instance_ref: "connector-instance://tenant-1/codex/a",
+      credential_handle_ref: "credential-handle://tenant-1/codex/account-a",
+      credential_lease_ref: "credential-lease://tenant-1/codex/a/1",
+      operation_class: "cli",
+      target_ref: "target://tenant-1/sandbox/a",
+      attach_grant_ref: "attach-grant://tenant-1/sandbox/a",
+      operation_policy_ref: "operation-policy://tenant-1/codex/run",
+      installation_revision_ref: "installation-revision://tenant-1/app/1",
+      policy_revision_ref: "policy-revision://tenant-1/codex/1",
+      target_grant_revision: "target-grant-revision://tenant-1/sandbox/1",
+      rotation_epoch: 1,
+      fence_token: "fence://tenant-1/codex/a/1"
+    }
+  end
+
+  defp retry_context(overrides) do
+    Map.merge(
+      %{
+        tenant_id: "tenant-1",
+        provider_family: "codex",
+        provider_account_ref: "provider-account://tenant-1/codex/account-a",
+        connector_instance_ref: "connector-instance://tenant-1/codex/a",
+        credential_handle_ref: "credential-handle://tenant-1/codex/account-a",
+        operation_class: "cli",
+        target_ref: "target://tenant-1/sandbox/a",
+        attach_grant_ref: "attach-grant://tenant-1/sandbox/a",
+        operation_policy_ref: "operation-policy://tenant-1/codex/run",
+        installation_revision_ref: "installation-revision://tenant-1/app/1",
+        policy_revision_ref: "policy-revision://tenant-1/codex/1",
+        target_grant_revision: "target-grant-revision://tenant-1/sandbox/1",
+        rotation_epoch: 1,
+        fence_token: "fence://tenant-1/codex/a/1",
+        idempotency_key: "idem://tenant-1/codex/retry-1",
+        dispatch_ref: "dispatch://tenant-1/codex/retry-1",
+        active_execution_ref: "execution://tenant-1/codex/active-1",
+        current_execution_ref: "execution://tenant-1/codex/active-1",
+        retry_authority_ref: "retry-authority://tenant-1/codex/retry-1",
+        materialization_epoch: 1,
+        materialized_credential_lease_ref: "credential-lease://tenant-1/codex/a/1",
+        restart_event: :workflow_resume
+      },
+      overrides
+    )
   end
 end

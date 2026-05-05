@@ -1124,15 +1124,47 @@ defmodule StackLab.CitadelSpineHarness do
       repo_roots: repo_roots(),
       cases: %{
         delayed_acceptance: %{kind: :delayed_acceptance},
-        node_restart_recovery: %{kind: :node_restart_recovery}
+        node_restart_recovery: %{kind: :node_restart_recovery},
+        revoked_credentials_after_restart: %{kind: :revoked_credentials_after_restart},
+        expired_lease_after_restart: %{kind: :expired_lease_after_restart},
+        rotated_handle_epoch_after_restart: %{kind: :rotated_handle_epoch_after_restart},
+        stale_installation_revision_after_restart: %{
+          kind: :stale_installation_revision_after_restart
+        },
+        stale_target_grant_after_restart: %{kind: :stale_target_grant_after_restart},
+        duplicate_old_lease_materialization: %{kind: :duplicate_old_lease_materialization},
+        delayed_retry_revalidates_authority: %{kind: :delayed_retry_revalidates_authority},
+        restart_event_revalidation: %{kind: :restart_event_revalidation}
       }
     }
   end
 
-  @spec exercise_restart_authority(:delayed_acceptance | :node_restart_recovery) ::
+  @spec exercise_restart_authority(
+          :delayed_acceptance
+          | :node_restart_recovery
+          | :revoked_credentials_after_restart
+          | :expired_lease_after_restart
+          | :rotated_handle_epoch_after_restart
+          | :stale_installation_revision_after_restart
+          | :stale_target_grant_after_restart
+          | :duplicate_old_lease_materialization
+          | :delayed_retry_revalidates_authority
+          | :restart_event_revalidation
+        ) ::
           {:ok, map()} | {:error, term()}
   def exercise_restart_authority(case_name)
-      when case_name in [:delayed_acceptance, :node_restart_recovery] do
+      when case_name in [
+             :delayed_acceptance,
+             :node_restart_recovery,
+             :revoked_credentials_after_restart,
+             :expired_lease_after_restart,
+             :rotated_handle_epoch_after_restart,
+             :stale_installation_revision_after_restart,
+             :stale_target_grant_after_restart,
+             :duplicate_old_lease_materialization,
+             :delayed_retry_revalidates_authority,
+             :restart_event_revalidation
+           ] do
     RestartAuthority.run_case(case_name)
   end
 
