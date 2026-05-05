@@ -7,14 +7,24 @@ defmodule StackLab.ConnectorHardeningScanner do
   """
 
   defmodule Finding do
-    @moduledoc false
+    @moduledoc """
+    Ref-only connector hardening defect finding.
+    """
 
     @enforce_keys [:rule, :reason]
     defstruct rule: nil, reason: nil, details: %{}
+
+    @type t :: %__MODULE__{
+            rule: atom(),
+            reason: atom(),
+            details: map()
+          }
   end
 
   defmodule Receipt do
-    @moduledoc false
+    @moduledoc """
+    Ref-only connector hardening scan receipt.
+    """
 
     @enforce_keys [
       :receipt_ref,
@@ -30,6 +40,20 @@ defmodule StackLab.ConnectorHardeningScanner do
       :findings
     ]
     defstruct @enforce_keys
+
+    @type t :: %__MODULE__{
+            receipt_ref: String.t(),
+            fixture_ref: String.t(),
+            scanner_ref: String.t(),
+            owner_repo: String.t(),
+            package_path: String.t(),
+            target_code_paths: [String.t()],
+            status: atom(),
+            checked_rules: [atom()],
+            required_refs: [atom()],
+            proof_refs: map(),
+            findings: [Finding.t()]
+          }
   end
 
   @scanner_ref "stack-lab.connector-hardening-scanner.v1"
@@ -49,12 +73,20 @@ defmodule StackLab.ConnectorHardeningScanner do
     :binding_refs,
     :lease_refs,
     :admission_refs,
+    :installation_refs,
     :tenant_refs,
+    :trace_refs,
     :target_refs,
-    :redaction_refs
+    :redaction_refs,
+    :provider_payload_projection
   ]
 
-  @forbidden_signal_rules [:env_reads, :token_storage, :direct_http_clients]
+  @forbidden_signal_rules [
+    :env_reads,
+    :token_storage,
+    :direct_http_clients,
+    :provider_payload_projection
+  ]
 
   @proof_rules [
     :generated_runtime_schema,
@@ -68,21 +100,32 @@ defmodule StackLab.ConnectorHardeningScanner do
 
   @required_refs [
     :tenant_ref,
+    :installation_ref,
+    :trace_ref,
     :provider_account_ref,
     :connector_instance_ref,
+    :connector_binding_ref,
     :credential_handle_ref,
     :credential_lease_ref,
     :target_ref,
+    :connector_admission_ref,
     :request_scope_ref,
     :operation_policy_ref,
     :redaction_ref
   ]
 
   @ref_rule_fields %{
-    binding_refs: [:provider_account_ref, :connector_instance_ref, :credential_handle_ref],
+    binding_refs: [
+      :provider_account_ref,
+      :connector_instance_ref,
+      :connector_binding_ref,
+      :credential_handle_ref
+    ],
     lease_refs: [:credential_lease_ref],
-    admission_refs: [:request_scope_ref, :operation_policy_ref],
+    admission_refs: [:connector_admission_ref, :request_scope_ref, :operation_policy_ref],
+    installation_refs: [:installation_ref],
     tenant_refs: [:tenant_ref],
+    trace_refs: [:trace_ref],
     target_refs: [:target_ref],
     redaction_refs: [:redaction_ref]
   }

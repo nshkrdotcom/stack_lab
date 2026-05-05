@@ -5,8 +5,9 @@ Owner phase: Phase 8, `ADDL-PHASE-16`.
 This package emits ref-only connector hardening receipts for HTTP and GraphQL
 SDK governed paths. It checks env-read, token-storage, direct-client, generated
 runtime schema, auth parser, operation dispatch, retry, webhook, pagination,
-telemetry, binding, lease, admission, tenant, target, and redaction evidence
-without using pattern engines.
+telemetry, binding, lease, admission, installation, tenant, trace, target,
+redaction, and provider-payload projection evidence without using pattern
+engines.
 
 Receipts contain field names, proof refs, owner repos, package paths, and target
 code paths. They do not store raw token values, auth headers, provider payloads,
