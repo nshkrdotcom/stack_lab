@@ -52,4 +52,10 @@ defmodule StackLab.WorkspaceTest do
       refute Keyword.has_key?(aliases, alias_name)
     end
   end
+
+  test "runs package tests one at a time for distributed node harnesses" do
+    workspace = MixProject.project()[:blitz_workspace]
+
+    assert Blitz.MixWorkspace.max_concurrency(workspace, :test) == 1
+  end
 end

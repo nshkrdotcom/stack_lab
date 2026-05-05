@@ -117,7 +117,9 @@ defmodule StackLab.Workspace.MixProject do
           credo: 2,
           docs: 4
         ],
-        overrides: []
+        overrides: [
+          test: 1
+        ]
       ],
       tasks: [
         deps_get: [args: ["deps.get"], preflight?: false],
