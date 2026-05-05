@@ -23,7 +23,8 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/atom_cleanup_harness",
     "examples/env_remediation_harness",
     "examples/session_lineage_drill",
-    "examples/pressure_failover_drill"
+    "examples/pressure_failover_drill",
+    "examples/deployment_receipts_drill"
   ]
 
   @active_project_globs [".", "support/*", "examples/*"]

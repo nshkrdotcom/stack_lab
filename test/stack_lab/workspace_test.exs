@@ -27,6 +27,7 @@ defmodule StackLab.WorkspaceTest do
     assert "examples/atom_cleanup_harness" in package_paths
     assert "examples/session_lineage_drill" in package_paths
     assert "examples/pressure_failover_drill" in package_paths
+    assert "examples/deployment_receipts_drill" in package_paths
   end
 
   test "uses the released Weld 0.7.2 line directly" do
