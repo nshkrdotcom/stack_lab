@@ -6,6 +6,8 @@ defmodule StackLab.Build.WorkspaceContract do
     "support/spec_cell",
     "support/gn_ten_control_plane",
     "support/connector_hardening_scanner",
+    "support/tenant_isolation_scanner",
+    "support/no_bypass_scanner",
     "support/citadel_spine_harness",
     "support/memsim_harness",
     "examples/single_node_roundtrip",

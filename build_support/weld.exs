@@ -7,6 +7,8 @@ defmodule StackLab.Build.WeldContract do
     "support/spec_cell",
     "support/gn_ten_control_plane",
     "support/connector_hardening_scanner",
+    "support/tenant_isolation_scanner",
+    "support/no_bypass_scanner",
     "examples/single_node_roundtrip",
     "examples/outer_brain_restart_durability",
     "examples/multi_node_roundtrip",
