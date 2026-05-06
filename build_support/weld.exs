@@ -25,7 +25,8 @@ defmodule StackLab.Build.WeldContract do
     "examples/guardrail_roundtrip",
     "examples/replay_roundtrip",
     "examples/cost_roundtrip",
-    "examples/skill_roundtrip"
+    "examples/skill_roundtrip",
+    "examples/hive_roundtrip"
   ]
 
   @artifact_docs [

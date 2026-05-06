@@ -33,6 +33,7 @@ owner, and the product-facing northbound surfaces:
 - `examples/pressure_failover_drill`
 - `support/citadel_spine_harness` Extravaganza non-UI lane fixture
 - `examples/skill_roundtrip`
+- `examples/hive_roundtrip`
 
 Those examples exercise real `citadel` and real `jido_integration` code
 through the harness-only `support/citadel_spine_harness` package. The typed
@@ -196,6 +197,8 @@ just fault net-cut
 - [support/memsim_harness/README.md](./support/memsim_harness/README.md)
 - [examples/atom_cleanup_harness/README.md](./examples/atom_cleanup_harness/README.md)
 - [examples/env_remediation_harness/README.md](./examples/env_remediation_harness/README.md)
+- [examples/skill_roundtrip/README.md](./examples/skill_roundtrip/README.md)
+- [examples/hive_roundtrip/README.md](./examples/hive_roundtrip/README.md)
 
 ## License
 
