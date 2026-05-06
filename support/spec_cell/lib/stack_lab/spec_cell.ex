@@ -31,6 +31,18 @@ defmodule StackLab.SpecCell do
         }
 
   @allowed_closeout_states [:planned, :red, :green, :open_defect]
+  @allowed_fixture_prefixes [
+    "UAA-",
+    "MEM-",
+    "PROMPT-",
+    "GUARD-",
+    "EVAL-",
+    "COST-",
+    "CONN-",
+    "OPCON-",
+    "SKILL-",
+    "HIVE-"
+  ]
 
   @spec new(map() | keyword()) :: {:ok, t()} | {:error, [atom()]}
   def new(attrs) when is_map(attrs) or is_list(attrs) do
@@ -67,6 +79,7 @@ defmodule StackLab.SpecCell do
     |> require_non_empty_list(:target_code_paths, cell.target_code_paths)
     |> require_binary(:proof_command, cell.proof_command)
     |> require_binary(:acceptance_fixture, cell.acceptance_fixture)
+    |> require_fixture_prefix(cell.acceptance_fixture)
     |> require_list(:scanner_refs, cell.scanner_refs)
     |> require_closeout_state(cell.closeout_state)
     |> require_binary(:release_claim, cell.release_claim)
@@ -88,6 +101,16 @@ defmodule StackLab.SpecCell do
   end
 
   defp require_binary(errors, field, _value), do: [field | errors]
+
+  defp require_fixture_prefix(errors, fixture) when is_binary(fixture) do
+    if Enum.any?(@allowed_fixture_prefixes, &String.starts_with?(fixture, &1)) do
+      errors
+    else
+      [:acceptance_fixture | errors]
+    end
+  end
+
+  defp require_fixture_prefix(errors, _fixture), do: [:acceptance_fixture | errors]
 
   defp require_non_empty_list(errors, field, [_ | _] = values) do
     require_list(errors, field, values)

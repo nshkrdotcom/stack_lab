@@ -63,4 +63,21 @@ defmodule StackLab.SpecCellTest do
 
     refute SpecCell.complete?(cell)
   end
+
+  test "accepts EVAL fixture rows for replay and drift proof" do
+    assert {:ok, cell} =
+             SpecCell.new(
+               requirement_id: "EVAL-008",
+               owner_repo: "stack_lab",
+               source_docs: ["implementation_docset/53_phase_c_evaluation_replay_and_drift.md"],
+               target_code_paths: ["support/drift_detector", "examples/replay_roundtrip"],
+               proof_command: "mix test",
+               acceptance_fixture: "EVAL-008",
+               scanner_refs: ["drift_detector.audit"],
+               closeout_state: :green,
+               release_claim: "Replay drift projection is bounded and ref-only"
+             )
+
+    assert SpecCell.complete?(cell)
+  end
 end

@@ -9,6 +9,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "support/tenant_isolation_scanner",
     "support/no_bypass_scanner",
     "support/memory_fabric_scanner",
+    "support/drift_detector",
     "support/citadel_spine_harness",
     "support/memsim_harness",
     "examples/single_node_roundtrip",
@@ -26,7 +27,8 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/session_lineage_drill",
     "examples/pressure_failover_drill",
     "examples/deployment_receipts_drill",
-    "examples/guardrail_roundtrip"
+    "examples/guardrail_roundtrip",
+    "examples/replay_roundtrip"
   ]
 
   @active_project_globs [".", "support/*", "examples/*"]

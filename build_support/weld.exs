@@ -10,6 +10,7 @@ defmodule StackLab.Build.WeldContract do
     "support/tenant_isolation_scanner",
     "support/no_bypass_scanner",
     "support/memory_fabric_scanner",
+    "support/drift_detector",
     "examples/single_node_roundtrip",
     "examples/outer_brain_restart_durability",
     "examples/multi_node_roundtrip",
@@ -21,7 +22,8 @@ defmodule StackLab.Build.WeldContract do
     "examples/session_lineage_drill",
     "examples/pressure_failover_drill",
     "examples/deployment_receipts_drill",
-    "examples/guardrail_roundtrip"
+    "examples/guardrail_roundtrip",
+    "examples/replay_roundtrip"
   ]
 
   @artifact_docs [
