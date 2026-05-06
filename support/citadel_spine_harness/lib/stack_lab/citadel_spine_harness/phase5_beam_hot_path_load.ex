@@ -294,7 +294,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
   defp run_partitioned_signal_ingress_sustained do
     name = unique_name(:phase5_signal_ingress)
     {:ok, ingress_pid} = SignalIngress.start_link(signal_ingress_opts(name, sustained_policy()))
-    {:ok, blocking_consumer} = BlockingConsumer.start([])
+    {:ok, blocking_consumer} = BlockingConsumer.start(recorder: self())
     {:ok, counting_consumer} = CountingConsumer.start([])
 
     :ok = SignalIngress.register_subscription(name, "sess-blocked")
@@ -319,8 +319,14 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
           rejection_reasons: %{}
         })
 
-      release_blocking_consumer(blocking_consumer, name)
+      blocked_consumer_observed? = wait_for_blocked_consumer()
+
+      queue_high_water =
+        max(state.queue_high_water, max_queue_depth(SignalIngress.snapshot(name)))
+
+      :ok = wait_until(fn -> CountingConsumer.count(counting_consumer) > 0 end, 500)
       open_delivery_count = CountingConsumer.count(counting_consumer)
+      release_blocking_consumer(blocking_consumer, name)
       after_sample = runtime_sample()
       duration_ms = monotonic_ms() - started_at_ms
 
@@ -338,10 +344,11 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
          rejected_count: state.rejected_count,
          delivery_order_scope: state.delivery_order_scope || :partition_fifo,
          owner_mailbox_high_water: state.owner_mailbox_high_water,
-         queue_high_water: state.queue_high_water,
+         queue_high_water: queue_high_water,
          admission_latency_summary: summarize_latency(state.latency),
          blocked_partition_isolation?:
-           open_delivery_count > 0 and state.rejected_count > 0 and state.queue_high_water >= 1,
+           blocked_consumer_observed? and open_delivery_count > 0 and state.rejected_count > 0 and
+             queue_high_water >= 1,
          token_bucket_exhaustion: token_bucket_exhaustion,
          tenant_scope_cap: tenant_scope_cap,
          rejection_queue_depth_stable?: state.rejection_queue_depth_stable?,
@@ -625,6 +632,14 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     BlockingConsumer.release(pid, max(release_count, 4))
   rescue
     _error -> :ok
+  end
+
+  defp wait_for_blocked_consumer do
+    receive do
+      {:consumer_blocked, _signal_id} -> true
+    after
+      5_000 -> false
+    end
   end
 
   defp runtime_sample do

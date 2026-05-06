@@ -1,0 +1,5 @@
+defmodule StackLab.MemoryFabricScanner.Fixtures.OwnerMemoryReference do
+  alias OuterBrain.MemoryEngine.Store.Memory
+
+  def adapter, do: Memory
+end

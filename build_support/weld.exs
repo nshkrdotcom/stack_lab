@@ -9,6 +9,7 @@ defmodule StackLab.Build.WeldContract do
     "support/connector_hardening_scanner",
     "support/tenant_isolation_scanner",
     "support/no_bypass_scanner",
+    "support/memory_fabric_scanner",
     "examples/single_node_roundtrip",
     "examples/outer_brain_restart_durability",
     "examples/multi_node_roundtrip",

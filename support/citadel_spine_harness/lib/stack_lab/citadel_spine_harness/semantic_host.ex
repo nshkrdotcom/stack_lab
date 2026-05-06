@@ -12,8 +12,8 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
   alias Jido.Integration.V2.StoreLocal.Storage, as: StoreLocalStorage
   alias Jido.Integration.V2.StoreLocal.SubmissionLedger
   alias StackLab.CitadelSpineHarness.InProcessInvocationDownstream
-  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
+  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
   @logical_workspace_ref "workspace://workspace/workspace/main"

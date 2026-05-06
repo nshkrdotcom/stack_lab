@@ -27,8 +27,8 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   alias Mezzanine.Audit.ExecutionLineage
   alias Mezzanine.IntegrationBridge
   alias Mezzanine.Intent.ReadIntent
-  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
+  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
 
   @control_plane_keys [
     :run_store,

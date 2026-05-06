@@ -7,8 +7,8 @@ defmodule StackLab.CitadelSpineHarness.SameNode do
   alias Jido.Integration.V2.StoreLocal.Server, as: StoreLocalServer
   alias Jido.Integration.V2.StoreLocal.Storage, as: StoreLocalStorage
   alias Jido.Integration.V2.StoreLocal.SubmissionLedger
-  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
+  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
   @logical_workspace_ref "workspace://stack_lab/root"

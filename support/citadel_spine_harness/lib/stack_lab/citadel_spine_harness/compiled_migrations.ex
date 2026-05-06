@@ -1,11 +1,13 @@
 defmodule StackLab.CitadelSpineHarness.CompiledMigrations do
   @moduledoc false
 
+  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
+
   @cache_key {__MODULE__, :migration_modules}
 
   @spec for_path(String.t()) :: [{integer(), module()}]
   def for_path(migration_dir) when is_binary(migration_dir) do
-    StackLab.CitadelSpineHarness.RuntimeResourceOwner.transaction(fn ->
+    RuntimeResourceOwner.transaction(fn ->
       do_for_path(migration_dir)
     end)
   end
