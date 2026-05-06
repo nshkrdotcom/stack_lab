@@ -13,10 +13,13 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   alias Jido.Integration.V2.ExecutionGovernanceProjection.Compiler
   alias Jido.Integration.V2.LowerFacts
   alias Jido.Integration.V2.Run
+  alias Jido.Integration.V2.StoreLocal
+  alias Jido.Integration.V2.StoreLocal.Application, as: StoreLocalApplication
   alias Jido.Integration.V2.StoreLocal.ArtifactStore
   alias Jido.Integration.V2.StoreLocal.AttemptStore
   alias Jido.Integration.V2.StoreLocal.EventStore
   alias Jido.Integration.V2.StoreLocal.RunStore
+  alias Jido.Integration.V2.StoreLocal.Server, as: StoreLocalServer
   alias Jido.Integration.V2.StoreLocal.TestSupport, as: StoreLocalTestSupport
   alias Jido.Integration.V2.SubmissionAcceptance
   alias Jido.Integration.V2.SubmissionIdentity
@@ -260,8 +263,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
       storage_dir = StoreLocalTestSupport.tmp_dir!()
 
       try do
-        :ok = StoreLocalTestSupport.reconfigure!(storage_dir: storage_dir)
-        :ok = reset_store_local!()
+        :ok = configure_store_local!(storage_dir)
         :ok = reset_control_plane_if_started()
         fun.()
       after
@@ -272,12 +274,13 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
     end)
   end
 
-  defp reset_store_local! do
-    StoreLocalTestSupport.reset_all!()
-  catch
-    :exit, {:shutdown, _details} ->
-      :ok = StoreLocalTestSupport.restart_store!()
-      StoreLocalTestSupport.reset_all!()
+  defp configure_store_local!(storage_dir) do
+    stop_store_local()
+    File.rm_rf!(storage_dir)
+    File.mkdir_p!(storage_dir)
+    :ok = StoreLocal.configure_defaults!(storage_dir: storage_dir)
+    :ok = ensure_store_local_started!()
+    :ok = StoreLocal.reset!()
   end
 
   defp reset_control_plane_if_started do
@@ -289,11 +292,75 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   end
 
   defp stop_store_local do
-    case Application.stop(:jido_integration_v2_store_local) do
-      :ok -> :ok
-      {:error, {:not_started, :jido_integration_v2_store_local}} -> :ok
-      {:error, {:not_started, _other_app}} -> :ok
-      {:error, reason} -> raise "unable to stop store_local application: #{inspect(reason)}"
+    _ = Application.stop(:jido_integration_v2_store_local)
+    stop_named_process(StoreLocalServer)
+    stop_named_process(StoreLocalApplication)
+    :ok
+  end
+
+  defp ensure_store_local_started! do
+    case Application.ensure_all_started(:jido_integration_v2_store_local) do
+      {:ok, _apps} ->
+        wait_for_store_local_server!()
+
+      {:error, {:jido_integration_v2_store_local, {:already_started, pid}}} ->
+        stop_process(pid)
+        ensure_store_local_started!()
+
+      {:error, {:already_started, pid}} ->
+        stop_process(pid)
+        ensure_store_local_started!()
+
+      {:error, reason} ->
+        raise "unable to start store_local application: #{inspect(reason)}"
+    end
+  end
+
+  defp wait_for_store_local_server!(attempts \\ 40)
+  defp wait_for_store_local_server!(0), do: raise("store_local server did not start")
+
+  defp wait_for_store_local_server!(attempts) do
+    case Process.whereis(StoreLocalServer) do
+      nil ->
+        Process.sleep(50)
+        wait_for_store_local_server!(attempts - 1)
+
+      _pid ->
+        :ok
+    end
+  end
+
+  defp stop_named_process(name) do
+    case Process.whereis(name) do
+      nil -> :ok
+      pid -> stop_process(pid)
+    end
+  end
+
+  defp stop_process(pid) when is_pid(pid) do
+    monitor_ref = Process.monitor(pid)
+
+    if Process.alive?(pid) do
+      try do
+        GenServer.stop(pid, :normal, 5_000)
+      catch
+        :exit, _reason ->
+          Process.exit(pid, :shutdown)
+      end
+    end
+
+    receive do
+      {:DOWN, ^monitor_ref, :process, ^pid, _reason} ->
+        :ok
+    after
+      5_000 ->
+        Process.exit(pid, :kill)
+
+        receive do
+          {:DOWN, ^monitor_ref, :process, ^pid, _reason} -> :ok
+        after
+          1_000 -> :ok
+        end
     end
   end
 
