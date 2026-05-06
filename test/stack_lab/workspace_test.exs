@@ -16,6 +16,7 @@ defmodule StackLab.WorkspaceTest do
     assert "support/citadel_spine_harness" in package_paths
     assert "support/model_inference_scanner" in package_paths
     assert "support/optimization_fabric_scanner" in package_paths
+    assert "support/coordination_fabric_scanner" in package_paths
     assert "support/ai_run_lineage_scanner" in package_paths
     assert "examples/single_node_roundtrip" in package_paths
     assert "examples/lower_facts_roundtrip" in package_paths
@@ -32,6 +33,7 @@ defmodule StackLab.WorkspaceTest do
     assert "examples/pressure_failover_drill" in package_paths
     assert "examples/deployment_receipts_drill" in package_paths
     assert "examples/gepa_platform_roundtrip" in package_paths
+    assert "examples/trinity_platform_roundtrip" in package_paths
     assert "examples/skill_roundtrip" in package_paths
     assert "examples/hive_roundtrip" in package_paths
   end

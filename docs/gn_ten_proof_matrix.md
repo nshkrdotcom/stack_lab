@@ -96,6 +96,10 @@ not claim authoritative audit truth or production deployment proof.
   mock model profiles, model inference scanner receipts, optimization fabric
   scanner receipts, AI run lineage receipts, promotion refs, rollback refs, and
   trace refs.
+- `trinity_platform_roundtrip`: runs the deterministic governed TRINITY proof
+  with mock route selection, role injection, provider pool readiness, verifier
+  refs, handoff scope refs, AppKit coordination projections, coordination
+  fabric scanner receipts, trace refs, and replay refs.
 
 ## Partial Proof Backlog
 

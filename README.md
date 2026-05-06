@@ -36,8 +36,10 @@ owner, and the product-facing northbound surfaces:
 - `examples/hive_roundtrip`
 - `support/model_inference_scanner`
 - `support/optimization_fabric_scanner`
+- `support/coordination_fabric_scanner`
 - `support/ai_run_lineage_scanner`
 - `examples/gepa_platform_roundtrip`
+- `examples/trinity_platform_roundtrip`
 
 Those examples exercise real `citadel` and real `jido_integration` code
 through the harness-only `support/citadel_spine_harness` package. The typed
@@ -75,6 +77,9 @@ cluster invalidation observations, and local-only toxiproxy hooks.
 Phase 8 adds governed GEPA proof support: model inference boundary scanning,
 optimization fabric scanning, adaptive AI run lineage scanning, and a
 deterministic `gepa_platform_roundtrip` example over mock model profiles.
+Phase 11 adds governed TRINITY proof support: coordination fabric scanning and
+a deterministic `trinity_platform_roundtrip` example over mock tenant, router,
+role, provider, verifier, trace, and replay refs.
 Phase 5 Scenario 209 proves Milestone-7 version-skew and contract-chaos
 handling: Citadel invocation requests accept V2 only, malformed/downgraded/
 future schema versions and stale schema hashes fail closed, Mezzanine workflow
@@ -208,8 +213,10 @@ just fault net-cut
 - [examples/hive_roundtrip/README.md](./examples/hive_roundtrip/README.md)
 - [support/model_inference_scanner/README.md](./support/model_inference_scanner/README.md)
 - [support/optimization_fabric_scanner/README.md](./support/optimization_fabric_scanner/README.md)
+- [support/coordination_fabric_scanner/README.md](./support/coordination_fabric_scanner/README.md)
 - [support/ai_run_lineage_scanner/README.md](./support/ai_run_lineage_scanner/README.md)
 - [examples/gepa_platform_roundtrip/README.md](./examples/gepa_platform_roundtrip/README.md)
+- [examples/trinity_platform_roundtrip/README.md](./examples/trinity_platform_roundtrip/README.md)
 
 ## License
 

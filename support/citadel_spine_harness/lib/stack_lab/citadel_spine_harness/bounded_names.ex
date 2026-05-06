@@ -174,6 +174,7 @@ defmodule StackLab.CitadelSpineHarness.BoundedNames do
   def local_node_name do
     pool_index =
       System.unique_integer([:positive, :monotonic])
+      |> Kernel.+(os_pid_offset())
       |> rem(length(@local_node_pool))
 
     Enum.fetch!(@local_node_pool, pool_index)
@@ -186,4 +187,13 @@ defmodule StackLab.CitadelSpineHarness.BoundedNames do
   def unavailable_node, do: @unavailable_node
 
   defp peer_prefix, do: :stack_lab_peer
+
+  defp os_pid_offset do
+    System.pid()
+    |> Integer.parse()
+    |> case do
+      {pid, ""} -> pid
+      _other -> System.unique_integer([:positive])
+    end
+  end
 end

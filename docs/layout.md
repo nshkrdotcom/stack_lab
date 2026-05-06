@@ -20,6 +20,8 @@ The workspace is organized as:
   - governed model profile and endpoint profile checks
 - `support/optimization_fabric_scanner/`
   - GEPA candidate, eval, promotion, budget, trace, and rollback checks
+- `support/coordination_fabric_scanner/`
+  - TRINITY router, role, provider, verifier, handoff, trace, and replay checks
 - `support/ai_run_lineage_scanner/`
   - adaptive AI run lineage and required-ref checks
 - `examples/`
@@ -32,6 +34,7 @@ The workspace is organized as:
   - `atom_cleanup_harness`
   - `pressure_failover_drill`
   - `gepa_platform_roundtrip`
+  - `trinity_platform_roundtrip`
 - `packaging/`
   - weld verification support
 
