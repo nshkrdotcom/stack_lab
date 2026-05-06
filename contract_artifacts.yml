@@ -9,12 +9,12 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 97283d1cf56e85e43a2882bd087121cf828708f5
+    source_sha: 651df253d42e8cd2ff1792630bf6a436ec1b2b99
     build_command: mix ci
     status: deprecated
     successor: ground_plane_contracts
     consumers:
-    notes: Phase A narrow repo-ref artifact retained as deprecated history. Source SHA refreshed during Phase 15 after Phase 14 GroundPlane restart-fence updates.
+    notes: Phase A narrow repo-ref artifact retained as deprecated history. Source SHA refreshed during AI Platform Phase B after Phase A GroundPlane persistence-policy extension commit.
 
   - name: stack_lab_gn_ten_manifest
     artifact_ref: artifact://nshkrdotcom/stack_lab/stack_lab_gn_ten_manifest
@@ -37,7 +37,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 97283d1cf56e85e43a2882bd087121cf828708f5
+    source_sha: 651df253d42e8cd2ff1792630bf6a436ec1b2b99
     build_command: mix ci
     status: stable
     consumers:
@@ -48,7 +48,7 @@ artifacts:
       - mezzanine
       - app_kit
       - stack_lab
-    notes: Universal primitive and repo/artifact reference contracts. Promoted stable in Phase K after Phase F primitive promotion and refreshed during Phase 15 after Phase 14 restart-fence updates.
+    notes: Universal primitive and repo/artifact reference contracts. Promoted stable in Phase K after Phase F primitive promotion and refreshed during AI Platform Phase B after Phase A GroundPlane persistence-policy extension commit.
 
   - name: execution_plane
     artifact_ref: artifact://nshkrdotcom/execution_plane/execution_plane
