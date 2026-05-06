@@ -32,6 +32,7 @@ owner, and the product-facing northbound surfaces:
 - `examples/restart_authority_drill`
 - `examples/pressure_failover_drill`
 - `support/citadel_spine_harness` Extravaganza non-UI lane fixture
+- `examples/skill_roundtrip`
 
 Those examples exercise real `citadel` and real `jido_integration` code
 through the harness-only `support/citadel_spine_harness` package. The typed
