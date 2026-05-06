@@ -1,5 +1,5 @@
 defmodule StackLab.CitadelSpineHarness.ObservabilityTraceJoinContinuityTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias AppKit.Core.Telemetry, as: AppKitTelemetry
   alias Citadel.ObservabilityContract.Telemetry, as: CitadelTelemetry

@@ -1,5 +1,5 @@
 defmodule StackLab.CitadelSpineHarness.Stage12LoadReadinessTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias StackLab.CitadelSpineHarness
 

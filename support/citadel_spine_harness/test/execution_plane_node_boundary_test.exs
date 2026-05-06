@@ -1,5 +1,5 @@
 defmodule StackLab.CitadelSpineHarness.ExecutionPlaneNodeBoundaryTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Citadel.AuthorityContract.ExecutionPlaneAuthorityVerifier
   alias ExecutionPlane.Admission.Rejection

@@ -1,5 +1,5 @@
 defmodule StackLab.CitadelSpineHarness.Phase3M6ReleaseReadinessTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Mezzanine.AppKitBridge.OperatorActionService
   alias Mezzanine.Execution.LifecycleContinuation

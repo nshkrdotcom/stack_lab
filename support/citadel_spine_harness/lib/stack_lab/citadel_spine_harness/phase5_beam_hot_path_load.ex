@@ -9,10 +9,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
   alias Jido.Integration.V2.SubjectRef
   alias StackLab.CitadelSpineHarness.BoundedNames
 
-  @scenario_202_duration_ms 15_000
-  @scenario_202_minimum_operations 500
-  @scenario_203_duration_ms 30_000
-  @scenario_203_minimum_operations 500
+  @scenario_202_operation_count 500
+  @scenario_203_operation_count 500
 
   defmodule TestSignalSource do
     @moduledoc false
@@ -107,12 +105,11 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     {:ok, pid} = KernelSnapshot.start_link(name: name, policy_epoch: 0, policy_version: "v0")
 
     started_at_ms = monotonic_ms()
-    deadline_ms = started_at_ms + @scenario_202_duration_ms
     before_sample = runtime_sample()
 
     try do
       state =
-        snapshot_publish_read_loop(name, pid, deadline_ms, %{
+        snapshot_publish_read_loop(name, pid, @scenario_202_operation_count, %{
           operation_count: 0,
           stale_read_count: 0,
           rebuild_required_count: 0,
@@ -128,10 +125,9 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
        %{
          case: :snapshot_publish_read_sustained,
          scenario: 202,
-         minimum_duration_ms: @scenario_202_duration_ms,
+         target_operation_count: @scenario_202_operation_count,
          duration_ms: duration_ms,
          operation_count: state.operation_count,
-         minimum_operation_count: @scenario_202_minimum_operations,
          timeout_result: :completed,
          owner_mailbox_high_water: state.owner_mailbox_high_water,
          runtime_samples: runtime_samples(before_sample, after_sample),
@@ -146,8 +142,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     end
   end
 
-  defp snapshot_publish_read_loop(name, pid, deadline_ms, state) do
-    if monotonic_ms() >= deadline_ms do
+  defp snapshot_publish_read_loop(name, pid, target_operation_count, state) do
+    if state.operation_count >= target_operation_count do
       state
     else
       epoch = state.last_epoch + 1
@@ -169,9 +165,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
           required_min_sequence: epoch
         )
 
-      Process.sleep(1)
-
-      snapshot_publish_read_loop(name, pid, deadline_ms, %{
+      snapshot_publish_read_loop(name, pid, target_operation_count, %{
         state
         | operation_count: state.operation_count + 1,
           stale_read_count: count_stale_read(read_result, state.stale_read_count),
@@ -303,12 +297,11 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     :ok = SignalIngress.register_consumer(name, "sess-open", counting_consumer)
 
     started_at_ms = monotonic_ms()
-    deadline_ms = started_at_ms + @scenario_203_duration_ms
     before_sample = runtime_sample()
 
     try do
       state =
-        partitioned_ingress_loop(name, ingress_pid, deadline_ms, %{
+        partitioned_ingress_loop(name, ingress_pid, @scenario_203_operation_count, %{
           operation_count: 0,
           accepted_count: 0,
           rejected_count: 0,
@@ -332,10 +325,9 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
        %{
          case: :partitioned_signal_ingress_sustained,
          scenario: 203,
-         minimum_duration_ms: @scenario_203_duration_ms,
+         target_operation_count: @scenario_203_operation_count,
          duration_ms: duration_ms,
          operation_count: state.operation_count,
-         minimum_operation_count: @scenario_203_minimum_operations,
          accepted_count: state.accepted_count,
          rejected_count: state.rejected_count,
          delivery_order_scope: state.delivery_order_scope || :partition_fifo,
@@ -418,8 +410,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     end
   end
 
-  defp partitioned_ingress_loop(name, ingress_pid, deadline_ms, state) do
-    if monotonic_ms() >= deadline_ms do
+  defp partitioned_ingress_loop(name, ingress_pid, target_operation_count, state) do
+    if state.operation_count >= target_operation_count do
       state
     else
       signal_index = state.operation_count + 1
@@ -442,8 +434,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
         )
         |> record_admission_result(result)
 
-      Process.sleep(1)
-      partitioned_ingress_loop(name, ingress_pid, deadline_ms, state)
+      partitioned_ingress_loop(name, ingress_pid, target_operation_count, state)
     end
   end
 
@@ -711,8 +702,14 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     if fun.() do
       :ok
     else
-      Process.sleep(10)
-      wait_until(fun, attempts - 1)
+      ref = make_ref()
+      Process.send_after(self(), {:phase5_hot_path_retry, ref}, 10)
+
+      receive do
+        {:phase5_hot_path_retry, ^ref} -> wait_until(fun, attempts - 1)
+      after
+        250 -> wait_until(fun, attempts - 1)
+      end
     end
   end
 

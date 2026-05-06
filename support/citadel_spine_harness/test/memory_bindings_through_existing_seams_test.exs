@@ -1,5 +1,5 @@
 defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeamsTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias StackLab.CitadelSpineHarness
 

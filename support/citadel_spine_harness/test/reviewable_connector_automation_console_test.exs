@@ -1,5 +1,5 @@
 defmodule StackLab.CitadelSpineHarness.ReviewableConnectorAutomationConsoleTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias StackLab.CitadelSpineHarness
 

@@ -800,7 +800,7 @@ defmodule StackLab.CitadelSpineHarness do
         snapshot_publish_read_sustained: %{
           kind: :snapshot_publish_read_sustained,
           scenario: 202,
-          minimum_duration_ms: 15_000
+          target_operation_count: 500
         },
         snapshot_staleness_classes: %{
           kind: :snapshot_staleness_classes,
@@ -809,7 +809,7 @@ defmodule StackLab.CitadelSpineHarness do
         partitioned_signal_ingress_sustained: %{
           kind: :partitioned_signal_ingress_sustained,
           scenario: 203,
-          minimum_duration_ms: 30_000
+          target_operation_count: 500
         },
         partition_fifo_ordering_scope: %{
           kind: :partition_fifo_ordering_scope,

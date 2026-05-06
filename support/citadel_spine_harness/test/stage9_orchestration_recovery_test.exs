@@ -1,5 +1,5 @@
 defmodule StackLab.CitadelSpineHarness.Stage9OrchestrationRecoveryTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias StackLab.CitadelSpineHarness
 

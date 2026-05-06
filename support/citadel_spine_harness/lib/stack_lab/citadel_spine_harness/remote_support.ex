@@ -9,6 +9,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
 
   @type remote_spine :: %{
           required(:peer_pid) => pid(),
+          required(:peer_monitor_ref) => reference(),
           required(:remote_node) => node(),
           required(:storage_dir) => String.t()
         }
@@ -17,37 +18,55 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
   def start_remote_spine!(case_name) when is_atom(case_name) do
     ensure_distribution_started!()
     _ = Application.ensure_all_started(:telemetry)
-    {:ok, peer_pid, remote_node} = start_peer()
+    {:ok, peer_pid, remote_node} = start_peer(case_name)
+    peer_monitor_ref = Process.monitor(peer_pid)
     storage_dir = remote_store_local_dir(case_name)
 
-    :ok = wait_for_remote_node!(remote_node)
-    :ok = sync_remote_code_paths!(remote_node)
-    :ok = wait_for_remote_spine!(remote_node)
-
-    :ok =
-      remote_call!(
-        remote_node,
-        RemoteSpine,
-        :configure_store_local!,
-        [storage_dir],
-        @startup_timeout_ms
-      )
-
-    %{
+    remote = %{
       peer_pid: peer_pid,
+      peer_monitor_ref: peer_monitor_ref,
       remote_node: remote_node,
       storage_dir: storage_dir
     }
+
+    try do
+      :ok = wait_for_remote_node!(remote_node)
+      :ok = sync_remote_code_paths!(remote_node)
+      :ok = wait_for_remote_spine!(remote_node)
+
+      :ok =
+        remote_call!(
+          remote_node,
+          RemoteSpine,
+          :configure_store_local!,
+          [storage_dir],
+          @startup_timeout_ms
+        )
+
+      remote
+    rescue
+      error ->
+        _ = stop_remote_spine(remote)
+        reraise error, __STACKTRACE__
+    catch
+      kind, reason ->
+        _ = stop_remote_spine(remote)
+        :erlang.raise(kind, reason, __STACKTRACE__)
+    end
   end
 
   @spec stop_remote_spine(remote_spine()) :: :ok
-  def stop_remote_spine(%{peer_pid: peer_pid, remote_node: remote_node, storage_dir: storage_dir}) do
+  def stop_remote_spine(
+        %{peer_pid: peer_pid, remote_node: remote_node, storage_dir: storage_dir} = remote
+      ) do
     _ = remote_call(remote_node, RemoteSpine, :cleanup_store_local, [storage_dir])
+    demonitor_peer(remote)
 
     if Process.alive?(peer_pid) do
-      :ok = :peer.stop(peer_pid)
+      _ = :peer.stop(peer_pid)
     end
 
+    File.rm_rf(storage_dir)
     :ok
   end
 
@@ -56,7 +75,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
     if Node.alive?() do
       :ok
     else
-      start_distribution(BoundedNames.local_node_slots())
+      start_distribution([])
     end
   end
 
@@ -72,6 +91,10 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
   end
 
   @spec distribution_start_error_message(term()) :: String.t()
+  def distribution_start_error_message({:distribution_start_failed, attempts}) do
+    "unable to start local distributed node after #{length(attempts)} generated name attempts: #{inspect(attempts)}"
+  end
+
   def distribution_start_error_message(reason) do
     "unable to start local distributed node: #{inspect(reason)}"
   end
@@ -130,55 +153,99 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
     )
   end
 
-  defp start_peer do
-    case :peer.start_link(%{name: :peer.random_name(:stack_lab_spine)}) do
+  defp start_peer(case_name) do
+    case :peer.start_link(%{name: BoundedNames.peer_node_name(case_name)}) do
       {:ok, _peer_pid, _remote_node} = peer -> peer
       {:error, reason} -> {:error, reason}
     end
   end
 
-  defp start_distribution([]), do: {:error, :no_local_node_slot_available}
+  defp start_distribution(failures) when length(failures) >= 3 do
+    {:error, {:distribution_start_failed, Enum.reverse(failures)}}
+  end
 
-  defp start_distribution([name | rest]) do
+  defp start_distribution(failures) do
+    name = BoundedNames.local_node_name()
+
     case Node.start(name, name_domain: :shortnames) do
       {:ok, _pid} -> :ok
       {:error, {:already_started, _pid}} -> :ok
-      {:error, _reason} when rest != [] -> start_distribution(rest)
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> start_distribution([{name, reason} | failures])
     end
   end
 
-  defp wait_for_remote_node!(remote_node, attempts \\ 40)
+  defp wait_for_remote_node!(remote_node) do
+    Node.monitor(remote_node, true)
 
-  defp wait_for_remote_node!(_remote_node, 0) do
-    raise "remote node did not become reachable in time"
-  end
-
-  defp wait_for_remote_node!(remote_node, attempts) do
-    case remote_call(remote_node, :erlang, :node, []) do
-      {:ok, ^remote_node} ->
-        :ok
-
-      _other ->
-        Process.sleep(25)
-        wait_for_remote_node!(remote_node, attempts - 1)
+    try do
+      :ok =
+        retry_until!("remote node #{inspect(remote_node)} did not become reachable in time", fn ->
+          case remote_call(remote_node, :erlang, :node, []) do
+            {:ok, ^remote_node} -> :ok
+            other -> {:retry, other}
+          end
+        end)
+    after
+      Node.monitor(remote_node, false)
+      flush_node_monitor(remote_node)
     end
   end
 
-  defp wait_for_remote_spine!(remote_node, attempts \\ 80)
-
-  defp wait_for_remote_spine!(_remote_node, 0) do
-    raise "remote spine service did not become callable in time"
+  defp wait_for_remote_spine!(remote_node) do
+    retry_until!("remote spine service did not become callable in time", fn ->
+      case remote_call(remote_node, RemoteSpine, :ping, []) do
+        {:ok, :ok} -> :ok
+        other -> {:retry, other}
+      end
+    end)
   end
 
-  defp wait_for_remote_spine!(remote_node, attempts) do
-    case remote_call(remote_node, RemoteSpine, :ping, []) do
-      {:ok, :ok} ->
+  defp retry_until!(message, fun) do
+    deadline = System.monotonic_time(:millisecond) + @startup_timeout_ms
+    retry_until!(message, fun, deadline, nil)
+  end
+
+  defp retry_until!(message, fun, deadline, last_result) do
+    case fun.() do
+      :ok ->
         :ok
 
-      _other ->
-        Process.sleep(25)
-        wait_for_remote_spine!(remote_node, attempts - 1)
+      {:retry, result} ->
+        remaining_ms = deadline - System.monotonic_time(:millisecond)
+
+        if remaining_ms <= 0 do
+          raise "#{message}; last result: #{inspect(result || last_result)}"
+        else
+          ref = make_ref()
+          Process.send_after(self(), {:remote_support_retry, ref}, min(25, remaining_ms))
+
+          receive do
+            {:nodeup, _node} ->
+              retry_until!(message, fun, deadline, result)
+
+            {:remote_support_retry, ^ref} ->
+              retry_until!(message, fun, deadline, result)
+          after
+            remaining_ms ->
+              raise "#{message}; last result: #{inspect(result)}"
+          end
+        end
+    end
+  end
+
+  defp demonitor_peer(%{peer_monitor_ref: peer_monitor_ref})
+       when is_reference(peer_monitor_ref) do
+    Process.demonitor(peer_monitor_ref, [:flush])
+  end
+
+  defp demonitor_peer(_remote), do: :ok
+
+  defp flush_node_monitor(remote_node) do
+    receive do
+      {:nodeup, ^remote_node} -> flush_node_monitor(remote_node)
+      {:nodedown, ^remote_node} -> flush_node_monitor(remote_node)
+    after
+      0 -> :ok
     end
   end
 

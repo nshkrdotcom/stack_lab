@@ -53,9 +53,11 @@ defmodule StackLab.WorkspaceTest do
     end
   end
 
-  test "runs package tests one at a time for distributed node harnesses" do
+  test "runs package tests with workspace parallelism" do
     workspace = MixProject.project()[:blitz_workspace]
 
-    assert Blitz.MixWorkspace.max_concurrency(workspace, :test) == 1
+    assert get_in(workspace, [:parallelism, :base, :test]) == 3
+    assert get_in(workspace, [:parallelism, :overrides]) == []
+    assert Blitz.MixWorkspace.max_concurrency(workspace, :test) > 1
   end
 end

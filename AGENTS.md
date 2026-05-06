@@ -119,3 +119,7 @@ output, or unredacted traces for a reviewed receipt.
 If a proof requires new product/platform behavior, implement that behavior in
 the owner repo first, then return to StackLab for assembled proof.
 <!-- gn-ten:repo-agent:end -->
+
+## Blitz 0.3.0 operational note
+
+Root workspace Blitz uses published Hex `~> 0.3.0` by default; `.blitz/` is committed compact impact state after green QC. Source and `mix.exs` changes cascade through reverse workspace dependencies; docs-only changes should stay owner-local.

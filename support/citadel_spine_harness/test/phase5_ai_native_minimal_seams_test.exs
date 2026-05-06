@@ -1,5 +1,5 @@
 defmodule StackLab.CitadelSpineHarness.Phase5AiNativeMinimalSeamsTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias StackLab.CitadelSpineHarness
 

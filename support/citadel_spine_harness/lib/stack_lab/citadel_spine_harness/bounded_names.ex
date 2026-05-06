@@ -28,35 +28,6 @@ defmodule StackLab.CitadelSpineHarness.BoundedNames do
     :phase5_session_directory_capped
   ]
 
-  @local_node_slots [
-    :stack_lab_local_a,
-    :stack_lab_local_b,
-    :stack_lab_local_c,
-    :stack_lab_local_d,
-    :stack_lab_local_e,
-    :stack_lab_local_f,
-    :stack_lab_local_g,
-    :stack_lab_local_h,
-    :stack_lab_local_i,
-    :stack_lab_local_j,
-    :stack_lab_local_k,
-    :stack_lab_local_l,
-    :stack_lab_local_m,
-    :stack_lab_local_n,
-    :stack_lab_local_o,
-    :stack_lab_local_p,
-    :stack_lab_local_q,
-    :stack_lab_local_r,
-    :stack_lab_local_s,
-    :stack_lab_local_t,
-    :stack_lab_local_u,
-    :stack_lab_local_v,
-    :stack_lab_local_w,
-    :stack_lab_local_x,
-    :stack_lab_local_y,
-    :stack_lab_local_z
-  ]
-
   @unavailable_node :stack_lab_missing_unavailable@localhost
 
   @spec global_name(atom()) :: {:global, {atom(), atom(), integer()}}
@@ -68,14 +39,38 @@ defmodule StackLab.CitadelSpineHarness.BoundedNames do
     raise ArgumentError, "unknown StackLab harness name prefix: #{inspect(prefix)}"
   end
 
-  @spec local_node_slots() :: [atom()]
-  def local_node_slots, do: rotated(@local_node_slots)
+  @spec local_node_name() :: atom()
+  def local_node_name, do: node_name(:local)
+
+  @spec peer_node_name(atom()) :: atom()
+  def peer_node_name(case_name) when is_atom(case_name), do: node_name({:peer, case_name})
 
   @spec unavailable_node() :: node()
   def unavailable_node, do: @unavailable_node
 
-  defp rotated(slots) do
-    offset = rem(System.unique_integer([:positive, :monotonic]), length(slots))
-    Enum.drop(slots, offset) ++ Enum.take(slots, offset)
+  defp node_name(scope) do
+    [
+      "stack_lab",
+      "stack_lab",
+      scope_slug(scope),
+      "ospid",
+      System.pid(),
+      "testpid",
+      self() |> :erlang.pid_to_list() |> to_string(),
+      "id",
+      System.unique_integer([:positive, :monotonic])
+    ]
+    |> Enum.join("_")
+    |> slug()
+    |> String.to_atom()
+  end
+
+  defp scope_slug(:local), do: "local"
+  defp scope_slug({:peer, case_name}), do: "peer_#{case_name}"
+
+  defp slug(value) do
+    value
+    |> to_string()
+    |> String.replace(~r/[^A-Za-z0-9_]/, "_")
   end
 end

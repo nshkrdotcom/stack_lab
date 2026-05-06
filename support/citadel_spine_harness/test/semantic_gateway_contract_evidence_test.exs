@@ -1,5 +1,5 @@
 defmodule StackLab.CitadelSpineHarness.SemanticGatewayContractEvidenceTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias StackLab.CitadelSpineHarness
 

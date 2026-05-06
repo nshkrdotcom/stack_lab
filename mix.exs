@@ -45,7 +45,7 @@ defmodule StackLab.Workspace.MixProject do
 
   defp deps do
     [
-      {:blitz, "~> 0.2.0", runtime: false},
+      {:blitz, "~> 0.3.0", runtime: false},
       {:weld, "~> 0.7.2", runtime: false},
       {:jason, "~> 1.4", runtime: false},
       {:ground_plane_contracts, path: "../ground_plane/core/ground_plane_contracts"},
@@ -57,12 +57,12 @@ defmodule StackLab.Workspace.MixProject do
 
   defp aliases do
     monorepo_aliases = [
-      "monorepo.deps.get": ["blitz.workspace deps_get"],
-      "monorepo.format": ["blitz.workspace format"],
-      "monorepo.compile": ["blitz.workspace compile"],
-      "monorepo.test": ["blitz.workspace test"],
-      "monorepo.credo": ["blitz.workspace credo"],
-      "monorepo.docs": ["blitz.workspace docs"]
+      "monorepo.deps.get": ["blitz.workspace.impact deps_get --"],
+      "monorepo.format": ["blitz.workspace.impact format --"],
+      "monorepo.compile": ["blitz.workspace.impact compile --"],
+      "monorepo.test": ["blitz.workspace.impact test --"],
+      "monorepo.credo": ["blitz.workspace.impact credo --"],
+      "monorepo.docs": ["blitz.workspace.impact docs --"]
     ]
 
     [
@@ -117,9 +117,7 @@ defmodule StackLab.Workspace.MixProject do
           credo: 2,
           docs: 4
         ],
-        overrides: [
-          test: 1
-        ]
+        overrides: []
       ],
       tasks: [
         deps_get: [args: ["deps.get"], preflight?: false],

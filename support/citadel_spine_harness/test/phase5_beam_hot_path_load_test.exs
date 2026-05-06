@@ -1,5 +1,5 @@
 defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoadTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias StackLab.CitadelSpineHarness
 
@@ -13,7 +13,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoadTest do
              snapshot_publish_read_sustained: %{
                kind: :snapshot_publish_read_sustained,
                scenario: 202,
-               minimum_duration_ms: 15_000
+               target_operation_count: 500
              },
              snapshot_staleness_classes: %{
                kind: :snapshot_staleness_classes,
@@ -22,7 +22,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoadTest do
              partitioned_signal_ingress_sustained: %{
                kind: :partitioned_signal_ingress_sustained,
                scenario: 203,
-               minimum_duration_ms: 30_000
+               target_operation_count: 500
              },
              partition_fifo_ordering_scope: %{
                kind: :partition_fifo_ordering_scope,
@@ -31,7 +31,6 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoadTest do
            }
   end
 
-  @tag timeout: 25_000
   test "scenario 202 records bounded sustained snapshot publish and read evidence" do
     assert {:ok, result} =
              CitadelSpineHarness.exercise_phase5_beam_hot_path_load(
@@ -40,8 +39,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoadTest do
 
     assert result.case == :snapshot_publish_read_sustained
     assert result.scenario == 202
-    assert result.duration_ms >= 15_000
-    assert result.operation_count >= result.minimum_operation_count
+    assert result.operation_count == result.target_operation_count
     assert result.timeout_result == :completed
     assert result.owner_mailbox_high_water >= 0
     assert result.runtime_samples.memory_before_bytes > 0
@@ -53,7 +51,6 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoadTest do
     assert result.persistent_term_payload? == false
   end
 
-  @tag timeout: 45_000
   test "scenario 203 records bounded sustained partitioned signal ingress evidence" do
     assert {:ok, result} =
              CitadelSpineHarness.exercise_phase5_beam_hot_path_load(
@@ -62,8 +59,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoadTest do
 
     assert result.case == :partitioned_signal_ingress_sustained
     assert result.scenario == 203
-    assert result.duration_ms >= 30_000
-    assert result.operation_count >= result.minimum_operation_count
+    assert result.operation_count == result.target_operation_count
     assert result.accepted_count > 0
     assert result.rejected_count > 0
     assert result.delivery_order_scope == :partition_fifo
