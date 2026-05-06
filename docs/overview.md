@@ -13,5 +13,7 @@ It exists to make these seams executable:
 - session-lineage and failover drills
 - governed-memory substrate simulations
 - shared-library plus governed-adapter integration receipts
+- governed GEPA model, optimization fabric, and AI run lineage receipts
+- deterministic GEPA platform roundtrip proof
 
 This repo is a harness workspace, not a shipping product surface.

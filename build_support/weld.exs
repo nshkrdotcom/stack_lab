@@ -10,6 +10,9 @@ defmodule StackLab.Build.WeldContract do
     "support/tenant_isolation_scanner",
     "support/no_bypass_scanner",
     "support/memory_fabric_scanner",
+    "support/model_inference_scanner",
+    "support/optimization_fabric_scanner",
+    "support/ai_run_lineage_scanner",
     "support/drift_detector",
     "examples/single_node_roundtrip",
     "examples/outer_brain_restart_durability",
@@ -25,6 +28,7 @@ defmodule StackLab.Build.WeldContract do
     "examples/guardrail_roundtrip",
     "examples/replay_roundtrip",
     "examples/cost_roundtrip",
+    "examples/gepa_platform_roundtrip",
     "examples/skill_roundtrip",
     "examples/hive_roundtrip"
   ]

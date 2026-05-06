@@ -92,6 +92,10 @@ not claim authoritative audit truth or production deployment proof.
   budget exhaustion fallback before uncontrolled model/provider spend.
 - `prompt_injection_defense`: runs the connector hardening scenario that rejects
   untrusted content attempting to expand tool permissions or alter policy.
+- `gepa_platform_roundtrip`: runs the deterministic governed GEPA proof with
+  mock model profiles, model inference scanner receipts, optimization fabric
+  scanner receipts, AI run lineage receipts, promotion refs, rollback refs, and
+  trace refs.
 
 ## Partial Proof Backlog
 

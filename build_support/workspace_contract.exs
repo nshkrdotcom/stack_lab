@@ -9,6 +9,9 @@ defmodule StackLab.Build.WorkspaceContract do
     "support/tenant_isolation_scanner",
     "support/no_bypass_scanner",
     "support/memory_fabric_scanner",
+    "support/model_inference_scanner",
+    "support/optimization_fabric_scanner",
+    "support/ai_run_lineage_scanner",
     "support/drift_detector",
     "support/citadel_spine_harness",
     "support/memsim_harness",
@@ -30,6 +33,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/guardrail_roundtrip",
     "examples/replay_roundtrip",
     "examples/cost_roundtrip",
+    "examples/gepa_platform_roundtrip",
     "examples/skill_roundtrip",
     "examples/hive_roundtrip"
   ]

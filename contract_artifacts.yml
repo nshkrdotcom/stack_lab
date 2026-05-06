@@ -9,7 +9,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 651df253d42e8cd2ff1792630bf6a436ec1b2b99
+    source_sha: 49d013522fb6ead2ff122f2469fcf3668bd63fbe
     build_command: mix ci
     status: deprecated
     successor: ground_plane_contracts
@@ -37,7 +37,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 651df253d42e8cd2ff1792630bf6a436ec1b2b99
+    source_sha: 49d013522fb6ead2ff122f2469fcf3668bd63fbe
     build_command: mix ci
     status: stable
     consumers:

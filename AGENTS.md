@@ -1,6 +1,7 @@
 # Monorepo Project Map
 
 - `./examples/governed_run_roundtrip/mix.exs`: Governed-run proving example for StackLab
+- `./examples/gepa_platform_roundtrip/mix.exs`: Deterministic governed GEPA platform roundtrip proof
 - `./examples/lower_facts_roundtrip/mix.exs`: Substrate-facing lower-facts proving example for StackLab
 - `./examples/mezzanine_restart_recovery/mix.exs`: Stage-2 restart-recovery proof for the neutral Mezzanine substrate
 - `./examples/multi_node_roundtrip/mix.exs`: Multi-node proving example for StackLab
@@ -13,8 +14,11 @@
 - `./examples/typed_host_roundtrip/mix.exs`: Typed host proving example for AppKit and Citadel.DomainSurface
 - `./mix.exs`: Tooling root for the StackLab non-umbrella monorepo
 - `./support/citadel_spine_harness/mix.exs`: Harness-only assembly package for Citadel and Jido Integration proofs
+- `./support/ai_run_lineage_scanner/mix.exs`: Adaptive AI run lineage scanner receipts
 - `./support/lab_core/mix.exs`: Shared harness helpers for the StackLab workspace
 - `./support/memsim_harness/mix.exs`: Governed-memory substrate simulation helpers for StackLab
+- `./support/model_inference_scanner/mix.exs`: Governed model inference boundary scanner receipts
+- `./support/optimization_fabric_scanner/mix.exs`: Governed GEPA optimization fabric scanner receipts
 
 # AGENTS.md
 

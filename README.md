@@ -34,6 +34,10 @@ owner, and the product-facing northbound surfaces:
 - `support/citadel_spine_harness` Extravaganza non-UI lane fixture
 - `examples/skill_roundtrip`
 - `examples/hive_roundtrip`
+- `support/model_inference_scanner`
+- `support/optimization_fabric_scanner`
+- `support/ai_run_lineage_scanner`
+- `examples/gepa_platform_roundtrip`
 
 Those examples exercise real `citadel` and real `jido_integration` code
 through the harness-only `support/citadel_spine_harness` package. The typed
@@ -68,6 +72,9 @@ Phase 7 adds `support/memsim_harness` for governed-memory substrate drills,
 starting with Scenario 700 for multi-node epoch monotonicity, source-node
 attribution, commit-order evidence, AITrace per-node receipt collection,
 cluster invalidation observations, and local-only toxiproxy hooks.
+Phase 8 adds governed GEPA proof support: model inference boundary scanning,
+optimization fabric scanning, adaptive AI run lineage scanning, and a
+deterministic `gepa_platform_roundtrip` example over mock model profiles.
 Phase 5 Scenario 209 proves Milestone-7 version-skew and contract-chaos
 handling: Citadel invocation requests accept V2 only, malformed/downgraded/
 future schema versions and stale schema hashes fail closed, Mezzanine workflow
@@ -199,6 +206,10 @@ just fault net-cut
 - [examples/env_remediation_harness/README.md](./examples/env_remediation_harness/README.md)
 - [examples/skill_roundtrip/README.md](./examples/skill_roundtrip/README.md)
 - [examples/hive_roundtrip/README.md](./examples/hive_roundtrip/README.md)
+- [support/model_inference_scanner/README.md](./support/model_inference_scanner/README.md)
+- [support/optimization_fabric_scanner/README.md](./support/optimization_fabric_scanner/README.md)
+- [support/ai_run_lineage_scanner/README.md](./support/ai_run_lineage_scanner/README.md)
+- [examples/gepa_platform_roundtrip/README.md](./examples/gepa_platform_roundtrip/README.md)
 
 ## License
 
