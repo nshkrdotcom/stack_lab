@@ -56,6 +56,12 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
       end
     end
 
+    @impl true
+    def handle_info(:release_consumer, state), do: {:noreply, state}
+
+    @impl true
+    def handle_info({:release_consumer, _signal_id}, state), do: {:noreply, state}
+
     defp send_recorder(nil, _message), do: :ok
     defp send_recorder(pid, message) when is_pid(pid), do: send(pid, message)
   end

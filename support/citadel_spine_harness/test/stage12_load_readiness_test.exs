@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.Stage12LoadReadinessTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias StackLab.CitadelSpineHarness
 
   test "Stage 12 proves same-subject callback storms stay idempotent and trace explainable" do

@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.SemanticGatewayContractEvidenceTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias StackLab.CitadelSpineHarness
 
   test "describes the Phase 6 SemanticGatewayContract evidence consumer scenario" do

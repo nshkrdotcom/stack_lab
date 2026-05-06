@@ -38,6 +38,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
   alias OuterBrain.Prompting.ContextPack
   alias StackLab.CitadelSpineHarness.MezzanineOperationalStack
   alias StackLab.CitadelSpineHarness.ProfileSlots
+  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
 
   @shared_trace_id "trace-stage14-memory-runtime"
   @memory_trace_id "trace-stage14-memory-maintenance"
@@ -843,19 +844,21 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
   end
 
   defp with_store_local_case(fun) when is_function(fun, 0) do
-    previous_env = snapshot_store_local_env()
-    storage_dir = StoreLocalTestSupport.tmp_dir!()
+    RuntimeResourceOwner.transaction(fn ->
+      previous_env = snapshot_store_local_env()
+      storage_dir = StoreLocalTestSupport.tmp_dir!()
 
-    try do
-      :ok = StoreLocalTestSupport.reconfigure!(storage_dir: storage_dir)
-      :ok = StoreLocalTestSupport.reset_all!()
-      reset_control_plane_if_started()
-      fun.()
-    after
-      stop_store_local()
-      restore_store_local_env(previous_env)
-      StoreLocalTestSupport.cleanup!(storage_dir)
-    end
+      try do
+        :ok = StoreLocalTestSupport.reconfigure!(storage_dir: storage_dir)
+        :ok = StoreLocalTestSupport.reset_all!()
+        reset_control_plane_if_started()
+        fun.()
+      after
+        stop_store_local()
+        restore_store_local_env(previous_env)
+        StoreLocalTestSupport.cleanup!(storage_dir)
+      end
+    end)
   end
 
   defp reset_control_plane_if_started do

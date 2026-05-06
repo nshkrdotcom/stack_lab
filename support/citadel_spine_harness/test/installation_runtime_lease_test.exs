@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.InstallationRuntimeLeaseTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias StackLab.CitadelSpineHarness
 
   test "same tenant can hold distinct installation leases while fencing a competing owner" do

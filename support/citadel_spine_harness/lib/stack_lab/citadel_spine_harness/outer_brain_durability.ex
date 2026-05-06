@@ -14,6 +14,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
   alias OuterBrain.RestartAuthority.RestartScan
   alias OuterBrain.Runtime.{LeaseRegistry, SessionOwner}
   alias StackLab.CitadelSpineHarness.PostgresContainer
+  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
 
   @case_names [
     :pending_recovery_after_restart,
@@ -201,23 +202,33 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
   defp replay_after_restart!(_case_name, _causal_unit_id), do: %{}
 
   defp with_store(case_name, fun) when is_function(fun, 1) do
-    container = PostgresContainer.start!("outer_brain_restart_durability_#{case_name}")
-    repo_config = PostgresContainer.repo_config(container.port)
-    _repo_pid = start_repo!(repo_config)
+    RuntimeResourceOwner.transaction(fn ->
+      container = PostgresContainer.start!("outer_brain_restart_durability_#{case_name}")
+      repo_config = PostgresContainer.repo_config(container.port)
+      _repo_pid = start_repo!(repo_config)
 
-    try do
-      ensure_schema!()
-      fun.(repo_config)
-    after
-      stop_repo(Process.whereis(Repo))
-      PostgresContainer.stop!(container)
-    end
+      try do
+        ensure_schema!()
+        fun.(repo_config)
+      after
+        stop_repo(Process.whereis(Repo))
+        PostgresContainer.stop!(container)
+      end
+    end)
   end
 
   defp start_repo!(repo_config) do
-    {:ok, repo_pid} = Repo.start_link(repo_config)
-    Process.unlink(repo_pid)
-    repo_pid
+    case Repo.start_link(repo_config) do
+      {:ok, repo_pid} ->
+        Process.unlink(repo_pid)
+        repo_pid
+
+      {:error, {:already_started, repo_pid}} ->
+        stop_repo(repo_pid)
+        {:ok, restarted_pid} = Repo.start_link(repo_config)
+        Process.unlink(restarted_pid)
+        restarted_pid
+    end
   end
 
   defp restart_repo!(repo_config) do

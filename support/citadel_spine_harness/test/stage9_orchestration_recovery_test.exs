@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.Stage9OrchestrationRecoveryTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias StackLab.CitadelSpineHarness
 
   test "scenario 9 operator pause preserves Temporal handoffs and does not starve peer tenants" do

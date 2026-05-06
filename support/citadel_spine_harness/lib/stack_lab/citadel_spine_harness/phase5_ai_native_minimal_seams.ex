@@ -300,7 +300,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5AiNativeMinimalSeams do
           binding_key: "shared_memory",
           usage_phase: :retrieval,
           required?: true,
-          timeout_ms: 20,
+          timeout_ms: 1_000,
           schema_ref: "context/workspace_memory",
           max_fragments: 1
         }

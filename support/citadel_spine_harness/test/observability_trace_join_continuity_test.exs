@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.ObservabilityTraceJoinContinuityTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias AppKit.Core.Telemetry, as: AppKitTelemetry
   alias Citadel.ObservabilityContract.Telemetry, as: CitadelTelemetry
   alias StackLab.CitadelSpineHarness

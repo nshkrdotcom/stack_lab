@@ -24,6 +24,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   alias Mezzanine.Audit.ExecutionLineage
   alias Mezzanine.IntegrationBridge
   alias Mezzanine.Intent.ReadIntent
+  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
 
   @control_plane_keys [
@@ -254,19 +255,21 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   end
 
   defp with_store_local_case(fun) when is_function(fun, 0) do
-    previous_env = snapshot_env()
-    storage_dir = StoreLocalTestSupport.tmp_dir!()
+    RuntimeResourceOwner.transaction(fn ->
+      previous_env = snapshot_env()
+      storage_dir = StoreLocalTestSupport.tmp_dir!()
 
-    try do
-      :ok = StoreLocalTestSupport.reconfigure!(storage_dir: storage_dir)
-      :ok = reset_store_local!()
-      :ok = reset_control_plane_if_started()
-      fun.()
-    after
-      stop_store_local()
-      restore_env(previous_env)
-      StoreLocalTestSupport.cleanup!(storage_dir)
-    end
+      try do
+        :ok = StoreLocalTestSupport.reconfigure!(storage_dir: storage_dir)
+        :ok = reset_store_local!()
+        :ok = reset_control_plane_if_started()
+        fun.()
+      after
+        stop_store_local()
+        restore_env(previous_env)
+        StoreLocalTestSupport.cleanup!(storage_dir)
+      end
+    end)
   end
 
   defp reset_store_local! do

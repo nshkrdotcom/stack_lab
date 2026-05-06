@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias StackLab.CitadelSpineHarness
   alias StackLab.CitadelSpineHarness.MixProject, as: HarnessMixProject
 

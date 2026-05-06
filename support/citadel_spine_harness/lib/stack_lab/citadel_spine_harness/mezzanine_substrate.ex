@@ -11,6 +11,7 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
   alias Mezzanine.RuntimeScheduler.Repo, as: RuntimeSchedulerRepo
   alias StackLab.CitadelSpineHarness.CompiledMigrations
   alias StackLab.CitadelSpineHarness.PostgresContainer
+  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
 
   @repo_modules [
     AuditRepo,
@@ -33,6 +34,12 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
 
   @spec with_store(atom() | String.t(), (keyword() -> any())) :: any()
   def with_store(label, fun) when is_function(fun, 1) do
+    RuntimeResourceOwner.transaction(fn ->
+      do_with_store(label, fun)
+    end)
+  end
+
+  defp do_with_store(label, fun) do
     container = PostgresContainer.start!("mezzanine_substrate_#{label}")
     repo_config = PostgresContainer.repo_config(container.port)
 
@@ -89,9 +96,17 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
     stop_repo(repo_module)
     put_repo_config!(repo_module, repo_config)
 
-    {:ok, repo_pid} = repo_module.start_link(repo_config)
-    Process.unlink(repo_pid)
-    repo_pid
+    case repo_module.start_link(repo_config) do
+      {:ok, repo_pid} ->
+        Process.unlink(repo_pid)
+        repo_pid
+
+      {:error, {:already_started, repo_pid}} ->
+        stop_pid!(repo_pid, repo_module)
+        {:ok, restarted_pid} = repo_module.start_link(repo_config)
+        Process.unlink(restarted_pid)
+        restarted_pid
+    end
   end
 
   defp stop_repo(repo_module) do
@@ -99,12 +114,8 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
       nil ->
         :ok
 
-      _pid ->
-        try do
-          GenServer.stop(repo_module)
-        catch
-          :exit, _reason -> :ok
-        end
+      pid ->
+        stop_pid!(pid, repo_module)
     end
   end
 
@@ -125,12 +136,8 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
       nil ->
         :ok
 
-      _pid ->
-        try do
-          GenServer.stop(PackRegistry)
-        catch
-          :exit, _reason -> :ok
-        end
+      pid ->
+        stop_pid!(pid, PackRegistry)
     end
   end
 
@@ -156,13 +163,7 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
         :ok
 
       pid ->
-        try do
-          GenServer.stop(pid)
-        catch
-          :exit, _reason -> :ok
-        end
-
-        wait_for_oban_shutdown()
+        stop_pid!(pid, Oban)
     end
   end
 
@@ -174,7 +175,6 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
 
       {:error, {:already_started, pid}} ->
         stop_stale_oban!(pid)
-        wait_for_oban_shutdown()
 
         {:ok, restarted_pid} = Oban.start_link(oban_config)
         Process.unlink(restarted_pid)
@@ -183,24 +183,35 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
   end
 
   defp stop_stale_oban!(pid) do
-    Process.exit(pid, :shutdown)
-    :ok
+    stop_pid!(pid, Oban)
   end
 
   defp oban_pid do
     Oban.Registry.whereis(Mezzanine.Execution.Oban)
   end
 
-  defp wait_for_oban_shutdown do
-    Enum.reduce_while(1..50, :ok, fn _, _acc ->
-      case oban_pid() do
-        nil ->
-          {:halt, :ok}
+  defp stop_pid!(pid, name) when is_pid(pid) do
+    monitor_ref = Process.monitor(pid)
 
-        _pid ->
-          Process.sleep(10)
-          {:cont, :ok}
+    try do
+      if Process.alive?(pid) do
+        GenServer.stop(pid, :normal, 5_000)
       end
-    end)
+    catch
+      :exit, _reason -> :ok
+    after
+      receive do
+        {:DOWN, ^monitor_ref, :process, ^pid, _reason} ->
+          :ok
+      after
+        0 ->
+          Process.demonitor(monitor_ref, [:flush])
+      end
+    end
+
+    case Process.whereis(name) do
+      ^pid -> raise "unable to stop #{inspect(name)}"
+      _other -> :ok
+    end
   end
 end

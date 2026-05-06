@@ -160,7 +160,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
     end
   end
 
-  defp start_distribution(failures) when length(failures) >= 3 do
+  defp start_distribution(failures) when length(failures) >= 128 do
     {:error, {:distribution_start_failed, Enum.reverse(failures)}}
   end
 

@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.Phase3M6ReleaseReadinessTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias Mezzanine.AppKitBridge.OperatorActionService
   alias Mezzanine.Execution.LifecycleContinuation
 

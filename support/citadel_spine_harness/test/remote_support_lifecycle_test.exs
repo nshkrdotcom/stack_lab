@@ -11,7 +11,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupportLifecycleTest do
 
     assert Enum.uniq(names) == names
     refute Enum.any?(strings, &Regex.match?(~r/^stack_lab_local_[a-z]$/, &1))
-    assert Enum.all?(strings, &String.starts_with?(&1, "stack_lab_stack_lab_"))
+    assert Enum.all?(strings, &String.starts_with?(&1, "stack_lab_local_"))
   end
 
   @tag timeout: 30_000

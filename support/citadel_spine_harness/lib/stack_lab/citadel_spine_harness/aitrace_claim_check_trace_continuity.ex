@@ -28,7 +28,11 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
     TestSupport
   }
 
-  alias StackLab.CitadelSpineHarness.{AppKitOperationalSurface, PostgresContainer}
+  alias StackLab.CitadelSpineHarness.{
+    AppKitOperationalSurface,
+    PostgresContainer,
+    RuntimeResourceOwner
+  }
 
   @control_plane_keys [
     :run_store,
@@ -527,24 +531,26 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
   end
 
   defp with_claim_check_store(label, trace_id, fun) when is_function(fun, 0) do
-    container = PostgresContainer.start!("scenario25_#{label}")
-    previous_env = snapshot_env()
-    claim_check_root = claim_check_root(label, trace_id)
+    RuntimeResourceOwner.transaction(fn ->
+      container = PostgresContainer.start!("scenario25_#{label}")
+      previous_env = snapshot_env()
+      claim_check_root = claim_check_root(label, trace_id)
 
-    try do
-      ensure_jido_apps_started!()
-      configure_claim_check_env!(container.port, claim_check_root)
-      start_store_postgres!()
-      migrate_store_postgres!()
-      TestSupport.reset_database!()
-      ControlPlane.reset!()
-      fun.()
-    after
-      stop_store_postgres()
-      restore_env(previous_env)
-      File.rm_rf!(claim_check_root)
-      PostgresContainer.stop!(container)
-    end
+      try do
+        ensure_jido_apps_started!()
+        configure_claim_check_env!(container.port, claim_check_root)
+        start_store_postgres!()
+        migrate_store_postgres!()
+        TestSupport.reset_database!()
+        ControlPlane.reset!()
+        fun.()
+      after
+        stop_store_postgres()
+        restore_env(previous_env)
+        File.rm_rf!(claim_check_root)
+        PostgresContainer.stop!(container)
+      end
+    end)
   end
 
   defp ensure_jido_apps_started! do

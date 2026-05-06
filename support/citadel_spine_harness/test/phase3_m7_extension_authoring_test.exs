@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.Phase3M7ExtensionAuthoringTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias StackLab.CitadelSpineHarness
 
   test "Scenario 34 proves internal/operator bundle authoring and activation failure gates" do

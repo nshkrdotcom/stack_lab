@@ -12,6 +12,7 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
   alias Jido.Integration.V2.StoreLocal.Storage, as: StoreLocalStorage
   alias Jido.Integration.V2.StoreLocal.SubmissionLedger
   alias StackLab.CitadelSpineHarness.InProcessInvocationDownstream
+  alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
@@ -191,30 +192,32 @@ defmodule StackLab.CitadelSpineHarness.SemanticHost do
   end
 
   defp with_case_runtime(case_name, fun) when is_function(fun, 1) do
-    listener = self()
-    RoundtripRuntime.flush_transport_messages()
-    storage_dir = store_local_dir(case_name)
-    ensure_store_local_ready!(storage_dir)
+    RuntimeResourceOwner.transaction(fn ->
+      listener = self()
+      RoundtripRuntime.flush_transport_messages()
+      storage_dir = store_local_dir(case_name)
+      ensure_store_local_ready!(storage_dir)
 
-    :ok =
-      TransportRuntime.put!(transport_config(case_name, listener))
+      :ok =
+        TransportRuntime.put!(transport_config(case_name, listener))
 
-    Code.ensure_loaded!(InProcessInvocationDownstream)
-    bridge = InvocationBridge.new!(downstream: InProcessInvocationDownstream)
+      Code.ensure_loaded!(InProcessInvocationDownstream)
+      bridge = InvocationBridge.new!(downstream: InProcessInvocationDownstream)
 
-    env =
-      RoundtripRuntime.start_runtime_env({:semantic_host, case_name},
-        invocation_handler: RoundtripRuntime.host_ingress_invocation_handler(bridge, listener)
-      )
+      env =
+        RoundtripRuntime.start_runtime_env({:semantic_host, case_name},
+          invocation_handler: RoundtripRuntime.host_ingress_invocation_handler(bridge, listener)
+        )
 
-    try do
-      fun.(env)
-    after
-      :ok = RoundtripRuntime.shutdown_runtime_env(env)
-      :ok = TransportRuntime.reset!()
-      stop_store_local()
-      File.rm_rf!(storage_dir)
-    end
+      try do
+        fun.(env)
+      after
+        :ok = RoundtripRuntime.shutdown_runtime_env(env)
+        :ok = TransportRuntime.reset!()
+        stop_store_local()
+        File.rm_rf!(storage_dir)
+      end
+    end)
   end
 
   defp ensure_store_local_ready!(storage_dir) do

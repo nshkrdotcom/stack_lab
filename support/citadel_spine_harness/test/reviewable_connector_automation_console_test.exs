@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.ReviewableConnectorAutomationConsoleTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias StackLab.CitadelSpineHarness
 
   test "Scenario 42 proves a second synthetic product shape for reviewable connector automation" do

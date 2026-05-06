@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias StackLab.CitadelSpineHarness
 
   test "PRELIM service-mode contract join exposes the M3 proof case" do

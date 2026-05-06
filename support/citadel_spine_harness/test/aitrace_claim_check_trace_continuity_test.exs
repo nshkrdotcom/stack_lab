@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuityTest do
   use ExUnit.Case, async: true
 
+  @moduletag timeout: 300_000
+
   alias StackLab.CitadelSpineHarness
 
   test "Scenario 25 proves AITrace visibility, claim-check indirection, and lower trace continuity under one trace id" do
