@@ -109,7 +109,9 @@ not claim authoritative audit truth or production deployment proof.
   TRINITY trace refs, eval and replay dataset refs, GEPA target refs, candidate
   refs, shadow/canary/approval gates, promotion refs, rollback refs, stale
   artifact rejection refs, AppKit adaptive-control projections, scanner
-  receipts, and no live provider dependency.
+  receipts, Phase 14 live-provider gate refs, Pristine OpenAPI admission refs,
+  Prismatic GraphQL operation binding refs, durable persistence preflight refs,
+  redacted debug sidecar refs, and no live provider dependency.
 
 ## Partial Proof Backlog
 
