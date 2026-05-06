@@ -10,6 +10,7 @@ defmodule StackLab.MemoryFabricScanner do
     @moduledoc "Memory fabric scanner finding."
     @enforce_keys [:rule, :reason, :path]
     defstruct [:details | @enforce_keys]
+    @type t :: %__MODULE__{}
   end
 
   defmodule Receipt do
@@ -24,6 +25,7 @@ defmodule StackLab.MemoryFabricScanner do
       :findings
     ]
     defstruct @enforce_keys
+    @type t :: %__MODULE__{}
   end
 
   @fixture_ref "MEM-012"
