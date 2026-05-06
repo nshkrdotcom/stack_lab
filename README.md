@@ -38,9 +38,11 @@ owner, and the product-facing northbound surfaces:
 - `support/optimization_fabric_scanner`
 - `support/coordination_fabric_scanner`
 - `support/cost_budget_scanner`
+- `support/adaptive_control_scanner`
 - `support/ai_run_lineage_scanner`
 - `examples/gepa_platform_roundtrip`
 - `examples/trinity_platform_roundtrip`
+- `examples/adaptive_control_roundtrip`
 
 Those examples exercise real `citadel` and real `jido_integration` code
 through the harness-only `support/citadel_spine_harness` package. The typed
@@ -86,6 +88,13 @@ Phase 12 adds prior-fabric cost and budget proof support:
 minute, endpoint startup, eval batch, replay, optimization search, provider
 pool, role, promotion, retry, budget exhaustion, AppKit projection, AITrace
 span, and StackLab receipt refs without raw payload projection.
+Phase 13 adds closed-loop adaptive-control proof support:
+`support/adaptive_control_scanner` verifies TRINITY trace refs, eval and replay
+dataset refs, GEPA target refs, candidate refs, gate evidence, promotion refs,
+rollback refs, stale artifact rejection refs, AppKit projection refs, and
+receipt refs. `examples/adaptive_control_roundtrip` proves the deterministic
+TRINITY trace to GEPA candidate to gated promotion to rollback loop without
+live provider dependencies.
 Phase 5 Scenario 209 proves Milestone-7 version-skew and contract-chaos
 handling: Citadel invocation requests accept V2 only, malformed/downgraded/
 future schema versions and stale schema hashes fail closed, Mezzanine workflow

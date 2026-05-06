@@ -105,6 +105,11 @@ not claim authoritative audit truth or production deployment proof.
   search, provider pool turn, role budget, promotion, failed retry, budget
   exhaustion, AppKit projection, AITrace span, and redacted StackLab receipt
   refs.
+- `adaptive_control_roundtrip`: runs the deterministic closed-loop proof with
+  TRINITY trace refs, eval and replay dataset refs, GEPA target refs, candidate
+  refs, shadow/canary/approval gates, promotion refs, rollback refs, stale
+  artifact rejection refs, AppKit adaptive-control projections, scanner
+  receipts, and no live provider dependency.
 
 ## Partial Proof Backlog
 

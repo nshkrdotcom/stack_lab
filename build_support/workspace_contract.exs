@@ -13,6 +13,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "support/optimization_fabric_scanner",
     "support/coordination_fabric_scanner",
     "support/cost_budget_scanner",
+    "support/adaptive_control_scanner",
     "support/ai_run_lineage_scanner",
     "support/drift_detector",
     "support/citadel_spine_harness",
@@ -37,6 +38,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/cost_roundtrip",
     "examples/gepa_platform_roundtrip",
     "examples/trinity_platform_roundtrip",
+    "examples/adaptive_control_roundtrip",
     "examples/skill_roundtrip",
     "examples/hive_roundtrip"
   ]

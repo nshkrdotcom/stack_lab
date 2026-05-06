@@ -14,6 +14,7 @@ defmodule StackLab.Build.WeldContract do
     "support/optimization_fabric_scanner",
     "support/coordination_fabric_scanner",
     "support/cost_budget_scanner",
+    "support/adaptive_control_scanner",
     "support/ai_run_lineage_scanner",
     "support/drift_detector",
     "examples/single_node_roundtrip",
@@ -32,6 +33,7 @@ defmodule StackLab.Build.WeldContract do
     "examples/cost_roundtrip",
     "examples/gepa_platform_roundtrip",
     "examples/trinity_platform_roundtrip",
+    "examples/adaptive_control_roundtrip",
     "examples/skill_roundtrip",
     "examples/hive_roundtrip"
   ]

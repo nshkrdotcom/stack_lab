@@ -25,6 +25,9 @@ The workspace is organized as:
 - `support/cost_budget_scanner/`
   - adaptive token, model, GPU, eval, replay, optimization, provider pool,
     role, promotion, retry, exhaustion, projection, span, and receipt checks
+- `support/adaptive_control_scanner/`
+  - TRINITY trace, dataset, GEPA target, gate, promotion, rollback, stale
+    rejection, AppKit projection, and receipt checks
 - `support/ai_run_lineage_scanner/`
   - adaptive AI run lineage and required-ref checks
 - `examples/`
@@ -38,6 +41,7 @@ The workspace is organized as:
   - `pressure_failover_drill`
   - `gepa_platform_roundtrip`
   - `trinity_platform_roundtrip`
+  - `adaptive_control_roundtrip`
 - `packaging/`
   - weld verification support
 
