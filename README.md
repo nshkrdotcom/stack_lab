@@ -95,6 +95,10 @@ rollback refs, stale artifact rejection refs, AppKit projection refs, and
 receipt refs. `examples/adaptive_control_roundtrip` proves the deterministic
 TRINITY trace to GEPA candidate to gated promotion to rollback loop without
 live provider dependencies.
+Phase 16 adds adaptive release-proof mapping in
+`support/gn_ten_control_plane`: public claims must map to SpecCells, fixtures,
+scanner refs, docs refs, QC refs, and receipt refs before they can be treated
+as release evidence. Inherited open defects keep the release status open.
 Phase 5 Scenario 209 proves Milestone-7 version-skew and contract-chaos
 handling: Citadel invocation requests accept V2 only, malformed/downgraded/
 future schema versions and stale schema hashes fail closed, Mezzanine workflow
@@ -233,6 +237,7 @@ just fault net-cut
 - [support/ai_run_lineage_scanner/README.md](./support/ai_run_lineage_scanner/README.md)
 - [examples/gepa_platform_roundtrip/README.md](./examples/gepa_platform_roundtrip/README.md)
 - [examples/trinity_platform_roundtrip/README.md](./examples/trinity_platform_roundtrip/README.md)
+- [examples/adaptive_control_roundtrip/README.md](./examples/adaptive_control_roundtrip/README.md)
 
 ## License
 

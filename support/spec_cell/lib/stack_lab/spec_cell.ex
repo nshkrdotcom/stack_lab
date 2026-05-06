@@ -41,7 +41,9 @@ defmodule StackLab.SpecCell do
     "CONN-",
     "OPCON-",
     "SKILL-",
-    "HIVE-"
+    "HIVE-",
+    "AOC-",
+    "PERSIST-AOC-"
   ]
 
   @spec new(map() | keyword()) :: {:ok, t()} | {:error, [atom()]}

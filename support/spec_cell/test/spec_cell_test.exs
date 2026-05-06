@@ -80,4 +80,36 @@ defmodule StackLab.SpecCellTest do
 
     assert SpecCell.complete?(cell)
   end
+
+  test "accepts adaptive AOC and persistence fixture rows" do
+    assert {:ok, aoc_cell} =
+             SpecCell.new(
+               requirement_id: "AOC-048",
+               owner_repo: "stack_lab",
+               source_docs: ["implementation_docset/10_acceptance_fixtures.md"],
+               target_code_paths: ["support/gn_ten_control_plane"],
+               proof_command: "mix test",
+               acceptance_fixture: "AOC-048",
+               scanner_refs: ["release_proof.audit"],
+               closeout_state: :green,
+               release_claim: "Adaptive release claims map to executable proof"
+             )
+
+    assert SpecCell.complete?(aoc_cell)
+
+    assert {:ok, persist_cell} =
+             SpecCell.new(
+               requirement_id: "PERSIST-AOC-008",
+               owner_repo: "mezzanine",
+               source_docs: ["implementation_docset/34_persistence_policy_extension.md"],
+               target_code_paths: ["core/adaptive_control_engine"],
+               proof_command: "mix test",
+               acceptance_fixture: "PERSIST-AOC-008",
+               scanner_refs: ["release_proof.persistence"],
+               closeout_state: :open_defect,
+               release_claim: "Persistence posture is explicit in release proof"
+             )
+
+    refute SpecCell.complete?(persist_cell)
+  end
 end
