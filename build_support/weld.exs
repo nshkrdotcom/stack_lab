@@ -23,7 +23,8 @@ defmodule StackLab.Build.WeldContract do
     "examples/pressure_failover_drill",
     "examples/deployment_receipts_drill",
     "examples/guardrail_roundtrip",
-    "examples/replay_roundtrip"
+    "examples/replay_roundtrip",
+    "examples/cost_roundtrip"
   ]
 
   @artifact_docs [

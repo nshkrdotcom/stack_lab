@@ -28,7 +28,8 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/pressure_failover_drill",
     "examples/deployment_receipts_drill",
     "examples/guardrail_roundtrip",
-    "examples/replay_roundtrip"
+    "examples/replay_roundtrip",
+    "examples/cost_roundtrip"
   ]
 
   @active_project_globs [".", "support/*", "examples/*"]
