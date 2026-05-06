@@ -37,6 +37,7 @@ owner, and the product-facing northbound surfaces:
 - `support/model_inference_scanner`
 - `support/optimization_fabric_scanner`
 - `support/coordination_fabric_scanner`
+- `support/cost_budget_scanner`
 - `support/ai_run_lineage_scanner`
 - `examples/gepa_platform_roundtrip`
 - `examples/trinity_platform_roundtrip`
@@ -80,6 +81,11 @@ deterministic `gepa_platform_roundtrip` example over mock model profiles.
 Phase 11 adds governed TRINITY proof support: coordination fabric scanning and
 a deterministic `trinity_platform_roundtrip` example over mock tenant, router,
 role, provider, verifier, trace, and replay refs.
+Phase 12 adds prior-fabric cost and budget proof support:
+`support/cost_budget_scanner` verifies token, provider request, self-hosted GPU
+minute, endpoint startup, eval batch, replay, optimization search, provider
+pool, role, promotion, retry, budget exhaustion, AppKit projection, AITrace
+span, and StackLab receipt refs without raw payload projection.
 Phase 5 Scenario 209 proves Milestone-7 version-skew and contract-chaos
 handling: Citadel invocation requests accept V2 only, malformed/downgraded/
 future schema versions and stale schema hashes fail closed, Mezzanine workflow
@@ -214,6 +220,7 @@ just fault net-cut
 - [support/model_inference_scanner/README.md](./support/model_inference_scanner/README.md)
 - [support/optimization_fabric_scanner/README.md](./support/optimization_fabric_scanner/README.md)
 - [support/coordination_fabric_scanner/README.md](./support/coordination_fabric_scanner/README.md)
+- [support/cost_budget_scanner/README.md](./support/cost_budget_scanner/README.md)
 - [support/ai_run_lineage_scanner/README.md](./support/ai_run_lineage_scanner/README.md)
 - [examples/gepa_platform_roundtrip/README.md](./examples/gepa_platform_roundtrip/README.md)
 - [examples/trinity_platform_roundtrip/README.md](./examples/trinity_platform_roundtrip/README.md)

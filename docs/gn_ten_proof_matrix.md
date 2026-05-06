@@ -100,6 +100,11 @@ not claim authoritative audit truth or production deployment proof.
   with mock route selection, role injection, provider pool readiness, verifier
   refs, handoff scope refs, AppKit coordination projections, coordination
   fabric scanner receipts, trace refs, and replay refs.
+- `cost_budget_scanner`: verifies adaptive token, provider request,
+  self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
+  search, provider pool turn, role budget, promotion, failed retry, budget
+  exhaustion, AppKit projection, AITrace span, and redacted StackLab receipt
+  refs.
 
 ## Partial Proof Backlog
 

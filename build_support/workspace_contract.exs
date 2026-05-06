@@ -12,6 +12,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "support/model_inference_scanner",
     "support/optimization_fabric_scanner",
     "support/coordination_fabric_scanner",
+    "support/cost_budget_scanner",
     "support/ai_run_lineage_scanner",
     "support/drift_detector",
     "support/citadel_spine_harness",

@@ -17,6 +17,7 @@ defmodule StackLab.WorkspaceTest do
     assert "support/model_inference_scanner" in package_paths
     assert "support/optimization_fabric_scanner" in package_paths
     assert "support/coordination_fabric_scanner" in package_paths
+    assert "support/cost_budget_scanner" in package_paths
     assert "support/ai_run_lineage_scanner" in package_paths
     assert "examples/single_node_roundtrip" in package_paths
     assert "examples/lower_facts_roundtrip" in package_paths

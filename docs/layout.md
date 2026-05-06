@@ -22,6 +22,9 @@ The workspace is organized as:
   - GEPA candidate, eval, promotion, budget, trace, and rollback checks
 - `support/coordination_fabric_scanner/`
   - TRINITY router, role, provider, verifier, handoff, trace, and replay checks
+- `support/cost_budget_scanner/`
+  - adaptive token, model, GPU, eval, replay, optimization, provider pool,
+    role, promotion, retry, exhaustion, projection, span, and receipt checks
 - `support/ai_run_lineage_scanner/`
   - adaptive AI run lineage and required-ref checks
 - `examples/`
