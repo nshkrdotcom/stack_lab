@@ -40,7 +40,7 @@ defmodule StackLab.Examples.RestartAuthorityDrillTest do
       assert result.status == :rejected
       assert result.reason == reason
       assert result.redacted?
-      refute inspect(result) =~ "raw_token"
+      refute String.contains?(inspect(result), "raw_token")
     end)
   end
 

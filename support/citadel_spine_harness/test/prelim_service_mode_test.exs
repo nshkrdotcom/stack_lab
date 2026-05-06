@@ -94,7 +94,12 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
     assert result.semantic.context_provenance.semantic_ref == "semantic://prelim/turn-1"
     assert result.semantic.read_only_context_adapter.mutation_permissions == []
     assert "lower://*" in result.semantic.read_only_context_adapter.denied_write_resources
-    assert result.semantic.privacy_redaction.public_payload.prompt_hash =~ "sha256:"
+
+    assert String.contains?(
+             result.semantic.privacy_redaction.public_payload.prompt_hash,
+             "sha256:"
+           )
+
     assert result.semantic.suppression_visibility.operator_visibility == "visible"
     assert result.semantic.semantic_failure.kind == :semantic_insufficient_context
     assert result.semantic.semantic_failure.retry_class == :clarification_required
@@ -455,7 +460,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
                end
              )
 
-    assert output =~ "inactive"
+    assert String.contains?(output, "inactive")
   end
 
   test "M5 service profile bootstrap fails closed when Temporal substrate is not serving" do
@@ -467,7 +472,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
                end
              )
 
-    assert output =~ "inactive"
+    assert String.contains?(output, "inactive")
   end
 
   test "M5 governed smoke fails closed when Temporal substrate is not serving" do
@@ -479,7 +484,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
                end
              )
 
-    assert output =~ "inactive"
+    assert String.contains?(output, "inactive")
   end
 
   test "M5 pressure and negatives fails closed when Temporal substrate is not serving" do
@@ -491,7 +496,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
                end
              )
 
-    assert output =~ "inactive"
+    assert String.contains?(output, "inactive")
   end
 
   test "M6 evidence report fails closed when Temporal substrate is not serving" do
@@ -503,11 +508,11 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
                end
              )
 
-    assert output =~ "inactive"
+    assert String.contains?(output, "inactive")
   end
 
   defp serving_temporal("just", ["dev-status"], opts) do
-    assert opts[:cd] =~ "/mezzanine"
+    assert String.contains?(opts[:cd], "/mezzanine")
     assert opts[:stderr_to_stdout]
 
     {"""

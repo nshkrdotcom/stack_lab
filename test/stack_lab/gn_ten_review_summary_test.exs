@@ -65,7 +65,7 @@ defmodule StackLab.GnTen.ReviewSummaryTest do
         Summary.run([])
       end
 
-    assert Exception.message(error) =~ "expected --batch <slug>"
+    assert String.contains?(Exception.message(error), "expected --batch <slug>")
   end
 
   defp write_batch!(root, receipt_dir) do

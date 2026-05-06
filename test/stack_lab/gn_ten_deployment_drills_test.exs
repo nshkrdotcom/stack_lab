@@ -15,7 +15,7 @@ defmodule StackLab.GnTen.DeploymentDrillsTest do
         Rehearse.run([])
       end
 
-    assert Exception.message(error) =~ "expected --drill <id>"
+    assert String.contains?(Exception.message(error), "expected --drill <id>")
   end
 
   test "unknown drill aborts before writing a receipt" do
@@ -26,7 +26,7 @@ defmodule StackLab.GnTen.DeploymentDrillsTest do
         Rehearse.run(["--drill", "unknown", "--out", out_dir])
       end
 
-    assert Exception.message(error) =~ "deploy_drill_unknown"
+    assert String.contains?(Exception.message(error), "deploy_drill_unknown")
     assert File.ls!(out_dir) == []
   end
 
@@ -82,10 +82,10 @@ defmodule StackLab.GnTen.DeploymentDrillsTest do
         Report.run(["--dir", out_dir])
       end)
 
-    assert output =~ "gn_ten.deploy.report passed"
-    assert output =~ "drill_count=5"
-    assert output =~ "receipt=cold_deploy"
-    assert output =~ "receipt=websocket_reconnect"
+    assert String.contains?(output, "gn_ten.deploy.report passed")
+    assert String.contains?(output, "drill_count=5")
+    assert String.contains?(output, "receipt=cold_deploy")
+    assert String.contains?(output, "receipt=websocket_reconnect")
   end
 
   defp temp_dir! do

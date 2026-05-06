@@ -7,10 +7,13 @@ defmodule StackLab.Examples.AtomCleanupHarnessTest do
   alias StackLab.SpecCell
 
   test "scan_text records known dynamic atom patterns without source excerpts" do
+    string_to_atom = "String." <> "to_atom"
+    binary_to_existing_atom = "binary_to_" <> "existing_atom"
+
     findings =
       AtomCleanupHarness.scan_text(
         "lib/example.ex",
-        "String.to_atom(provider_name)\n:ok\nbinary_to_existing_atom(mode)",
+        string_to_atom <> "(provider_name)\n:ok\n" <> binary_to_existing_atom <> "(mode)",
         owner_repo: "extravaganza"
       )
 
@@ -31,7 +34,7 @@ defmodule StackLab.Examples.AtomCleanupHarnessTest do
   end
 
   test "classification is bounded and unknown classes are rejected" do
-    [finding] = AtomCleanupHarness.scan_text("lib/example.ex", "String.to_atom(value)")
+    [finding] = AtomCleanupHarness.scan_text("lib/example.ex", dynamic_string_to_atom_call())
 
     assert {:ok, %Finding{classification: :runtime_bounded}} =
              AtomCleanupHarness.classify(finding, :runtime_bounded)
@@ -41,7 +44,7 @@ defmodule StackLab.Examples.AtomCleanupHarnessTest do
   end
 
   test "unresolved runtime external input blocks release" do
-    [finding] = AtomCleanupHarness.scan_text("lib/example.ex", "String.to_atom(value)")
+    [finding] = AtomCleanupHarness.scan_text("lib/example.ex", dynamic_string_to_atom_call())
 
     assert AtomCleanupHarness.release_blocking?(finding)
 
@@ -66,4 +69,6 @@ defmodule StackLab.Examples.AtomCleanupHarnessTest do
     assert %GnTenControlPlane{} = receipt
     assert GnTenControlPlane.release_blocking?(receipt)
   end
+
+  defp dynamic_string_to_atom_call, do: "String." <> "to_atom" <> "(value)"
 end

@@ -141,13 +141,13 @@ defmodule StackLab.CitadelSpineHarness.Phase5AiNativeMinimalSeamsTest do
     assert result.scenario_id == 211
     assert String.starts_with?(result.positive.journal_entry_id, "semantic_failure_journal:v1:")
     assert String.starts_with?(result.positive.semantic_failure_payload_hash, "sha256:")
-    assert result.positive.corrected_output_artifact_ref =~ "artifact://"
+    assert String.contains?(result.positive.corrected_output_artifact_ref, "artifact://")
     assert result.positive.evidence_refs != []
 
     ref_summary = result.positive.reply_publication_ref_summary
     assert String.starts_with?(ref_summary.body_hash, "sha256:")
     assert String.starts_with?(ref_summary.schema_hash, "sha256:")
-    assert ref_summary.artifact_id =~ "reply-scenario-211"
+    assert String.contains?(ref_summary.artifact_id, "reply-scenario-211")
 
     failures = result.negative_failures
 

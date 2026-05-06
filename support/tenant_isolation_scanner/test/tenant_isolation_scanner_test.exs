@@ -34,7 +34,7 @@ defmodule StackLab.TenantIsolationScannerTest do
 
     assert Enum.any?(findings, &(&1.reason == :missing_tenant_ref))
     assert Enum.any?(findings, &(&1.reason == :cross_tenant_ref))
-    refute inspect(findings) =~ "secret-value"
+    refute String.contains?(inspect(findings), "secret-value")
   end
 
   test "rejects unknown tenant-sensitive fact kinds" do

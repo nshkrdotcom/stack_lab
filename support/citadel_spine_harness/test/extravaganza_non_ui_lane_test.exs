@@ -54,9 +54,9 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaNonUiLaneTest do
     assert result.source_publication.operation == :update_comment
     assert result.source_publication.source_binding_ref == "linear_primary"
     assert result.source_publication.lower_receipt_refs == ["receipt://terminal-success"]
-    assert result.source_publication.body =~ "Operator Review Workpad"
-    assert result.source_publication.body =~ "github_pr"
-    assert result.source_publication.body =~ "codex.session.completed=1"
+    assert String.contains?(result.source_publication.body, "Operator Review Workpad")
+    assert String.contains?(result.source_publication.body, "github_pr")
+    assert String.contains?(result.source_publication.body, "codex.session.completed=1")
 
     assert result.identity_lifecycle.provider_objects ==
              :source_admission_provider_create_outputs_workflow_state_and_receipts

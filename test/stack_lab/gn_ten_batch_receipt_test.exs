@@ -12,7 +12,7 @@ defmodule StackLab.GnTen.BatchReceiptTest do
         New.run([])
       end
 
-    assert Exception.message(error) =~ "expected --name <slug>"
+    assert String.contains?(Exception.message(error), "expected --name <slug>")
   end
 
   test "rejects unsafe slugs" do
@@ -32,18 +32,18 @@ defmodule StackLab.GnTen.BatchReceiptTest do
     assert receipt.md_path == Path.join(out_dir, "20260428_phase-a-command-surface-smoke.md")
     markdown = File.read!(receipt.md_path)
 
-    assert markdown =~ "# gn-ten Batch Receipt: phase-a-command-surface-smoke"
-    assert markdown =~ "Date: 2026-04-28"
-    assert markdown =~ "Batch ID: 20260428-phase-a-command-surface-smoke"
-    assert markdown =~ "Branch policy: main_only"
-    assert markdown =~ "Primary owner repo: stack_lab"
-    assert markdown =~ "Contract producer repo:"
-    assert markdown =~ "Consumer repos:"
-    assert markdown =~ "## Scope"
-    assert markdown =~ "## Commands"
-    assert markdown =~ "## Proof"
-    assert markdown =~ "## Git Closeout"
-    assert markdown =~ "## Notes"
+    assert String.contains?(markdown, "# gn-ten Batch Receipt: phase-a-command-surface-smoke")
+    assert String.contains?(markdown, "Date: 2026-04-28")
+    assert String.contains?(markdown, "Batch ID: 20260428-phase-a-command-surface-smoke")
+    assert String.contains?(markdown, "Branch policy: main_only")
+    assert String.contains?(markdown, "Primary owner repo: stack_lab")
+    assert String.contains?(markdown, "Contract producer repo:")
+    assert String.contains?(markdown, "Consumer repos:")
+    assert String.contains?(markdown, "## Scope")
+    assert String.contains?(markdown, "## Commands")
+    assert String.contains?(markdown, "## Proof")
+    assert String.contains?(markdown, "## Git Closeout")
+    assert String.contains?(markdown, "## Notes")
   end
 
   test "creates json receipt with schema and main-only branch policy" do

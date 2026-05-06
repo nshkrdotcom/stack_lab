@@ -36,9 +36,22 @@ defmodule StackLab.CitadelSpineHarness.TemporalDispatchContractEvidenceTest do
     assert "temporal-task-queue://default/mezzanine.hazmat" in result.positive.task_queue_refs
     assert "workflow://Mezzanine.Workflows.ExecutionAttempt" in result.positive.workflow_type_refs
     assert result.positive.restart_procedure_ref == "mezzanine-just://temporal-restart"
-    assert result.positive.active_workflow_state_before_restart_ref =~ "#accepted_active"
-    assert result.positive.replay_or_continuation_evidence_ref =~ "temporal-replay://"
-    assert result.positive.persisted_outcome_state_ref =~ "workflow-start-outbox://"
+
+    assert String.contains?(
+             result.positive.active_workflow_state_before_restart_ref,
+             "#accepted_active"
+           )
+
+    assert String.contains?(
+             result.positive.replay_or_continuation_evidence_ref,
+             "temporal-replay://"
+           )
+
+    assert String.contains?(
+             result.positive.persisted_outcome_state_ref,
+             "workflow-start-outbox://"
+           )
+
     refute result.positive.raw_workflow_history_included?
     refute Map.has_key?(result.positive, :raw_workflow_history)
 

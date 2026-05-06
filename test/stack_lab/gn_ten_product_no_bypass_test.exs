@@ -8,15 +8,15 @@ defmodule StackLab.GnTen.ProductNoBypassTest do
 
   test "AppKit scanner accepts a minimal product fixture" do
     assert {output, 0} = scan_fixture("proof_product_minimal")
-    assert output =~ "app_kit.no_bypass passed"
+    assert String.contains?(output, "app_kit.no_bypass passed")
   end
 
   test "AppKit scanner rejects hostile product bypass imports" do
     assert {output, status} = scan_fixture("proof_product_hostile")
     assert status != 0
-    assert output =~ "boundary violation"
-    assert output =~ "AppKit.Bridges"
-    assert output =~ "Mezzanine"
+    assert String.contains?(output, "boundary violation")
+    assert String.contains?(output, "AppKit.Bridges")
+    assert String.contains?(output, "Mezzanine")
   end
 
   defp scan_fixture(name) do

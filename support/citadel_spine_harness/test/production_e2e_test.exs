@@ -88,16 +88,24 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
     assert receipt.appkit.runtime_projection_source == :reducer_owned_projection
     assert receipt.appkit.dto.lower_receipt_ref == receipt.jido_integration.lower_receipt_ref
 
-    assert receipt.mezzanine.subject_ref =~ "mezzanine://subjects/"
-    assert receipt.mezzanine.execution_ref =~ "mezzanine://executions/"
-    assert receipt.mezzanine.workflow_outbox_ref =~ "mezzanine://workflow-outbox/"
-    assert receipt.mezzanine.workflow_execution_ref =~ "temporal://default/"
+    assert String.contains?(receipt.mezzanine.subject_ref, "mezzanine://subjects/")
+    assert String.contains?(receipt.mezzanine.execution_ref, "mezzanine://executions/")
+    assert String.contains?(receipt.mezzanine.workflow_outbox_ref, "mezzanine://workflow-outbox/")
+    assert String.contains?(receipt.mezzanine.workflow_execution_ref, "temporal://default/")
 
-    assert receipt.citadel.permission_decision_ref =~ "citadel://authority-decisions/"
-    assert receipt.citadel.execution_governance_ref =~ "citadel://execution-governance/"
+    assert String.contains?(
+             receipt.citadel.permission_decision_ref,
+             "citadel://authority-decisions/"
+           )
+
+    assert String.contains?(
+             receipt.citadel.execution_governance_ref,
+             "citadel://execution-governance/"
+           )
+
     assert receipt.citadel.decision == :allow
 
-    assert receipt.jido_integration.lower_submission_ref =~ "jido://submissions/"
+    assert String.contains?(receipt.jido_integration.lower_submission_ref, "jido://submissions/")
     assert receipt.jido_integration.carries_citadel_authority? == true
     assert receipt.jido_integration.provider_effect_live? == false
 
@@ -195,7 +203,7 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
                env: %{}
              )
 
-    assert error.operator_action =~ "just dev-up"
-    assert error.operator_action =~ "do not start an ephemeral Temporal cluster"
+    assert String.contains?(error.operator_action, "just dev-up")
+    assert String.contains?(error.operator_action, "do not start an ephemeral Temporal cluster")
   end
 end

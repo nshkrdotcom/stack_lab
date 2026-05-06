@@ -23,7 +23,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacketTest do
 
     assert result.case == :contract_chaos
     assert result.scenario == 209
-    assert result.owning_milestone =~ "Milestone 7"
+    assert String.contains?(result.owning_milestone, "Milestone 7")
 
     assert result.positive.citadel_invocation_request.schema_version == 2
     assert result.positive.citadel_invocation_request.bridge_acceptance_status == :accepted

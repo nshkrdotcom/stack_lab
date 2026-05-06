@@ -123,7 +123,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
              )
 
     assert result.case == :duplicate_publication_suppressed_after_restart
-    assert result.durable.initial_publication_id =~ "publication-"
+    assert String.contains?(result.durable.initial_publication_id, "publication-")
     assert result.durable.replayed_publication_id == result.durable.initial_publication_id
     assert result.after_restart.publication_ids == [result.durable.initial_publication_id]
     assert result.after_restart.publication_bodies == ["Done"]
@@ -357,7 +357,8 @@ defmodule StackLab.CitadelSpineHarnessTest do
     |> Path.join("lib/**/*.ex")
     |> Path.wildcard(match_dot: true)
     |> Enum.each(fn path ->
-      refute File.read!(path) =~ "MezzanineOpsModel", "#{path} still references MezzanineOpsModel"
+      refute String.contains?(File.read!(path), "MezzanineOpsModel"),
+             "#{path} still references MezzanineOpsModel"
     end)
   end
 
@@ -376,7 +377,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     |> Path.join("lib/**/*.ex")
     |> Path.wildcard(match_dot: true)
     |> Enum.each(fn path ->
-      refute File.read!(path) =~ "Mezzanine.WorkAudit",
+      refute String.contains?(File.read!(path), "Mezzanine.WorkAudit"),
              "#{path} still references Mezzanine.WorkAudit"
     end)
   end
@@ -396,7 +397,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     |> Path.join("lib/**/*.ex")
     |> Path.wildcard(match_dot: true)
     |> Enum.each(fn path ->
-      refute File.read!(path) =~ "Mezzanine.Control",
+      refute String.contains?(File.read!(path), "Mezzanine.Control"),
              "#{path} still references Mezzanine.Control"
     end)
   end
@@ -416,7 +417,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     |> Path.join("lib/**/*.ex")
     |> Path.wildcard(match_dot: true)
     |> Enum.each(fn path ->
-      refute File.read!(path) =~ "Mezzanine.Assurance",
+      refute String.contains?(File.read!(path), "Mezzanine.Assurance"),
              "#{path} still references Mezzanine.Assurance"
     end)
   end
@@ -438,7 +439,7 @@ defmodule StackLab.CitadelSpineHarnessTest do
     |> Enum.each(fn path ->
       contents = File.read!(path)
 
-      refute contents =~ "Mezzanine.OpsDomain.Repo",
+      refute String.contains?(contents, "Mezzanine.OpsDomain.Repo"),
              "#{path} still references Mezzanine.OpsDomain.Repo"
 
       refute direct_ops_namespace?(contents),
@@ -481,8 +482,12 @@ defmodule StackLab.CitadelSpineHarnessTest do
       end
     rescue
       error in RuntimeError ->
-        assert Exception.message(error) =~ "unable to start local distributed node"
-        assert Exception.message(error) =~ ":nodistribution"
+        assert String.contains?(
+                 Exception.message(error),
+                 "unable to start local distributed node"
+               )
+
+        assert String.contains?(Exception.message(error), ":nodistribution")
     end
   end
 end

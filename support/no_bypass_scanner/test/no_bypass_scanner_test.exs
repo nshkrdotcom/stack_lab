@@ -41,8 +41,8 @@ defmodule StackLab.NoBypassScannerTest do
   end
 
   test "rejects unknown no-bypass rules" do
-    assert {:error, {:unknown_no_bypass_rules, [:regex_scan]}} =
-             NoBypassScanner.scan(valid_attrs(rules: [:direct_provider_sdk_calls, :regex_scan]))
+    assert {:error, {:unknown_no_bypass_rules, [:pattern_scan]}} =
+             NoBypassScanner.scan(valid_attrs(rules: [:direct_provider_sdk_calls, :pattern_scan]))
   end
 
   defp valid_attrs(overrides \\ []) do

@@ -38,12 +38,16 @@ defmodule StackLab.CitadelSpineHarness.SemanticGatewayContractEvidenceTest do
 
     assert result.positive.contract_id == "SemanticGatewayContract.v1"
     assert result.positive.semantic_context_provenance_ref == "semantic:result-phase6-m7"
-    assert result.positive.semantic_failure_ref =~ "semantic_failure_journal:v1:"
+    assert String.contains?(result.positive.semantic_failure_ref, "semantic_failure_journal:v1:")
     assert result.positive.read_only_context_adapter_boundary_ref == "context-adapter:phase6-m7"
     assert result.positive.reply_publication_dedupe_ref == "causal-phase6-m7:final"
     assert result.positive.suppression_visibility_ref == "suppression:phase6-m7"
     assert result.positive.privacy_redaction_fixture_ref == "fixture:phase6-m7-privacy"
-    assert result.positive.restart_replay_with_semantic_state_ref =~ "outer-brain-restart://"
+
+    assert String.contains?(
+             result.positive.restart_replay_with_semantic_state_ref,
+             "outer-brain-restart://"
+           )
 
     assert result.real_restart.case == :duplicate_publication_suppressed_after_restart
     assert result.real_restart.after_restart.next_action == {:noop, :final_reply_published}

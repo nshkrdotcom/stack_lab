@@ -104,9 +104,9 @@ defmodule StackLab.GnTen.BatchRunnerTest do
     assert called == ["ground_plane", "execution_plane"]
     assert receipt["run_status"] == "failed"
     assert receipt["resume"]["first_failed_repo"] == "execution_plane"
-    assert receipt["resume"]["command"] =~ "--resume --confirm"
+    assert String.contains?(receipt["resume"]["command"], "--resume --confirm")
     assert Enum.any?(trace["spans"], &(&1["repo_ref"] == "repo://nshkrdotcom/execution_plane"))
-    refute Jason.encode!(trace) =~ "VERY_SECRET_STDOUT"
+    refute String.contains?(Jason.encode!(trace), "VERY_SECRET_STDOUT")
   end
 
   test "successful run emits per-repo spans without raw command output" do
@@ -132,7 +132,7 @@ defmodule StackLab.GnTen.BatchRunnerTest do
     assert Enum.all?(trace["spans"], &Map.has_key?(&1, "repo_ref"))
     assert Enum.all?(trace["spans"], &Map.has_key?(&1, "status"))
     assert Enum.all?(trace["spans"], &Map.has_key?(&1, "evidence_ref"))
-    refute Jason.encode!(trace) =~ "RAW_STDOUT_THAT_MUST_NOT_LEAK"
+    refute String.contains?(Jason.encode!(trace), "RAW_STDOUT_THAT_MUST_NOT_LEAK")
   end
 
   test "fails if a non-stack_lab repo becomes dirty during the run" do

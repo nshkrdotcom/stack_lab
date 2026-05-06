@@ -46,8 +46,8 @@ defmodule StackLab.Examples.LowerFactsRoundtripTest do
     assert result.staleness_class == :lower_fresh
     refute result.operator_actionable?
     assert result.lineage.installation_id == "inst-lower-facts"
-    assert result.lineage.execution_id =~ "execution-"
-    assert result.run.run_id =~ "run-lower-facts-"
+    assert String.contains?(result.lineage.execution_id, "execution-")
+    assert String.contains?(result.run.run_id, "run-lower-facts-")
     assert result.run.status == :completed
   end
 

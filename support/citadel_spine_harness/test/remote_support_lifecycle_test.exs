@@ -8,9 +8,15 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupportLifecycleTest do
   test "local distributed node names are run-scoped instead of fixed slots" do
     names = for _index <- 1..16, do: BoundedNames.local_node_name()
     strings = Enum.map(names, &Atom.to_string/1)
+    single_slot_suffixes = for codepoint <- ?a..?z, do: <<codepoint>>
 
     assert Enum.uniq(names) == names
-    refute Enum.any?(strings, &Regex.match?(~r/^stack_lab_local_[a-z]$/, &1))
+
+    refute Enum.any?(strings, fn name ->
+             suffix = String.replace_prefix(name, "stack_lab_local_", "")
+             suffix in single_slot_suffixes
+           end)
+
     assert Enum.all?(strings, &String.starts_with?(&1, "stack_lab_local_"))
   end
 

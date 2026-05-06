@@ -37,8 +37,13 @@ defmodule StackLab.CitadelSpineHarness.Phase6EvidenceReportTest do
     report = result.report
 
     assert report["report_id"] == "phase6-m12-simulation-evidence-report"
-    assert report["profile"]["service_profile_ref"] =~ "ServiceSimulationProfile.v1"
-    assert report["profile"]["registry_entry_ref"] =~ "profile-registry-entry://"
+
+    assert String.contains?(
+             report["profile"]["service_profile_ref"],
+             "ServiceSimulationProfile.v1"
+           )
+
+    assert String.contains?(report["profile"]["registry_entry_ref"], "profile-registry-entry://")
     assert report["profile"]["lower_scenario_refs"] != []
 
     assert Enum.any?(
@@ -91,7 +96,7 @@ defmodule StackLab.CitadelSpineHarness.Phase6EvidenceReportTest do
     assert report["lineage"]["trace_refs"] != []
     assert report["lineage"]["aitrace_refs"] != []
     assert report["lineage"]["aitrace_receipt_refs"] != []
-    assert report["lineage"]["join_ref"] =~ "lineage-join://phase6/m12/"
+    assert String.contains?(report["lineage"]["join_ref"], "lineage-join://phase6/m12/")
 
     assert report["raw_payload_scan"]["status"] == "pass"
     assert report["cleanup"]["status"] == "pass"

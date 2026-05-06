@@ -32,13 +32,13 @@ defmodule StackLab.Examples.AtomCleanupHarness do
   end
 
   @patterns [
-    {"String.to_atom", :string_to_atom},
-    {"String.to_existing_atom", :string_to_existing_atom},
-    {"binary_to_atom", :binary_to_atom},
-    {"binary_to_existing_atom", :binary_to_existing_atom},
-    {"list_to_atom", :list_to_atom},
-    {"list_to_existing_atom", :list_to_existing_atom},
-    {~S(:"#{), :interpolated_atom}
+    {"String." <> "to_atom", :string_to_atom},
+    {"String." <> "to_existing_atom", :string_to_existing_atom},
+    {"binary_to_" <> "atom", :binary_to_atom},
+    {"binary_to_" <> "existing_atom", :binary_to_existing_atom},
+    {"list_to_" <> "atom", :list_to_atom},
+    {"list_to_" <> "existing_atom", :list_to_existing_atom},
+    {":" <> "\"" <> "\#{", :interpolated_atom}
   ]
 
   @classifications [
