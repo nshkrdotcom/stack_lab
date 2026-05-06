@@ -9,15 +9,17 @@ defmodule StackLab.NoBypassScannerTest do
              NoBypassScanner.scan(valid_attrs())
 
     assert receipt.status == :pass
-    assert receipt.fixture_ref == "UAA-043"
+    assert receipt.fixture_ref == "AOC-044"
     assert receipt.owner_repo == "extravaganza"
     assert receipt.findings == []
   end
 
-  test "reports direct provider, env auth, runtime, DB, and trace bypasses" do
+  test "reports direct GEPA, TRINITY, provider, env auth, runtime, DB, and trace bypasses" do
     attrs =
       valid_attrs(
         signals: %{
+          direct_gepa_framework_calls: ["GepaFramework.Runner.run"],
+          direct_trinity_framework_calls: ["TrinityFramework.Router.route"],
           direct_provider_sdk_calls: ["Anthropic.Messages.create"],
           direct_generated_sdk_calls: ["GitHubEx.Client.request"],
           direct_env_auth_lookup: ["ANTHROPIC_API_KEY"],
@@ -31,6 +33,8 @@ defmodule StackLab.NoBypassScannerTest do
              NoBypassScanner.scan(attrs)
 
     assert Enum.map(findings, & &1.rule) == [
+             :direct_gepa_framework_calls,
+             :direct_trinity_framework_calls,
              :direct_provider_sdk_calls,
              :direct_generated_sdk_calls,
              :direct_env_auth_lookup,
@@ -51,6 +55,7 @@ defmodule StackLab.NoBypassScannerTest do
       package_path: "apps/extravaganza_core",
       target_code_paths: ["apps/extravaganza_core/lib/extravaganza/headless_surface.ex"],
       approved_facade_refs: [
+        "app-kit-adaptive-control-surface://tenant-1/adaptive",
         "app-kit-headless-surface://tenant-1/headless",
         "app-kit-authority-projection://tenant-1/headless"
       ],

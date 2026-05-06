@@ -34,7 +34,7 @@ not claim authoritative audit truth or production deployment proof.
 | `citadel` | `repo://nshkrdotcom/citadel` | policy packet and authority proofs through StackLab | `mix ci` in `citadel`; StackLab governance scenarios | authority refs |
 | `outer_brain` | `repo://nshkrdotcom/outer_brain` | restart durability and semantic failure proofs | `mix ci` in `outer_brain`; StackLab restart scenarios | semantic failure and journal refs |
 | `mezzanine` | `repo://nshkrdotcom/mezzanine` | lifecycle, projection, audit, Temporal/Postgres drift proofs | `mix ci` in `mezzanine`; StackLab projection drift scenarios | projection and incident refs |
-| `app_kit` | `repo://nshkrdotcom/app_kit` | product no-bypass and DTO conformance proofs | `mix ci` in `app_kit`; `mix test test/stack_lab/gn_ten_product_no_bypass_test.exs` in `stack_lab` | no-bypass scan receipts and fixture proof |
+| `app_kit` | `repo://nshkrdotcom/app_kit` | product no-bypass and DTO conformance proofs, including Phase 15 adaptive-control operator sections | `mix ci` in `app_kit`; `mix test` in `stack_lab/support/no_bypass_scanner` | `AOC-044` no-bypass scan receipts and AppKit adaptive-control facade proof |
 | `extravaganza` | `repo://nshkrdotcom/extravaganza` | thin product and headless parity proofs | `mix ci` in `extravaganza`; StackLab product lane fixture | AppKit DTO and no-bypass receipt refs |
 | `stack_lab` | `repo://nshkrdotcom/stack_lab` | assembled proof owner | `mix ci`; `mix gn_ten.validate` | proof matrix and scenario receipts |
 | `AITrace` | `repo://nshkrdotcom/AITrace` | trace export and single-node proof-trace fixture | AITrace equivalent CI gate | `aitrace.single_node_proof_trace.v1` |

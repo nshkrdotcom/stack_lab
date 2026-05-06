@@ -47,9 +47,11 @@ defmodule StackLab.NoBypassScanner do
     defstruct @enforce_keys
   end
 
-  @fixture_ref "UAA-043"
+  @fixture_ref "AOC-044"
   @scanner_ref "stack-lab.product-no-bypass-scanner.v1"
   @rules [
+    :direct_gepa_framework_calls,
+    :direct_trinity_framework_calls,
     :direct_provider_sdk_calls,
     :direct_generated_sdk_calls,
     :direct_env_auth_lookup,
