@@ -112,6 +112,14 @@ not claim authoritative audit truth or production deployment proof.
   receipts, Phase 14 live-provider gate refs, Pristine OpenAPI admission refs,
   Prismatic GraphQL operation binding refs, durable persistence preflight refs,
   redacted debug sidecar refs, and no live provider dependency.
+- `persistence_mode_roundtrip`: runs the deterministic persistence profile
+  matrix for `:mickey_mouse`, `:memory_debug`, `:integration_postgres`, and
+  `:full_debug_tracked`. The proof records storage behavior, stable authority
+  semantics, restart-claim classification, redacted debug evidence, gn-ten
+  profile/tier/store/capture/proof fields, and source/test/scanner/docs/receipt
+  mappings for `PERSIST-001` through `PERSIST-020` without regex parsing,
+  environment reads, live providers, Postgres, Temporal, object stores,
+  network, optional external substrates, or raw debug payloads.
 
 ## Partial Proof Backlog
 

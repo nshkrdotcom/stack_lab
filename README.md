@@ -102,7 +102,13 @@ The persistence overlay adds `support/persistence_matrix_scanner` and
 matrix proof. The harness verifies `:mickey_mouse`, `:memory_debug`, gated
 `:integration_postgres`, and `:full_debug_tracked` profile receipts with no
 default Postgres, Temporal, object store, live provider, network, or optional
-external substrate dependency and with redacted debug facts only.
+external substrate dependency and with redacted debug facts only. Phase 10
+extends the proof so every profile receipt records storage behavior,
+authority-semantics, restart-claim, and gn-ten profile/tier/store/capture/proof
+fields, and every `PERSIST-001` through `PERSIST-020` fixture maps to source,
+test, scanner, docs, and receipt evidence. Scanner inputs are structured facts;
+regex parsing, environment reads, live substrate checks, and raw debug payloads
+are outside the proof contract.
 Phase 16 adds adaptive release-proof mapping in
 `support/gn_ten_control_plane`: public claims must map to SpecCells, fixtures,
 scanner refs, docs refs, QC refs, and receipt refs before they can be treated
