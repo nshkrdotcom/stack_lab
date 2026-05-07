@@ -22,3 +22,7 @@ receipt evidence.
 
 The scanner does not parse source text. Regex APIs are not allowed in scanner
 code or tests, and phase static checks use fixed-string token scans only.
+
+## Persistence Documentation
+
+See `docs/persistence.md` for tiers, defaults, adapters, unsupported selections, config examples, restart claims, durability claims, debug sidecar behavior, redaction guarantees, migration or preflight behavior, and no-bypass scope when applicable.

@@ -254,6 +254,7 @@ just fault net-cut
 - [examples/trinity_platform_roundtrip/README.md](./examples/trinity_platform_roundtrip/README.md)
 - [examples/adaptive_control_roundtrip/README.md](./examples/adaptive_control_roundtrip/README.md)
 - [examples/persistence_mode_roundtrip/README.md](./examples/persistence_mode_roundtrip/README.md)
+- `docs/persistence.md`
 
 ## License
 
@@ -282,3 +283,7 @@ just temporal-ui
 ```
 
 Expected local contract: `127.0.0.1:7233`, UI `http://127.0.0.1:8233`, namespace `default`, native service `mezzanine-temporal-dev.service`, persistent state `~/.local/share/temporal/dev-server.db`.
+
+## Persistence Documentation
+
+See `docs/persistence.md` for tiers, defaults, adapters, unsupported selections, config examples, restart claims, durability claims, debug sidecar behavior, redaction guarantees, migration or preflight behavior, and no-bypass scope when applicable.

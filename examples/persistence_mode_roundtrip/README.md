@@ -20,3 +20,7 @@ harness uses structured GroundPlane policy data only; it does not read process
 environment, application config, provider credentials, network state, Postgres,
 Temporal, object stores, optional external substrates, or raw debug payloads.
 Regex APIs are not allowed in this package.
+
+## Persistence Documentation
+
+See `docs/persistence.md` for tiers, defaults, adapters, unsupported selections, config examples, restart claims, durability claims, debug sidecar behavior, redaction guarantees, migration or preflight behavior, and no-bypass scope when applicable.
