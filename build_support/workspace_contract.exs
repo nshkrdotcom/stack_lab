@@ -15,6 +15,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "support/cost_budget_scanner",
     "support/adaptive_control_scanner",
     "support/ai_run_lineage_scanner",
+    "support/persistence_matrix_scanner",
     "support/drift_detector",
     "support/citadel_spine_harness",
     "support/memsim_harness",
@@ -39,6 +40,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/gepa_platform_roundtrip",
     "examples/trinity_platform_roundtrip",
     "examples/adaptive_control_roundtrip",
+    "examples/persistence_mode_roundtrip",
     "examples/skill_roundtrip",
     "examples/hive_roundtrip"
   ]

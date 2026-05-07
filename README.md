@@ -40,9 +40,11 @@ owner, and the product-facing northbound surfaces:
 - `support/cost_budget_scanner`
 - `support/adaptive_control_scanner`
 - `support/ai_run_lineage_scanner`
+- `support/persistence_matrix_scanner`
 - `examples/gepa_platform_roundtrip`
 - `examples/trinity_platform_roundtrip`
 - `examples/adaptive_control_roundtrip`
+- `examples/persistence_mode_roundtrip`
 
 Those examples exercise real `citadel` and real `jido_integration` code
 through the harness-only `support/citadel_spine_harness` package. The typed
@@ -95,6 +97,12 @@ rollback refs, stale artifact rejection refs, AppKit projection refs, and
 receipt refs. `examples/adaptive_control_roundtrip` proves the deterministic
 TRINITY trace to GEPA candidate to gated promotion to rollback loop without
 live provider dependencies.
+The persistence overlay adds `support/persistence_matrix_scanner` and
+`examples/persistence_mode_roundtrip` for deterministic persistence-profile
+matrix proof. The harness verifies `:mickey_mouse`, `:memory_debug`, gated
+`:integration_postgres`, and `:full_debug_tracked` profile receipts with no
+default Postgres, Temporal, object store, live provider, network, or optional
+external substrate dependency and with redacted debug facts only.
 Phase 16 adds adaptive release-proof mapping in
 `support/gn_ten_control_plane`: public claims must map to SpecCells, fixtures,
 scanner refs, docs refs, QC refs, and receipt refs before they can be treated
@@ -235,9 +243,11 @@ just fault net-cut
 - [support/coordination_fabric_scanner/README.md](./support/coordination_fabric_scanner/README.md)
 - [support/cost_budget_scanner/README.md](./support/cost_budget_scanner/README.md)
 - [support/ai_run_lineage_scanner/README.md](./support/ai_run_lineage_scanner/README.md)
+- [support/persistence_matrix_scanner/README.md](./support/persistence_matrix_scanner/README.md)
 - [examples/gepa_platform_roundtrip/README.md](./examples/gepa_platform_roundtrip/README.md)
 - [examples/trinity_platform_roundtrip/README.md](./examples/trinity_platform_roundtrip/README.md)
 - [examples/adaptive_control_roundtrip/README.md](./examples/adaptive_control_roundtrip/README.md)
+- [examples/persistence_mode_roundtrip/README.md](./examples/persistence_mode_roundtrip/README.md)
 
 ## License
 
