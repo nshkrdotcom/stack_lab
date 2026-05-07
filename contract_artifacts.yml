@@ -9,12 +9,12 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 0f86a1369145fe0b635a0611f624df8dc70782a4
+    source_sha: 6999ce97bf69f02297b9689434d7f693b9e8c0ac
     build_command: mix ci
     status: deprecated
     successor: ground_plane_contracts
     consumers:
-    notes: Phase A narrow repo-ref artifact retained as deprecated history. Source SHA refreshed during persistence overlay Phase 10 after GroundPlane fence persistence posture joined the artifact source.
+    notes: Phase A narrow repo-ref artifact retained as deprecated history. Source SHA refreshed during persistence overlay Phase 13 after GroundPlane persistence documentation and QC receipts advanced.
 
   - name: stack_lab_gn_ten_manifest
     artifact_ref: artifact://nshkrdotcom/stack_lab/stack_lab_gn_ten_manifest
@@ -22,7 +22,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/stack_lab
     producer_path: /home/home/p/g/n/stack_lab
     source_ref: main
-    source_sha: 4f4cea23e3a5df2ce5f31979d2dea515886c7b80
+    source_sha: c6af2c0109580a23a412ea97720f125d89aefa40
     build_command: mix gn_ten.validate
     status: bootstrap
     consumers:
@@ -37,7 +37,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 0f86a1369145fe0b635a0611f624df8dc70782a4
+    source_sha: 6999ce97bf69f02297b9689434d7f693b9e8c0ac
     build_command: mix ci
     status: stable
     consumers:
@@ -48,7 +48,7 @@ artifacts:
       - mezzanine
       - app_kit
       - stack_lab
-    notes: Universal primitive, repo/artifact reference, and persistence policy contracts. Promoted stable in Phase K after Phase F primitive promotion and refreshed during persistence overlay Phase 10 after GroundPlane fence persistence posture joined the artifact source.
+    notes: Universal primitive, repo/artifact reference, and persistence policy contracts. Promoted stable in Phase K after Phase F primitive promotion and refreshed during persistence overlay Phase 13 after GroundPlane persistence documentation and QC receipts advanced.
 
   - name: execution_plane
     artifact_ref: artifact://nshkrdotcom/execution_plane/execution_plane
@@ -56,7 +56,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/execution_plane
     producer_path: /home/home/p/g/n/execution_plane
     source_ref: main
-    source_sha: 0307e8ba7894320d75c0a91908109507e772bcf6
+    source_sha: 005fdbb32fcb848b410c3b05aea0f6f1aafde0e3
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -71,7 +71,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/jido_integration
     producer_path: /home/home/p/g/n/jido_integration
     source_ref: main
-    source_sha: c2685cd3dc7467f7bdfc6e4d473e3e78fba4d62c
+    source_sha: a453a1af28a0fb19b59fda469b359d4e0f0707d2
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -86,7 +86,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/citadel
     producer_path: /home/home/p/g/n/citadel
     source_ref: main
-    source_sha: e8fd5b92563254effcaa0d92ef7bd8f0cb447b71
+    source_sha: 95f7e71d6cc384dff598892b06d4f9c797aa70f6
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -101,7 +101,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/citadel
     producer_path: /home/home/p/g/n/citadel
     source_ref: main
-    source_sha: e8fd5b92563254effcaa0d92ef7bd8f0cb447b71
+    source_sha: 95f7e71d6cc384dff598892b06d4f9c797aa70f6
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -116,7 +116,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/outer_brain
     producer_path: /home/home/p/g/n/outer_brain
     source_ref: main
-    source_sha: 54b383920da5292757b94020b8c38ee40633d2a9
+    source_sha: 6e9e203a0f8049edf4d72d8c7b04ec5d359c1ac9
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -130,7 +130,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/mezzanine
     producer_path: /home/home/p/g/n/mezzanine
     source_ref: main
-    source_sha: 56531d6b9eb06298b99bfdecf953ef795477fc71
+    source_sha: f0732820946e6b351af4be25980e0104834b1ffc
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -144,7 +144,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/app_kit
     producer_path: /home/home/p/g/n/app_kit
     source_ref: main
-    source_sha: 375ba88f595b5961dbe04b7e1371607936fa490a
+    source_sha: c42d2440a2f75afc369b1c47f6e31dfb66607b59
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -158,7 +158,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/stack_lab
     producer_path: /home/home/p/g/n/stack_lab
     source_ref: main
-    source_sha: 4f4cea23e3a5df2ce5f31979d2dea515886c7b80
+    source_sha: c6af2c0109580a23a412ea97720f125d89aefa40
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -171,7 +171,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/AITrace
     producer_path: /home/home/p/g/n/AITrace
     source_ref: main
-    source_sha: a59035c9bd536d3e6ce6e3046cfeb224f820b49d
+    source_sha: 215bc95643a21d7d0e65d788311de1342a85172a
     build_command: mix deps.get && mix format --check-formatted && mix compile --warnings-as-errors && mix test && mix credo --strict && mix dialyzer --format short && mix docs
     status: bootstrap
     consumers:
