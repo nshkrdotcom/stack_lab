@@ -1,6 +1,6 @@
 defmodule Mix.Tasks.StackLab.ProviderSmokeCheck do
   @moduledoc """
-  Runs the opt-in provider smoke check for the Extravaganza non-UI lane.
+  Runs the opt-in provider smoke check.
   """
 
   use Mix.Task

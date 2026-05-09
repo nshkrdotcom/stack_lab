@@ -33,9 +33,6 @@ This package owns:
 - the real `mezzanine` restart-recovery proof through the JobOutbox-backed
   dispatch worker
 - the governed-run proof above the `app_kit` operational surface
-- the Extravaganza non-UI lane fixture for Linear-shaped source admission,
-  workspace refs, Codex lower receipts, GitHub PR evidence refs, operator
-  review, and Linear workpad publication readback through AppKit DTOs
 - the Scenario-19 observability, archived-read honesty, and trace-join
   continuity proof across the public northbound and lower-backed surfaces
 - the Scenario-38 and Scenario-41 archived unified-trace reconstruction proof
@@ -129,15 +126,9 @@ the Phase-3 packet under
 runbook index, Scenario 29-43 runbook references in `STACK_LAB_SPEC.md`, and
 absence of placeholder runbook content.
 
-The Extravaganza non-UI lane fixture is credential-free internal contract
-coverage. It compiles the product pack, builds typed AppKit runtime projection
-DTOs, renders the product workpad preview, maps required failure variants to
-owner coverage, and exposes the opt-in provider smoke command for M12.
-The provider smoke command composes owner-owned Linear, GitHub, Codex, and Mezzanine
-Temporal status checks and writes a local receipt; it does not accept static
-GitHub, Linear, Codex, or Temporal provider selectors. This is lower provider
-reachability only; it is not production E2E, does not prove the product path,
-and does not prove the AppKit/Mezzanine/Citadel/Jido causal chain.
+The provider smoke command composes owner-owned Linear, GitHub, Codex, and
+Mezzanine Temporal status checks and writes a local receipt; it does not accept
+static GitHub, Linear, Codex, or Temporal provider selectors.
 
 Run the provider smoke command from the StackLab workspace root:
 

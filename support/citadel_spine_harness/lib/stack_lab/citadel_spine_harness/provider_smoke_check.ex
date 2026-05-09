@@ -1,6 +1,6 @@
 defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
   @moduledoc """
-  Opt-in provider smoke harness for the Extravaganza non-UI lane.
+  Opt-in provider smoke harness for shared lower providers.
 
   The harness composes existing owner-owned live checks and records one local
   receipt. It does not accept provider object ids from the operator; the lower
@@ -16,15 +16,13 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
   @schema_name "provider_smoke_receipt_v1.json"
   @proof_class "provider_smoke_only"
   @not_proven [
-    "Extravaganza product entrypoint",
-    "AppKit WorkSurface ingest",
-    "AppKit WorkControl start_run",
-    "Mezzanine workflow execution",
-    "Citadel authority decision",
-    "Jido lower invocation under authority",
-    "Mezzanine receipt reducer projection",
-    "AppKit runtime projection readback",
-    "Extravaganza operator/readback path"
+    "product entrypoint",
+    "work-control start_run",
+    "workflow execution",
+    "authority decision",
+    "governed lower invocation",
+    "receipt reducer projection",
+    "product readback path"
   ]
   @static_selector_flags [
     "--github-issue-number",
@@ -68,7 +66,6 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
       github_repo: spec.github_repo,
       temporal_mode: spec.temporal_mode,
       steps: [
-        :internal_appkit_projection,
         :temporal_status,
         :linear_terminal_publication,
         :github_disposable_pr,
@@ -79,7 +76,6 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
         linear: :discover_issue_create_update_terminal_comment_from_provider_outputs,
         github: :fetch_repo_create_branch_commit_pr_review_close_delete_from_provider_outputs,
         codex: :session_turn_runtime_refs_from_lower_receipts,
-        appkit: :typed_runtime_projection_receipt,
         temporal: :mezzanine_just_substrate_status
       },
       static_provider_selector_acceptance?: false
@@ -96,7 +92,6 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
     with {:ok, spec} <- parse_args(argv),
          {:ok, linear_stdin} <- maybe_read_linear_stdin(spec, secret_reader),
          :ok <- progress.(spec, :started),
-         {:ok, internal_projection} <- run_internal_projection(progress),
          {:ok, temporal} <- run_temporal(spec, command_runner, progress),
          {:ok, linear} <- run_linear(spec, linear_stdin, command_runner, progress),
          {:ok, github} <- run_github(spec, command_runner, progress),
@@ -105,7 +100,6 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
         %{
           schema_name: @schema_name,
           proof_class: @proof_class,
-          production_e2e: false,
           status: :smoke_test_only,
           provider_smoke_result: :passed,
           command: "mix stack_lab.provider_smoke_check",
@@ -114,7 +108,6 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
           provider_smoke_steps: plan(spec).steps,
           plan: plan(spec),
           not_proven: @not_proven,
-          internal_projection: internal_projection_summary(internal_projection),
           temporal: temporal,
           linear: linear,
           github: github,
@@ -297,20 +290,6 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
 
       other ->
         {:error, {:invalid_linear_api_key_stdin, other}}
-    end
-  end
-
-  defp run_internal_projection(progress) do
-    progress.(:internal_appkit_projection, :started)
-
-    case CitadelSpineHarness.exercise_extravaganza_non_ui_lane(:deterministic_full_lane) do
-      {:ok, result} ->
-        progress.(:internal_appkit_projection, :passed)
-        {:ok, result}
-
-      {:error, reason} ->
-        progress.(:internal_appkit_projection, :failed)
-        {:error, reason}
     end
   end
 
@@ -508,16 +487,6 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
       {output, 0} -> {:ok, output}
       {output, status} -> {:error, %{exit_status: status, output: output}}
     end
-  end
-
-  defp internal_projection_summary(result) do
-    %{
-      case: result.case,
-      acceptance_kind: result.acceptance_kind,
-      path: result.path,
-      evidence_refs: result.evidence.refs,
-      source_publish_ref: result.pack.source_publish_ref
-    }
   end
 
   defp write_receipt(path, receipt) do

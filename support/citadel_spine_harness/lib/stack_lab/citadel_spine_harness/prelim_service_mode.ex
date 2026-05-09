@@ -2,12 +2,20 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   @moduledoc false
 
   alias Citadel.AuthorityContract.AuthorityDecision.V1, as: AuthorityDecision
-  alias Extravaganza.ProductPack
-  alias Extravaganza.WorkClasses.CodingOperations
   alias Jido.Integration.V2.TenantScope
   alias Mezzanine.Leasing.AuthorizationScope
   alias Mezzanine.Lifecycle.{Evaluator, SubjectSnapshot}
-  alias Mezzanine.Pack.{CompiledPack, Compiler}
+
+  alias Mezzanine.Pack.{
+    CompiledPack,
+    Compiler,
+    DecisionSpec,
+    ExecutionRecipeSpec,
+    LifecycleSpec,
+    Manifest,
+    ProjectionSpec,
+    SubjectKindSpec
+  }
 
   alias Mezzanine.WorkflowRuntime.{
     ExecutionLifecycleWorkflow,
@@ -29,6 +37,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
     AppKitOperationalSurface,
     LowerFacts,
     OuterBrainDurability,
+    ProfileSlots,
     TemporalPostgresProjectionDrift
   }
 
@@ -73,7 +82,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   def run_case(:m3_contract_join, opts) when is_list(opts) do
     with {:ok, substrate} <- temporal_substrate(opts),
          {:ok, temporal} <- temporal_contract(),
-         {:ok, workload} <- extravaganza_workload_contract(),
+         {:ok, workload} <- service_workload_contract(),
          {:ok, authority} <- authority_contract(),
          {:ok, semantic} <- semantic_contract() do
       {:ok,
@@ -130,7 +139,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
          {:ok, worker_health} <- temporal_worker_health(),
          {:ok, profile} <- service_simulation_profile(),
          {:ok, installation} <- install_service_profiles([profile]),
-         {:ok, workload} <- extravaganza_workload_contract(),
+         {:ok, workload} <- service_workload_contract(),
          {:ok, authority} <- authority_contract(),
          {:ok, semantic} <- semantic_contract(),
          {:ok, appkit_smoke} <-
@@ -172,7 +181,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
          {:ok, worker_health} <- temporal_worker_health(),
          {:ok, profile} <- service_simulation_profile(),
          {:ok, installation} <- install_service_profiles([profile]),
-         {:ok, workload} <- extravaganza_workload_contract(),
+         {:ok, workload} <- service_workload_contract(),
          {:ok, authority} <- authority_contract(),
          {:ok, semantic} <- semantic_contract(),
          {:ok, appkit_smoke} <-
@@ -315,10 +324,9 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
     end
   end
 
-  defp extravaganza_workload_contract do
-    config = extravaganza_config()
-    manifest = ProductPack.manifest(config)
-    recipe_ref = ProductPack.execution_recipe_ref(config)
+  defp service_workload_contract do
+    manifest = service_workload_manifest()
+    recipe_ref = "service_operations"
 
     with {:ok, compiled} <- Compiler.compile(manifest),
          {:ok, execution_transition} <-
@@ -333,14 +341,12 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
              subject_snapshot(manifest, execution_transition.to),
              {:decision_made, "operator_review", :accept}
            ) do
-      work_class = CodingOperations.definition()
-
       {:ok,
        %{
          work_class: %{
-           name: work_class.name,
-           kind: work_class.kind,
-           intake_required: work_class.intake_schema["required"]
+           name: "service_operations",
+           kind: "service_task",
+           intake_required: ["title", "description"]
          },
          pack: %{
            pack_slug: manifest.pack_slug,
@@ -502,9 +508,9 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
       profile_ref: "service-simulation-profile://phase5prelim/m5/bootstrap",
       run_ref: "run://phase5prelim/m5/bootstrap",
       workload_ref: "workload://phase5prelim/governed-smoke",
-      pack_ref: "pack://extravaganza/coding_operations",
-      work_class_ref: "work-class://extravaganza/coding_operations",
-      subject_kind: "coding_task",
+      pack_ref: "pack://stack_lab/service_operations",
+      work_class_ref: "work-class://stack_lab/service_operations",
+      subject_kind: "service_task",
       adapter_profile_refs: %{
         cli_core: "adapter-profile://cli_subprocess_core/6ef1c72",
         asm: "adapter-profile://agent_session_manager/eed6b45",
@@ -676,7 +682,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
       |> validate_governed_smoke()
       |> rejected()
 
-    non_coding_subject =
+    non_service_subject =
       smoke_evidence
       |> put_in([:governed_subject, :subject_kind], "expense_request")
       |> validate_governed_smoke()
@@ -686,13 +692,13 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
      %{
        missing_review_gate: missing_review_gate,
        missing_lower_trace: missing_lower_trace,
-       non_coding_subject: non_coding_subject
+       non_service_subject: non_service_subject
      }}
   end
 
   defp validate_governed_smoke(%{
          run_shape: %{tenant_count: 1, agent_count: 1, work_item_count: 1},
-         governed_subject: %{subject_ref: subject_ref, subject_kind: "coding_task"},
+         governed_subject: %{subject_ref: subject_ref, subject_kind: "service_task"},
          agent_execution: %{
            execution_ref: execution_ref,
            submission_receipt_ref: "submission://" <> _receipt_ref,
@@ -716,7 +722,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   end
 
   defp validate_governed_smoke(%{governed_subject: %{subject_kind: subject_kind}})
-       when subject_kind != "coding_task" do
+       when subject_kind != "service_task" do
     {:error, {:invalid_subject_kind, subject_kind}}
   end
 
@@ -868,8 +874,8 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
       Enum.any?(work_items, & &1.provider_egress_allowed?) ->
         {:error, :real_provider_egress_allowed}
 
-      Enum.any?(work_items, &(&1.subject_kind != "coding_task")) ->
-        {:error, :non_coding_pressure_subject}
+      Enum.any?(work_items, &(&1.subject_kind != "service_task")) ->
+        {:error, :non_service_pressure_subject}
 
       true ->
         :ok
@@ -1118,7 +1124,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
 
   defp subject_snapshot(manifest, lifecycle_state) do
     SubjectSnapshot.new(%{
-      subject_kind: subject_kind(manifest),
+      subject_kind: subject_kind_atom(manifest),
       lifecycle_state: lifecycle_state,
       payload: %{
         "identifier" => "PRELIM-1",
@@ -1129,27 +1135,98 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   end
 
   defp subject_kind(manifest) do
-    manifest.subject_kind_specs
-    |> List.first()
-    |> Map.fetch!(:name)
+    manifest
+    |> subject_kind_atom()
     |> Atom.to_string()
   end
 
-  defp extravaganza_config do
-    %{
-      tenant_id: "tenant-prelim",
-      program_slug: "extravaganza_coding_ops",
-      program_name: "Extravaganza Coding Ops",
-      product_family: "operator_proving_ground",
-      pack_version: "1.0.0-prelim",
-      policy_bundle_name: "default_coding_ops",
-      policy_bundle_version: "1.0.0",
-      work_class_name: "coding_operations",
-      work_class_kind: "coding_task",
-      placement_profile_id: "local_default",
-      execution_timeout_ms: 300_000,
-      linear_source_kind: "linear",
-      operator_surface_enabled?: true
+  defp subject_kind_atom(manifest) do
+    manifest.subject_kind_specs
+    |> List.first()
+    |> Map.fetch!(:name)
+    |> case do
+      value when is_atom(value) -> value
+      "service_task" -> :service_task
+    end
+  end
+
+  defp service_workload_manifest do
+    %Manifest{
+      pack_slug: "stack_lab_service_ops",
+      version: "1.0.0-prelim",
+      migration_strategy: :additive,
+      profile_slots:
+        ProfileSlots.default(
+          source_profile_ref: :lab_source,
+          runtime_profile_ref: :service_runtime,
+          tool_scope_ref: :service_tools_v1,
+          evidence_profile_ref: :service_evidence,
+          publication_profile_ref: :service_publication,
+          review_profile_ref: :human_operator,
+          projection_profile_ref: :service_projection_v1
+        ),
+      subject_kind_specs: [%SubjectKindSpec{name: "service_task"}],
+      lifecycle_specs: [
+        %LifecycleSpec{
+          subject_kind: "service_task",
+          initial_state: :submitted,
+          terminal_states: [:completed, :rejected, :expired],
+          transitions: [
+            %{
+              from: :submitted,
+              to: :awaiting_review,
+              trigger: {:execution_completed, "service_operations"}
+            },
+            %{
+              from: :submitted,
+              to: :retry_submission,
+              trigger: {:execution_failed, "service_operations"}
+            },
+            %{from: :retry_submission, to: :submitted, trigger: :auto},
+            %{
+              from: :awaiting_review,
+              to: :completed,
+              trigger: {:decision_made, "operator_review", :accept}
+            },
+            %{
+              from: :awaiting_review,
+              to: :rejected,
+              trigger: {:decision_made, "operator_review", :reject}
+            },
+            %{
+              from: :awaiting_review,
+              to: :expired,
+              trigger: {:decision_made, "operator_review", :expired}
+            }
+          ]
+        }
+      ],
+      execution_recipe_specs: [
+        %ExecutionRecipeSpec{
+          recipe_ref: "service_operations",
+          placement_ref: :local_default,
+          runtime_class: :session,
+          workspace_policy: %{
+            strategy: :per_subject,
+            root_ref: "service_operations_workspaces"
+          },
+          sandbox_policy_ref: "service_operations_sandbox",
+          prompt_refs: ["service_operations_prompt"]
+        }
+      ],
+      decision_specs: [
+        %DecisionSpec{
+          decision_kind: :operator_review,
+          description: "Operator review gate for StackLab service workload",
+          trigger: {:after_execution_completed, "service_operations"},
+          authorized_actors: [:operator],
+          allowed_decisions: [:accept, :reject, :expired],
+          required_within_hours: 24
+        }
+      ],
+      projection_specs: [
+        %ProjectionSpec{name: "operator_queue", subject_kinds: ["service_task"]}
+      ]
     }
   end
 
@@ -1165,7 +1242,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
       approval_profile: "review_required",
       egress_profile: "blocked",
       workspace_profile: "read_write_ephemeral",
-      resource_profile: "coding_task",
+      resource_profile: "service_task",
       decision_hash: String.duplicate("a", 64),
       extensions: %{"citadel" => %{"budget_ref" => "budget://prelim/local"}}
     }

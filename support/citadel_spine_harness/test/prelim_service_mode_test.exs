@@ -72,10 +72,10 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
     assert result.temporal.oban_cutover.temporalex_boundary_violations == []
     refute result.temporal.projection_drift_negatives.workflow_start_outbox_bypass.accepted?
 
-    assert result.workload.work_class.name == "coding_operations"
-    assert result.workload.work_class.kind == "coding_task"
-    assert result.workload.pack.pack_slug == "extravaganza_coding_ops"
-    assert result.workload.pack.subject_kind == "coding_task"
+    assert result.workload.work_class.name == "service_operations"
+    assert result.workload.work_class.kind == "service_task"
+    assert result.workload.pack.pack_slug == "stack_lab_service_ops"
+    assert result.workload.pack.subject_kind == "service_task"
     assert result.workload.lifecycle.after_execution_completed == "awaiting_review"
     assert result.workload.lifecycle.review_gate == :operator_review
     assert result.workload.lifecycle.after_review_accept == "completed"
@@ -188,7 +188,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
              {:invalid_egress_policy, :allow_real_provider_fallback}
   end
 
-  test "M5 governed smoke workload drives one coding task through owner paths" do
+  test "M5 governed smoke workload drives one service task through owner paths" do
     assert {:ok, result} =
              CitadelSpineHarness.exercise_prelim_service_mode(
                :m5_governed_smoke,
@@ -232,12 +232,12 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
     assert smoke.workload_profile.profile_ref ==
              "service-simulation-profile://phase5prelim/m5/bootstrap"
 
-    assert smoke.workload_profile.subject_kind == "coding_task"
+    assert smoke.workload_profile.subject_kind == "service_task"
     assert smoke.workload_profile.lifecycle_after_execution == "awaiting_review"
     assert smoke.workload_profile.lifecycle_after_review == "completed"
 
     assert smoke.governed_subject.source_kind == "linear"
-    assert smoke.governed_subject.subject_kind == "coding_task"
+    assert smoke.governed_subject.subject_kind == "service_task"
     assert smoke.governed_subject.lifecycle_state_before_pause == "awaiting_review"
     assert smoke.governed_subject.lifecycle_state_after_review == "awaiting_review"
 
@@ -276,7 +276,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
     assert result.negative_failures.missing_lower_trace ==
              {:missing_trace_source, "lower_run_status"}
 
-    assert result.negative_failures.non_coding_subject ==
+    assert result.negative_failures.non_service_subject ==
              {:invalid_subject_kind, "expense_request"}
   end
 
@@ -332,7 +332,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
 
     assert length(pressure.tenants) == 3
     assert length(work_items) == 24
-    assert Enum.all?(work_items, &(&1.subject_kind == "coding_task"))
+    assert Enum.all?(work_items, &(&1.subject_kind == "service_task"))
     assert Enum.all?(work_items, &(&1.cost_units == 0))
     refute Enum.any?(work_items, & &1.provider_egress_allowed?)
 
@@ -388,7 +388,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
 
     assert "workflow://Mezzanine.Workflows.ExecutionAttempt" in report.substrate.worker_health_refs
 
-    assert report.workload_profile.subject_kind == "coding_task"
+    assert report.workload_profile.subject_kind == "service_task"
     assert report.workload_profile.tenant_count == 3
     assert report.workload_profile.agent_count == 12
     assert report.workload_profile.runs_per_agent == 2

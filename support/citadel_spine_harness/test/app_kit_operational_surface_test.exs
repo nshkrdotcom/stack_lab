@@ -75,10 +75,10 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert result.governed_workload.synthetic_operator_driver_ref == "operator_script_in_app_kit"
 
     assert result.governed_workload.work_class_ref ==
-             "extravaganza/work_classes/coding_operations"
+             "stack_lab/work_classes/service_operations"
 
-    assert result.governed_workload.pack_ref == "mezzanine/packs/extravaganza_coding_ops@1"
-    assert result.governed_workload.subject_kind == "coding_task"
+    assert result.governed_workload.pack_ref == "mezzanine/packs/stack_lab_service_ops@1"
+    assert result.governed_workload.subject_kind == "service_task"
 
     assert result.governed_workload.script_surfaces == [
              :app_kit_work_control,
@@ -101,8 +101,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
     assert result.scale_pressure_seed == %{
              contract_name: "ScalePressureProfile.v1",
              workload_contract_ref: "GovernedAgentWorkloadContract.v1",
-             workload_ref: "workloads/extravaganza-coding-ops",
-             profile_id: "profiles/extravaganza/local_default",
+             workload_ref: "workloads/stack-lab-service-ops",
+             profile_id: "profiles/stack_lab/local_default",
              tenant_count: 1,
              agents_per_tenant: 1,
              work_items_per_agent: 1,

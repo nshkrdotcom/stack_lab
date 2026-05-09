@@ -64,10 +64,10 @@ defmodule StackLab.CitadelSpineHarness.Phase6EvidenceReportTest do
              "app_kit_operator_surface_via_mezzanine_bridge"
 
     assert report["governed_workload"]["work_class_ref"] ==
-             "extravaganza/work_classes/coding_operations"
+             "stack_lab/work_classes/service_operations"
 
     assert report["governed_workload"]["pack_ref"] ==
-             "mezzanine/packs/extravaganza_coding_ops@1"
+             "mezzanine/packs/stack_lab_service_ops@1"
 
     assert "tenant:tenant-phase6-m8" in report["authority"]["tenant_refs"]
     assert report["authority"]["authority_decision_refs"] != []

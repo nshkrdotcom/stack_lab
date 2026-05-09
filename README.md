@@ -31,7 +31,6 @@ owner, and the product-facing northbound surfaces:
 - `examples/multi_node_roundtrip`
 - `examples/restart_authority_drill`
 - `examples/pressure_failover_drill`
-- `support/citadel_spine_harness` Extravaganza non-UI lane fixture
 - `examples/skill_roundtrip`
 - `examples/hive_roundtrip`
 - `support/model_inference_scanner`
@@ -155,17 +154,10 @@ remote-runtime-client stub. It proves local node process/HTTP execution,
 rejection of unsigned authority and unattested targets, and the
 JidoIntegration-owned fallback ladder that records a rejected strong
 attestation rung before succeeding on `local-erlexec-weak`.
-The Extravaganza non-UI lane fixture proves the credential-free internal
-contract for the current coding-ops path: Linear-shaped source admission,
-workspace refs, Codex lower receipts, GitHub PR evidence refs, operator review,
-and Linear workpad publication readback are carried through AppKit DTOs and
-Extravaganza product templates. The harness now also exposes an opt-in provider
-smoke command from the workspace root that composes Linear terminal
-publication, GitHub disposable PR creation/review/cleanup, Codex app-server
-execution, Temporal substrate status, and a local receipt without accepting
-static provider selectors. This is lower provider reachability only; it is not
-production E2E, does not prove the product path, and does not prove the
-AppKit/Mezzanine/Citadel/Jido causal chain.
+The harness also exposes an opt-in provider smoke command from the workspace
+root that composes Linear terminal publication, GitHub disposable PR
+creation/review/cleanup, Codex app-server execution, Temporal substrate status,
+and a local receipt without accepting static provider selectors.
 
 ## Scope
 
@@ -235,8 +227,6 @@ just fault net-cut
 - [docs/runbooks/up_single.md](./docs/runbooks/up_single.md)
 - [docs/runbooks/up_multi.md](./docs/runbooks/up_multi.md)
 - [docs/runbooks/faults.md](./docs/runbooks/faults.md)
-- [docs/runbooks/extravaganza_non_ui_lane.md](./docs/runbooks/extravaganza_non_ui_lane.md)
-- [docs/runbooks/production_e2e.md](./docs/runbooks/production_e2e.md)
 - [docs/runbooks/tre_lane_acceptance.md](./docs/runbooks/tre_lane_acceptance.md)
 - [support/spec_cell/README.md](./support/spec_cell/README.md)
 - [support/gn_ten_control_plane/README.md](./support/gn_ten_control_plane/README.md)

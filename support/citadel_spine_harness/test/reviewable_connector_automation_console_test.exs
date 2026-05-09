@@ -17,7 +17,7 @@ defmodule StackLab.CitadelSpineHarness.ReviewableConnectorAutomationConsoleTest 
     assert result.whitepaper_use_case == :"18.2_reviewable_connector_automation"
 
     assert result.synthetic_shape.surface_kind == :connector_automation_console
-    assert result.synthetic_shape.differs_from == :extravaganza_operator_shell
+    assert result.synthetic_shape.differs_from == :single_product_operator_shell
     assert result.synthetic_shape.product_posture == :reviewable_connector_automation
 
     assert result.automation_case.subject_id in result.console.listed_subject_ids

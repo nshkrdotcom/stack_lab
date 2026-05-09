@@ -15,7 +15,6 @@ defmodule StackLab.CitadelSpineHarness do
     AppKitOperationalSurface,
     AuthorityTenantPropagationEvidence,
     ExtensionAuthoring,
-    ExtravaganzaNonUiLane,
     GovernedRun,
     InstallationRuntimeLease,
     LowerFacts,
@@ -35,7 +34,6 @@ defmodule StackLab.CitadelSpineHarness do
     PrelimEvidenceReport,
     PrelimServiceMode,
     PressureFailover,
-    ProductionE2E,
     ProviderFamilyRuntimeIntegration,
     RestartAuthority,
     SameNode,
@@ -694,76 +692,6 @@ defmodule StackLab.CitadelSpineHarness do
              :unauthorized_lower_trace_read
            ] do
     AppKitOperationalSurface.run_case(case_name)
-  end
-
-  @spec extravaganza_non_ui_lane_scenario() :: map()
-  def extravaganza_non_ui_lane_scenario do
-    %{
-      name: :extravaganza_non_ui_lane,
-      compose: LabCore.compose_file(:single),
-      runbook: "extravaganza_non_ui_lane.md",
-      repo_roots: repo_roots(),
-      owner_repo: :stack_lab,
-      product_repo: :extravaganza,
-      cases: %{
-        deterministic_full_lane: %{kind: :deterministic_full_lane},
-        local_single_node_verification: %{kind: :owner_product_path},
-        failure_matrix: %{kind: :failure_matrix},
-        live_readiness: %{kind: :live_readiness}
-      }
-    }
-  end
-
-  @spec exercise_extravaganza_non_ui_lane(
-          :deterministic_full_lane
-          | :local_single_node_verification
-          | :failure_matrix
-          | :live_readiness
-        ) :: {:ok, map()}
-  def exercise_extravaganza_non_ui_lane(case_name)
-      when case_name in [
-             :deterministic_full_lane,
-             :local_single_node_verification,
-             :failure_matrix,
-             :live_readiness
-           ] do
-    ExtravaganzaNonUiLane.run_case(case_name)
-  end
-
-  @spec production_e2e_scenario() :: map()
-  def production_e2e_scenario do
-    %{
-      name: :production_e2e,
-      compose: LabCore.compose_file(:single),
-      runbook: "production_e2e.md",
-      repo_roots: repo_roots(),
-      owner_repo: :stack_lab,
-      product_repo: :extravaganza,
-      schema_name: ProductionE2E.schema_name(),
-      provider_smoke_schema_name: "provider_smoke_receipt_v1.json",
-      temporal: ProductionE2E.temporal_contract(),
-      cases: %{
-        deterministic_offline_fixture: %{kind: :true_production_path},
-        live_provider_mutation: %{
-          kind: :true_production_path,
-          requires_explicit_authorization: :live_provider_mutation_authorized?
-        },
-        temporal_unavailable: %{kind: :fail_closed_guard}
-      }
-    }
-  end
-
-  @spec exercise_production_e2e(
-          :deterministic_offline_fixture | :live_provider_mutation,
-          keyword()
-        ) ::
-          {:ok, map()} | {:error, term()}
-  def exercise_production_e2e(case_name, opts \\ [])
-
-  def exercise_production_e2e(case_name, opts)
-      when case_name in [:deterministic_offline_fixture, :live_provider_mutation] and
-             is_list(opts) do
-    ProductionE2E.run_case(case_name, opts)
   end
 
   @spec tre_lane_acceptance_scenario() :: map()

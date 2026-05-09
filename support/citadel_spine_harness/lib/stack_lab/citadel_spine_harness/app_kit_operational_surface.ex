@@ -542,7 +542,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       {:ok, run_request} =
         RunRequest.new(%{
           subject_ref: subject_ref,
-          recipe_ref: "coding_operations",
+          recipe_ref: "service_operations",
           params: %{"priority" => "high"}
         })
 
@@ -1229,7 +1229,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
            whitepaper_use_case: :"18.2_reviewable_connector_automation",
            synthetic_shape: %{
              surface_kind: :connector_automation_console,
-             differs_from: :extravaganza_operator_shell,
+             differs_from: :single_product_operator_shell,
              product_posture: :reviewable_connector_automation
            },
            console: %{
@@ -1866,35 +1866,35 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
   defp activate_governed_workload_registration! do
     manifest = %Manifest{
-      pack_slug: "extravaganza_coding_ops",
+      pack_slug: "stack_lab_service_ops",
       version: "1",
       migration_strategy: :additive,
       profile_slots:
         ProfileSlots.default(
-          source_profile_ref: :linear_coding_task,
+          source_profile_ref: :linear_service_task,
           runtime_profile_ref: :codex_session,
           tool_scope_ref: :coding_ops_v1,
           evidence_profile_ref: :github_pr_plus_workpad,
-          publication_profile_ref: :linear_workpad_review,
+          publication_profile_ref: :service_publication,
           review_profile_ref: :human_operator,
           projection_profile_ref: :coding_ops_projection_v1
         ),
-      subject_kind_specs: [%SubjectKindSpec{name: "coding_task"}],
+      subject_kind_specs: [%SubjectKindSpec{name: "service_task"}],
       lifecycle_specs: [
         %LifecycleSpec{
-          subject_kind: "coding_task",
+          subject_kind: "service_task",
           initial_state: :submitted,
           terminal_states: [:completed, :rejected, :expired],
           transitions: [
             %{
               from: :submitted,
               to: :awaiting_review,
-              trigger: {:execution_completed, "coding_operations"}
+              trigger: {:execution_completed, "service_operations"}
             },
             %{
               from: :submitted,
               to: :retry_submission,
-              trigger: {:execution_failed, "coding_operations"}
+              trigger: {:execution_failed, "service_operations"}
             },
             %{from: :retry_submission, to: :submitted, trigger: :auto},
             %{
@@ -1917,29 +1917,29 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
       ],
       execution_recipe_specs: [
         %ExecutionRecipeSpec{
-          recipe_ref: "coding_operations",
+          recipe_ref: "service_operations",
           placement_ref: :local_default,
           runtime_class: :session,
           workspace_policy: %{
             strategy: :per_subject,
-            root_ref: "coding_operations_workspaces"
+            root_ref: "service_operations_workspaces"
           },
-          sandbox_policy_ref: "coding_operations_sandbox",
-          prompt_refs: ["coding_operations_prompt"]
+          sandbox_policy_ref: "service_operations_sandbox",
+          prompt_refs: ["service_operations_prompt"]
         }
       ],
       decision_specs: [
         %DecisionSpec{
           decision_kind: :operator_review,
           description: "Operator review gate for governed coding operations",
-          trigger: {:after_execution_completed, "coding_operations"},
+          trigger: {:after_execution_completed, "service_operations"},
           authorized_actors: [:operator],
           allowed_decisions: [:accept, :reject, :expired],
           required_within_hours: 24
         }
       ],
       projection_specs: [
-        %ProjectionSpec{name: "operator_queue", subject_kinds: ["coding_task"]}
+        %ProjectionSpec{name: "operator_queue", subject_kinds: ["service_task"]}
       ]
     }
 
@@ -1968,9 +1968,9 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
     {:ok, bootstrap} =
       Installations.ensure_runtime_profile(tenant_id, %{
         program: %{
-          slug: "extravaganza_coding_ops",
-          name: "Extravaganza Coding Ops",
-          product_family: "extravaganza",
+          slug: "stack_lab_service_ops",
+          name: "StackLab Service Ops",
+          product_family: "stack_lab",
           configuration: %{},
           metadata: %{}
         },
@@ -1983,8 +1983,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
           metadata: %{}
         },
         work_class: %{
-          name: "coding_operations",
-          kind: "coding_task",
+          name: "service_operations",
+          kind: "service_task",
           intake_schema: %{"required" => ["title"]},
           default_review_profile: %{"required" => true},
           default_run_profile: %{"runtime" => "session"}
@@ -2005,12 +2005,12 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   defp governed_workload_install_template! do
     {:ok, template} =
       InstallTemplate.new(%{
-        template_key: "extravaganza-coding-ops",
-        pack_slug: "extravaganza_coding_ops",
+        template_key: "stack-lab-service-ops",
+        pack_slug: "stack_lab_service_ops",
         pack_version: "1",
         default_bindings: %{
           "execution_bindings" => %{
-            "coding_operations" => %{"placement_ref" => "local_default"}
+            "service_operations" => %{"placement_ref" => "local_default"}
           }
         },
         metadata: %{"managed_by" => "stack_lab", "contract" => "GovernedAgentWorkloadContract.v1"}
@@ -2021,12 +2021,12 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
   defp governed_workload_attrs do
     %{
-      workload_ref: "workloads/extravaganza-coding-ops",
-      profile_id: "profiles/extravaganza/local_default",
+      workload_ref: "workloads/stack-lab-service-ops",
+      profile_id: "profiles/stack_lab/local_default",
       ingress_ref: "app_kit_operator_surface_via_mezzanine_bridge",
-      work_class_ref: "extravaganza/work_classes/coding_operations",
-      pack_ref: "mezzanine/packs/extravaganza_coding_ops@1",
-      subject_kind: "coding_task",
+      work_class_ref: "stack_lab/work_classes/service_operations",
+      pack_ref: "mezzanine/packs/stack_lab_service_ops@1",
+      subject_kind: "service_task",
       lifecycle_states: [
         :submitted,
         :retry_submission,
@@ -2035,7 +2035,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         :rejected,
         :expired
       ],
-      review_gate_ref: "extravaganza/review_gates/operator_review",
+      review_gate_ref: "stack_lab/review_gates/operator_review",
       tenant_count: 1,
       agent_count: 1,
       runs_per_agent: 1,
@@ -2087,8 +2087,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
           metadata: %{}
         },
         work_class: %{
-          name: "coding_task_#{System.unique_integer([:positive])}",
-          kind: "coding_task",
+          name: "service_task_#{System.unique_integer([:positive])}",
+          kind: "service_task",
           intake_schema: %{"required" => ["title"]},
           default_review_profile: %{"required" => review_required?},
           default_run_profile: %{"runtime" => "session"}

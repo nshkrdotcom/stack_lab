@@ -9,7 +9,6 @@ It exists to make these seams executable:
 - multi-node boot
 - restart-authority drills
 - governed-run and operator-surface examples
-- Extravaganza non-UI coding-ops fixture coverage
 - session-lineage and failover drills
 - governed-memory substrate simulations
 - shared-library plus governed-adapter integration receipts

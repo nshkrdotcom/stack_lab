@@ -204,14 +204,14 @@ defmodule StackLab.CitadelSpineHarness.Phase6EvidenceReport do
   defp governed_workload_section do
     %{
       "ingress_ref" => "app_kit_operator_surface_via_mezzanine_bridge",
-      "work_class_ref" => "extravaganza/work_classes/coding_operations",
-      "pack_ref" => "mezzanine/packs/extravaganza_coding_ops@1",
+      "work_class_ref" => "stack_lab/work_classes/service_operations",
+      "pack_ref" => "mezzanine/packs/stack_lab_service_ops@1",
       "subject_refs" => [
         "subject://phase6/m5/governed-coding-operation",
-        "subject-kind://coding_task"
+        "subject-kind://service_task"
       ],
       "review_gate_refs" => [
-        "extravaganza/review_gates/operator_review",
+        "stack_lab/review_gates/operator_review",
         "review-action://phase6/m5/operator-accept"
       ],
       "lifecycle_refs" => [

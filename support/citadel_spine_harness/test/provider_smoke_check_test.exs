@@ -55,7 +55,6 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheckTest do
     plan = ProviderSmokeCheck.plan(spec)
 
     assert plan.steps == [
-             :internal_appkit_projection,
              :temporal_status,
              :linear_terminal_publication,
              :github_disposable_pr,
@@ -115,21 +114,17 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheckTest do
     assert receipt.github.repo == "nshkrdotcom/test"
     assert receipt.linear.terminal_comment_preserved? == true
     assert receipt.temporal.mode == :check
-    assert receipt.internal_projection.case == :deterministic_full_lane
     assert receipt.schema_name == "provider_smoke_receipt_v1.json"
     assert receipt.proof_class == "provider_smoke_only"
-    assert receipt.production_e2e == false
     assert receipt.status == :smoke_test_only
     assert receipt.provider_smoke_result == :passed
     assert receipt.command == "mix stack_lab.provider_smoke_check"
     assert receipt.provider_smoke_steps == receipt.plan.steps
-    assert "Citadel authority decision" in receipt.not_proven
-    assert "AppKit runtime projection readback" in receipt.not_proven
+    assert "authority decision" in receipt.not_proven
+    assert "product readback path" in receipt.not_proven
 
     assert_receive {:receipt_written, "/tmp/m12-receipt.json", ^receipt}
     assert_receive {:progress, :run, :started}
-    assert_receive {:progress, :internal_appkit_projection, :started}
-    assert_receive {:progress, :internal_appkit_projection, :passed}
     assert_receive {:progress, :temporal, :started}
     assert_receive {:progress, :temporal, :passed}
     assert_receive {:progress, :linear, :started}

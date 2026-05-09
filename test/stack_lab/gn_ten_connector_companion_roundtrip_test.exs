@@ -10,7 +10,7 @@ defmodule StackLab.GnTen.ConnectorCompanionRoundtripTest do
     assert report.schema_version == "phase_e_connector_companion_roundtrip_v1"
     assert report.profile == "assembled_offline"
     assert report[:provider_free?] == true
-    assert report.repos_checked == ["jido_integration", "app_kit", "extravaganza", "stack_lab"]
+    assert report.repos_checked == ["jido_integration", "app_kit", "stack_lab"]
     assert report.explicit_app_config.auto_discovery? == false
     assert report.admission_record.admission_status == "admitted"
     assert report.app_kit_projection.contract_name == "AppKit.ConnectorAdmissionProjection.v1"

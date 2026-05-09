@@ -34,7 +34,7 @@ defmodule StackLab.GnTen.ConnectorCompanionRoundtrip do
       schema_version: @schema_version,
       profile: "assembled_offline",
       provider_free?: true,
-      repos_checked: ["jido_integration", "app_kit", "extravaganza", "stack_lab"],
+      repos_checked: ["jido_integration", "app_kit", "stack_lab"],
       explicit_app_config: explicit_app_config(),
       admission_record: admission_record(),
       app_kit_projection: app_kit_projection(),
@@ -71,9 +71,9 @@ defmodule StackLab.GnTen.ConnectorCompanionRoundtrip do
 
   defp explicit_app_config do
     %{
-      connector_ref: "connector://tenant-alpha/extravaganza-linear-safe-read",
-      package: "extravaganza_linear_safe_read_companion",
-      module: "Extravaganza.Companions.LinearSafeRead.Connector",
+      connector_ref: "connector://tenant-alpha/sample-linear-safe-read",
+      package: "sample_linear_safe_read_companion",
+      module: "SampleApp.Companions.LinearSafeRead.Connector",
       tenant_ref: "tenant://tenant-alpha",
       app_config_ref: "app-config://tenant-alpha/linear-safe-read-companion",
       manifest_hash: "sha256:1a0f1e6d8e0d9c4b3a2f105f91c8d7e6a5b4c3d2e1f011223344556677889900",
@@ -91,7 +91,7 @@ defmodule StackLab.GnTen.ConnectorCompanionRoundtrip do
 
     %{
       connector_ref: config.connector_ref,
-      connector_id: "extravaganza_linear_safe_read",
+      connector_id: "sample_linear_safe_read",
       tenant_ref: config.tenant_ref,
       manifest_hash: config.manifest_hash,
       contract_version: config.contract_version,

@@ -60,7 +60,6 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       {:app_kit_scope_objects, path: "../../../app_kit/core/scope_objects"},
       {:app_kit_work_control, path: "../../../app_kit/core/work_control"},
       {:app_kit_work_surface, path: "../../../app_kit/core/work_surface"},
-      {:extravaganza_core, path: "../../../extravaganza/apps/extravaganza_core", runtime: false},
       {:mezzanine_core, path: "../../../mezzanine/core/mezzanine_core", runtime: false},
       {:mezzanine_audit_engine, path: "../../../mezzanine/core/audit_engine", runtime: false},
       {:mezzanine_config_registry,
@@ -143,7 +142,6 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       # The harness boots these packages manually under test, so they stay
       # compile-only at app startup but still need PLT coverage for direct calls.
       plt_add_apps: [
-        :extravaganza_core,
         :ground_plane_contracts,
         :jido_integration_v2_control_plane,
         :jido_integration_v2_store_postgres,
