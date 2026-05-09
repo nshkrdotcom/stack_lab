@@ -54,6 +54,7 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
              )
 
     assert receipt.schema_name == "production_e2e_receipt_v1.json"
+    assert receipt.scenario_id == "extravaganza.production_e2e.v1"
     assert receipt.forbidden_provider_smoke_schema == "provider_smoke_receipt_v1.json"
     assert receipt.proof_class == "true_production_e2e"
     assert receipt.production_e2e == true
@@ -66,6 +67,18 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
 
     assert receipt.path == [:extravaganza, :appkit, :mezzanine, :citadel, :jido_integration]
     assert receipt.trigger.starts_at == :product_appkit_boundary
+    assert receipt.runtime_profile.lower_runtime_kind == "deterministic_fixture"
+    assert receipt.runtime_profile.runtime_profile_kind == "temporal_local"
+    assert receipt.runtime_profile.live_provider_allowed == false
+
+    assert Map.keys(receipt.repo_shas) |> Enum.sort() == [
+             :app_kit,
+             :citadel,
+             :extravaganza,
+             :jido_integration,
+             :mezzanine,
+             :stack_lab
+           ]
 
     assert receipt.trigger.appkit_calls == [
              :work_surface_ingest_subject_3,
@@ -107,6 +120,7 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
 
     assert String.contains?(receipt.jido_integration.lower_submission_ref, "jido://submissions/")
     assert receipt.jido_integration.carries_citadel_authority? == true
+    assert receipt.jido_integration.lower_runtime_kind == "deterministic_fixture"
     assert receipt.jido_integration.provider_effect_live? == false
 
     assert receipt.jido_integration.provider_object_refs == [
@@ -115,6 +129,7 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
            ]
 
     assert receipt.lower_receipt.receipt_state == :succeeded
+    assert receipt.lower_receipt.lower_runtime_kind == "deterministic_fixture"
 
     assert receipt.lower_receipt.provider_created_refs ==
              receipt.jido_integration.provider_object_refs
@@ -142,6 +157,32 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
     assert receipt.evidence.requirements_met? == true
     assert receipt.evidence.placeholder_artifact_refs? == false
     assert receipt.receipt_structural_difference_from_provider_smoke == true
+
+    assert receipt.governed_lower_envelope.lower_runtime_kind == "deterministic_fixture"
+    assert receipt.governed_lower_envelope.capability_id == "codex.session.turn"
+
+    assert "source_binding://linear_primary" in receipt.governed_lower_envelope.resource_scope_refs
+
+    assert Enum.map(receipt.acceptance_claim_rows, & &1.id) == [
+             "local_single_node_run",
+             "no_bypass",
+             "authority_exact_match",
+             "active_manifest_required_for_writes",
+             "deterministic_lower_receipt",
+             "projection_evidence_chain",
+             "review_decision",
+             "source_publication_receipt"
+           ]
+
+    assert Enum.map(receipt.symphony_parity_claim_rows, & &1.id) == [
+             "source_eligibility",
+             "continuation_retry",
+             "abnormal_retry",
+             "stale_retry_protection",
+             "workspace_policy",
+             "dynamic_tool_denial",
+             "observability_state_detail_refresh"
+           ]
   end
 
   test "live provider mutation is fail-closed unless explicitly enabled" do
@@ -205,5 +246,20 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2ETest do
 
     assert String.contains?(error.operator_action, "just dev-up")
     assert String.contains?(error.operator_action, "do not start an ephemeral Temporal cluster")
+  end
+
+  test "production E2E runbook stays aligned with the root StackLab command" do
+    runbook =
+      StackLab.CitadelSpineHarness.repo_roots().stack_lab
+      |> Path.join("docs/runbooks/production_e2e.md")
+      |> File.read!()
+
+    assert String.contains?(runbook, "just dev-up")
+    assert String.contains?(runbook, "just dev-status")
+    assert String.contains?(runbook, "just up-single")
+    assert String.contains?(runbook, "mix extravaganza.headless.smoke --backend appkit")
+    assert String.contains?(runbook, "mix stack_lab.production_e2e_check")
+    assert String.contains?(runbook, "--receipt-file /tmp/extravaganza-production-e2e.json")
+    assert String.contains?(runbook, "Provider smoke remains separate")
   end
 end

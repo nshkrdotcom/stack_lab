@@ -12,6 +12,22 @@ readback, Extravaganza workpad rendering, local worker identity flow, SSH
 execution-surface contract coverage, required failure variant mapping, and the
 provider smoke command contract.
 
+The same test file also exercises
+`CitadelSpineHarness.exercise_extravaganza_non_ui_lane(:local_single_node_verification)`.
+That case boots a local Mezzanine store, bootstraps Extravaganza, starts a
+Linear-shaped run through `Extravaganza.ProductHost.start_run/2`, reads back
+operator status through AppKit, records an AppKit review decision, and emits
+StackLab acceptance claim rows with repo SHAs and runtime profile refs.
+
+The production-path command is documented in `production_e2e.md` and exposed at
+the workspace root:
+
+```bash
+cd /home/home/p/g/n/stack_lab
+mix stack_lab.production_e2e_check \
+  --receipt-file /tmp/extravaganza-production-e2e.json
+```
+
 Run the opt-in provider smoke check from the workspace root. When using
 `--linear-api-key-stdin`, pipe the secret into the command or finish stdin
 manually with EOF, typically `Ctrl-D`; the task does not read credentials from

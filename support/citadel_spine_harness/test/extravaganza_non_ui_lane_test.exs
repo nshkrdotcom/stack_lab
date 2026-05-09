@@ -12,6 +12,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaNonUiLaneTest do
 
     assert scenario.cases == %{
              deterministic_full_lane: %{kind: :deterministic_full_lane},
+             local_single_node_verification: %{kind: :owner_product_path},
              failure_matrix: %{kind: :failure_matrix},
              live_readiness: %{kind: :live_readiness}
            }
@@ -63,6 +64,86 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaNonUiLaneTest do
 
     assert result.static_selector_keys_present? == false
     assert result.forbidden_selector_hits == []
+  end
+
+  @tag timeout: 300_000
+  test "local single-node verification drives the owner ProductHost path and emits acceptance rows" do
+    assert {:ok, result} =
+             CitadelSpineHarness.exercise_extravaganza_non_ui_lane(
+               :local_single_node_verification
+             )
+
+    assert result.case == :local_single_node_verification
+    assert result.scenario_id == "extravaganza.local_single_node.v1"
+    assert result.acceptance_kind == :local_single_node_owner_product_path
+    assert result.provider_smoke_scope == :provider_reachability_only
+    assert result.stack_lab_role == :external_acceptance_harness_not_product_runtime
+
+    assert result.product_path.run_state == :waiting_review
+    assert result.product_path.workflow_dispatch_state == "queued"
+    assert String.starts_with?(result.product_path.workflow_start_ref, "workflow-start-outbox://")
+    assert result.product_path.review_required == true
+    assert result.product_path.review_status in [:accepted, :approved, :completed]
+    assert result.product_path.review_action_kind in ["review_run", "review_accept"]
+    assert result.product_path.subject_ref in result.product_path.queue_subject_refs
+
+    assert result.product_path.appkit_entrypoints == [
+             "Extravaganza.ProductHost.start_run/2",
+             "AppKit.WorkSurface.ingest_subject/3",
+             "AppKit.WorkControl.start_run/3"
+           ]
+
+    assert result.runtime_profile.lower_runtime_kind == "codex_session"
+    assert result.runtime_profile.runtime_profile_kind == "temporal_local"
+    assert result.runtime_profile.live_provider_allowed == false
+    assert result.product_path.lower_envelope_refs.runtime_profile_ref == "codex_session"
+    assert "codex.session.turn" in result.product_path.lower_envelope_refs.requested_action_ids
+
+    assert "linear.comments.update" in result.product_path.lower_envelope_refs.requested_capability_ids
+
+    assert Map.keys(result.repo_shas) |> Enum.sort() == [
+             :app_kit,
+             :citadel,
+             :extravaganza,
+             :jido_integration,
+             :mezzanine,
+             :stack_lab
+           ]
+
+    assert Enum.all?(result.repo_shas, fn {_repo, sha} -> is_binary(sha) and sha != "" end)
+
+    claim_ids = Enum.map(result.acceptance_claim_rows, & &1.id)
+
+    assert claim_ids == [
+             "local_single_node_run",
+             "no_bypass",
+             "authority_exact_match",
+             "active_manifest_required_for_writes",
+             "deterministic_lower_receipt",
+             "projection_evidence_chain",
+             "review_decision",
+             "source_publication_receipt"
+           ]
+
+    assert Enum.all?(result.acceptance_claim_rows, &(&1.scenario_id == result.scenario_id))
+
+    parity_ids = Enum.map(result.symphony_parity_claim_rows, & &1.id)
+
+    assert parity_ids == [
+             "source_eligibility",
+             "continuation_retry",
+             "abnormal_retry",
+             "stale_retry_protection",
+             "workspace_policy",
+             "dynamic_tool_denial",
+             "observability_state_detail_refresh"
+           ]
+
+    assert Enum.any?(
+             result.runbook,
+             &(&1.command ==
+                 "mix stack_lab.production_e2e_check --receipt-file /tmp/extravaganza-production-e2e.json")
+           )
   end
 
   test "failure matrix maps every required M10 variant to owner coverage" do

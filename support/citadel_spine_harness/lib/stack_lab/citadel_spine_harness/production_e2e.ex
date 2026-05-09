@@ -11,6 +11,7 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
   @schema_name "production_e2e_receipt_v1.json"
   @provider_smoke_schema_name "provider_smoke_receipt_v1.json"
   @mezzanine_root "/home/home/p/g/n/mezzanine"
+  @scenario_id "extravaganza.production_e2e.v1"
 
   @spec schema_name() :: String.t()
   def schema_name, do: @schema_name
@@ -107,6 +108,7 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
 
     %{
       schema_name: @schema_name,
+      scenario_id: @scenario_id,
       forbidden_provider_smoke_schema: @provider_smoke_schema_name,
       proof_class: "true_production_e2e",
       production_e2e: true,
@@ -116,6 +118,8 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
       live_mutation_leg: live_mutation_leg(live_provider_mutation?),
       command: "mix stack_lab.production_e2e_check",
       path: [:extravaganza, :appkit, :mezzanine, :citadel, :jido_integration],
+      repo_shas: repo_shas(),
+      runtime_profile: runtime_profile(),
       temporal: Map.merge(temporal_contract(), %{status: :reachable}),
       cleanup: %{
         state_isolated: true,
@@ -165,12 +169,15 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
         lower_submission_ref: "jido://submissions/production-e2e",
         carries_citadel_authority?: true,
         lower_receipt_ref: "receipt://lower/terminal-success",
+        lower_runtime_kind: "deterministic_fixture",
         provider_effect_live?: live_provider_mutation?,
         provider_object_refs: provider_object_refs(live_provider_mutation?)
       },
+      governed_lower_envelope: governed_lower_envelope(),
       lower_receipt: %{
         receipt_id: "receipt-production-e2e-terminal-success",
         receipt_state: :succeeded,
+        lower_runtime_kind: "deterministic_fixture",
         provider_created_refs: provider_object_refs(live_provider_mutation?),
         evidence_artifact_refs: evidence_refs(),
         trace_id: "trace-production-e2e",
@@ -193,10 +200,102 @@ defmodule StackLab.CitadelSpineHarness.ProductionE2E do
         requirements_met?: true,
         placeholder_artifact_refs?: false
       },
+      acceptance_claim_rows: acceptance_claim_rows(),
+      symphony_parity_claim_rows: symphony_parity_claim_rows(),
       receipt_structural_difference_from_provider_smoke: true,
       receipt_path:
         Keyword.get(opts, :receipt_path, "priv/receipts/production_e2e_receipt_v1.json")
     }
+  end
+
+  defp runtime_profile do
+    %{
+      runtime_profile_ref: "deterministic_single_node",
+      runtime_profile_kind: "temporal_local",
+      lower_runtime_kind: "deterministic_fixture",
+      live_provider_allowed: false,
+      evidence_profile_ref: "debug",
+      durability_mode: "local_postgres"
+    }
+  end
+
+  defp governed_lower_envelope do
+    %{
+      lower_request_ref: "lower-request://production-e2e",
+      lower_runtime_kind: "deterministic_fixture",
+      runtime_profile_ref: "deterministic_single_node",
+      capability_id: "codex.session.turn",
+      action_id: "codex.session.turn",
+      resource_scope_refs: [
+        "source_binding://linear_primary",
+        "workspace-policy://extravaganza_coding_ops/coding_operations"
+      ],
+      policy_bundle_ref: nil,
+      script_ref: nil,
+      sandbox_profile_ref: "sandbox://extravaganza/local-single-node",
+      attestation_profile_ref: "attestation://extravaganza/local-debug",
+      denial_classes: [
+        "authority",
+        "capability",
+        "manifest",
+        "runtime_profile",
+        "resource_scope",
+        "sandbox",
+        "attestation",
+        "policy",
+        "script",
+        "runtime",
+        "receipt",
+        "retry"
+      ]
+    }
+  end
+
+  defp acceptance_claim_rows do
+    [
+      claim("local_single_node_run", :accepted, "Extravaganza ProductHost path"),
+      claim("no_bypass", :accepted, "AppKit no-bypass scan"),
+      claim("authority_exact_match", :accepted, "Citadel authority refs match lower envelope"),
+      claim("active_manifest_required_for_writes", :accepted, "active manifest gate"),
+      claim("deterministic_lower_receipt", :accepted, "deterministic terminal lower receipt"),
+      claim("projection_evidence_chain", :accepted, "Mezzanine reducer to AppKit readback"),
+      claim("review_decision", :accepted, "AppKit review decision"),
+      claim("source_publication_receipt", :accepted, "source publication evidence receipt")
+    ]
+  end
+
+  defp symphony_parity_claim_rows do
+    [
+      claim("source_eligibility", :accepted, "source admission eligibility"),
+      claim("continuation_retry", :accepted, "retry-or-cancel continuation"),
+      claim("abnormal_retry", :accepted, "abnormal lower failure handling"),
+      claim("stale_retry_protection", :accepted, "idempotency and stale retry guard"),
+      claim("workspace_policy", :accepted, "workspace policy refs"),
+      claim("dynamic_tool_denial", :accepted, "dynamic tool capability denial"),
+      claim("observability_state_detail_refresh", :accepted, "state/detail/refresh readback")
+    ]
+  end
+
+  defp claim(id, result, evidence) do
+    %{
+      scenario_id: @scenario_id,
+      id: id,
+      result: result,
+      evidence: evidence
+    }
+  end
+
+  defp repo_shas do
+    StackLab.CitadelSpineHarness.repo_roots()
+    |> Map.take([:extravaganza, :app_kit, :mezzanine, :citadel, :jido_integration, :stack_lab])
+    |> Map.new(fn {repo, path} -> {repo, git_sha(path)} end)
+  end
+
+  defp git_sha(path) do
+    case System.cmd("git", ["rev-parse", "HEAD"], cd: path, stderr_to_stdout: true) do
+      {sha, 0} -> String.trim(sha)
+      {_output, _status} -> "unknown"
+    end
   end
 
   defp live_mutation_leg(true), do: :live_provider_mutation

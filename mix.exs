@@ -108,7 +108,7 @@ defmodule StackLab.Workspace.MixProject do
       ],
       parallelism: [
         env: "STACK_LAB_MONOREPO_MAX_CONCURRENCY",
-        multiplier: :auto,
+        multiplier: 1,
         base: [
           deps_get: 4,
           format: 4,
@@ -152,6 +152,7 @@ defmodule StackLab.Workspace.MixProject do
         "docs/runbooks/up_multi.md",
         "docs/runbooks/faults.md",
         "docs/runbooks/extravaganza_non_ui_lane.md",
+        "docs/runbooks/production_e2e.md",
         "CHANGELOG.md",
         "LICENSE"
       ],
@@ -169,7 +170,8 @@ defmodule StackLab.Workspace.MixProject do
           "docs/runbooks/up_single.md",
           "docs/runbooks/up_multi.md",
           "docs/runbooks/faults.md",
-          "docs/runbooks/extravaganza_non_ui_lane.md"
+          "docs/runbooks/extravaganza_non_ui_lane.md",
+          "docs/runbooks/production_e2e.md"
         ],
         Project: ["CHANGELOG.md", "LICENSE"]
       ]

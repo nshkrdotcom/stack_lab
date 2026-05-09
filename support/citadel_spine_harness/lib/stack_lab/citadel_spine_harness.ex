@@ -706,6 +706,7 @@ defmodule StackLab.CitadelSpineHarness do
       product_repo: :extravaganza,
       cases: %{
         deterministic_full_lane: %{kind: :deterministic_full_lane},
+        local_single_node_verification: %{kind: :owner_product_path},
         failure_matrix: %{kind: :failure_matrix},
         live_readiness: %{kind: :live_readiness}
       }
@@ -714,11 +715,17 @@ defmodule StackLab.CitadelSpineHarness do
 
   @spec exercise_extravaganza_non_ui_lane(
           :deterministic_full_lane
+          | :local_single_node_verification
           | :failure_matrix
           | :live_readiness
         ) :: {:ok, map()}
   def exercise_extravaganza_non_ui_lane(case_name)
-      when case_name in [:deterministic_full_lane, :failure_matrix, :live_readiness] do
+      when case_name in [
+             :deterministic_full_lane,
+             :local_single_node_verification,
+             :failure_matrix,
+             :live_readiness
+           ] do
     ExtravaganzaNonUiLane.run_case(case_name)
   end
 

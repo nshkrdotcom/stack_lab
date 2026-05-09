@@ -2,10 +2,12 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
   @moduledoc false
 
   alias Ecto.Migrator
+  alias Mezzanine.Archival.Repo, as: ArchivalRepo
   alias Mezzanine.Audit.Repo, as: AuditRepo
   alias Mezzanine.ConfigRegistry.Repo, as: ConfigRegistryRepo
   alias Mezzanine.Decisions.Repo, as: DecisionsRepo
   alias Mezzanine.Execution.Repo, as: ExecutionRepo
+  alias Mezzanine.Execution.RuntimeStack
   alias Mezzanine.Objects.Repo, as: ObjectsRepo
   alias Mezzanine.Pack.Registry, as: PackRegistry
   alias Mezzanine.RuntimeScheduler.Repo, as: RuntimeSchedulerRepo
@@ -13,23 +15,28 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
   alias StackLab.CitadelSpineHarness.PostgresContainer
   alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
 
+  @ops_domain_repo RuntimeStack.ops_domain_repo()
   @repo_modules [
     AuditRepo,
+    @ops_domain_repo,
     ObjectsRepo,
     ExecutionRepo,
     DecisionsRepo,
     ConfigRegistryRepo,
-    RuntimeSchedulerRepo
+    RuntimeSchedulerRepo,
+    ArchivalRepo
   ]
   @migration_components [
     {AuditRepo, "audit_engine"},
+    {@ops_domain_repo, "ops_domain"},
     {ObjectsRepo, "object_engine"},
     {ExecutionRepo, "execution_engine"},
     {ExecutionRepo, "leasing"},
     {ExecutionRepo, "barriers"},
     {DecisionsRepo, "decision_engine"},
     {ConfigRegistryRepo, "config_registry"},
-    {RuntimeSchedulerRepo, "runtime_scheduler"}
+    {RuntimeSchedulerRepo, "runtime_scheduler"},
+    {ArchivalRepo, "archival_engine"}
   ]
 
   @spec with_store(atom() | String.t(), (keyword() -> any())) :: any()
