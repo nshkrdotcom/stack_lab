@@ -46,6 +46,7 @@ defmodule StackLab.CitadelSpineHarness do
     Stage9OrchestrationRecovery,
     TemporalDispatchContractEvidence,
     TemporalPostgresProjectionDrift,
+    TreLaneAcceptance,
     TypedHost
   }
 
@@ -763,6 +764,24 @@ defmodule StackLab.CitadelSpineHarness do
       when case_name in [:deterministic_offline_fixture, :live_provider_mutation] and
              is_list(opts) do
     ProductionE2E.run_case(case_name, opts)
+  end
+
+  @spec tre_lane_acceptance_scenario() :: map()
+  def tre_lane_acceptance_scenario do
+    TreLaneAcceptance.scenario()
+  end
+
+  @spec exercise_tre_lane_acceptance(
+          :deterministic_fixture_runner | :installed_rex_runner,
+          keyword()
+        ) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_tre_lane_acceptance(case_name, opts \\ [])
+
+  def exercise_tre_lane_acceptance(case_name, opts)
+      when case_name in [:deterministic_fixture_runner, :installed_rex_runner] and
+             is_list(opts) do
+    TreLaneAcceptance.run_case(case_name, opts)
   end
 
   @spec stage12_load_readiness_scenario() :: map()
