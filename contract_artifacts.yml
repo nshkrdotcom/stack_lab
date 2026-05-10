@@ -9,7 +9,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 6999ce97bf69f02297b9689434d7f693b9e8c0ac
+    source_sha: 3fc2a61dbc2cbae6f50ab9e3282fe73e69671b21
     build_command: mix ci
     status: deprecated
     successor: ground_plane_contracts
@@ -37,7 +37,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 6999ce97bf69f02297b9689434d7f693b9e8c0ac
+    source_sha: 3fc2a61dbc2cbae6f50ab9e3282fe73e69671b21
     build_command: mix ci
     status: stable
     consumers:
@@ -56,7 +56,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/execution_plane
     producer_path: /home/home/p/g/n/execution_plane
     source_ref: main
-    source_sha: 005fdbb32fcb848b410c3b05aea0f6f1aafde0e3
+    source_sha: ea4456ecf2fc5ede4ee2e44f00b1f039f9fcec55
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -71,7 +71,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/jido_integration
     producer_path: /home/home/p/g/n/jido_integration
     source_ref: main
-    source_sha: a453a1af28a0fb19b59fda469b359d4e0f0707d2
+    source_sha: 5fbb00b04d44d34ea205df4f0dc581a95bcf6858
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -86,7 +86,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/citadel
     producer_path: /home/home/p/g/n/citadel
     source_ref: main
-    source_sha: 95f7e71d6cc384dff598892b06d4f9c797aa70f6
+    source_sha: e7e1f987ebb91de020560f0d6574b961a989db4c
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -101,7 +101,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/citadel
     producer_path: /home/home/p/g/n/citadel
     source_ref: main
-    source_sha: 95f7e71d6cc384dff598892b06d4f9c797aa70f6
+    source_sha: e7e1f987ebb91de020560f0d6574b961a989db4c
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -116,7 +116,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/outer_brain
     producer_path: /home/home/p/g/n/outer_brain
     source_ref: main
-    source_sha: 6e9e203a0f8049edf4d72d8c7b04ec5d359c1ac9
+    source_sha: 611a4ef2a321c8dd8db4dd4721fae760d40499ec
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -130,7 +130,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/mezzanine
     producer_path: /home/home/p/g/n/mezzanine
     source_ref: main
-    source_sha: f0732820946e6b351af4be25980e0104834b1ffc
+    source_sha: 88d9d42ef1e458eac9173a06491f9663a4187669
     build_command: mix ci
     status: bootstrap
     consumers:
@@ -144,7 +144,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/app_kit
     producer_path: /home/home/p/g/n/app_kit
     source_ref: main
-    source_sha: c42d2440a2f75afc369b1c47f6e31dfb66607b59
+    source_sha: 8de791f656ed30cf838fc1836a726978f673da82
     build_command: mix ci
     status: bootstrap
     consumers:

@@ -188,21 +188,16 @@ defmodule StackLab.CitadelSpineHarness.TreLaneAcceptance do
 
   defp run_with_runner(runner_kind, runner, opts) do
     RuntimeResourceOwner.transaction(fn ->
-      with_isolated_jido_store(fn ->
-        previous_secret = System.get_env("STACK_LAB_TRE_SECRET")
-        System.put_env("STACK_LAB_TRE_SECRET", "ambient-secret")
-
-        try do
-          with :ok <- register_connector(),
-               {:ok, connection_id} <- install_connection(),
-               {:ok, result} <- dispatch_tre(connection_id, runner, opts) do
-            {:ok, receipt(result, runner_kind, runner)}
-          end
-        after
-          restore_env_var("STACK_LAB_TRE_SECRET", previous_secret)
-        end
-      end)
+      with_isolated_jido_store(fn -> run_registered_case(runner_kind, runner, opts) end)
     end)
+  end
+
+  defp run_registered_case(runner_kind, runner, opts) do
+    with :ok <- register_connector(),
+         {:ok, connection_id} <- install_connection(),
+         {:ok, result} <- dispatch_tre(connection_id, runner, opts) do
+      {:ok, receipt(result, runner_kind, runner)}
+    end
   end
 
   defp register_connector do
@@ -690,9 +685,6 @@ defmodule StackLab.CitadelSpineHarness.TreLaneAcceptance do
       {_output, _status} -> "unknown"
     end
   end
-
-  defp restore_env_var(key, nil), do: System.delete_env(key)
-  defp restore_env_var(key, value), do: System.put_env(key, value)
 
   defp sha256(value) do
     "sha256:" <> Base.encode16(:crypto.hash(:sha256, IO.iodata_to_binary(value)), case: :lower)

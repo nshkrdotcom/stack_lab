@@ -43,8 +43,8 @@ defmodule StackLab.WorkspaceTest do
     assert "examples/hive_roundtrip" in package_paths
   end
 
-  test "uses the released Weld 0.7.2 line directly" do
-    assert {:weld, "~> 0.7.2", runtime: false} in MixProject.project()[:deps]
+  test "uses the released Weld 0.8.1 line directly" do
+    assert {:weld, "~> 0.8.1", only: [:dev, :test], runtime: false} in MixProject.project()[:deps]
   end
 
   test "uses Weld task autodiscovery instead of local release aliases" do
