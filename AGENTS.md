@@ -84,6 +84,15 @@ Use `docs/review/gn_ten_batch_review.md` at every gn-ten batch closeout. The
 batch receipt is the review unit; do not substitute raw logs, private command
 output, or unredacted traces for a reviewed receipt.
 
+## Live Provider Checks
+
+For live provider checks, use `~/scripts/with_bash_secrets <command>`. It sources
+`~/.bash/bash_secrets` and execs the command. Do not print secret values. Pipe
+`LINEAR_API_KEY` via stdin for Linear examples. GitHub live examples use `gh auth`
+or `GH_TOKEN`/`GITHUB_TOKEN` from the wrapper. Codex SDK examples use the existing
+Codex/OpenAI machine auth through the wrapper. Live provider smoke is not product
+acceptance unless it runs the product-owned Extravaganza command path.
+
 <!-- gn-ten:repo-agent:start repo=stack_lab source_sha=ab276c0640772b73065ab12bf05d77be51f1bb67 -->
 # stack_lab Agent Instructions Draft
 
