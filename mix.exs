@@ -46,7 +46,7 @@ defmodule StackLab.Workspace.MixProject do
   defp deps do
     [
       {:blitz, "~> 0.3.0", runtime: false},
-      {:weld, "~> 0.8.0", only: [:dev, :test], runtime: false},
+      {:weld, "~> 0.8.1", only: [:dev, :test], runtime: false},
       {:jason, "~> 1.4", runtime: false},
       {:ground_plane_contracts, path: "../ground_plane/core/ground_plane_contracts"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
