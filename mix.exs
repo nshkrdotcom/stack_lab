@@ -50,7 +50,7 @@ defmodule StackLab.Workspace.MixProject do
   defp deps do
     [
       {:blitz, "~> 0.3.0", runtime: false},
-      {:weld, "~> 0.8.1", only: [:dev, :test], runtime: false},
+      {:weld, "~> 0.8.2", only: [:dev, :test], runtime: false},
       {:jason, "~> 1.4", runtime: false},
       DependencySources.dep(:ground_plane_contracts, __DIR__),
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
