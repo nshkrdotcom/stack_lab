@@ -158,6 +158,13 @@ The harness also exposes an opt-in provider smoke command from the workspace
 root that composes Linear terminal publication, GitHub disposable PR
 creation/review/cleanup, Codex app-server execution, Temporal substrate status,
 and a local receipt without accepting static provider selectors.
+Provider smoke remains a provider/substrate check, not product acceptance.
+Extravaganza product behavior is externally accepted by shelling out to the
+product-owned command:
+
+```bash
+mix stack_lab.extravaganza.external_acceptance
+```
 
 ## Scope
 

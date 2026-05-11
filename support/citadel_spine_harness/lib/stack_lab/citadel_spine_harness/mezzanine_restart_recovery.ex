@@ -259,6 +259,4 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
       :error -> {:unknown_handoff_state, state}
     end
   end
-
-  defp normalize_handoff_state(state) when is_atom(state), do: state
 end

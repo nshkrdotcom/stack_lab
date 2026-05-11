@@ -14,5 +14,6 @@ It exists to make these seams executable:
 - shared-library plus governed-adapter integration receipts
 - governed GEPA model, optimization fabric, and AI run lineage receipts
 - deterministic GEPA platform roundtrip proof
+- external acceptance of Extravaganza's product-owned public headless command
 
 This repo is a harness workspace, not a shipping product surface.

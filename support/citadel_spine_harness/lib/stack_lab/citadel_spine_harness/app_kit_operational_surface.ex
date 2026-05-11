@@ -886,10 +886,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         {:ok, unified_trace} =
           OperatorSurface.get_unified_trace(env.context, execution_ref, env.surface_opts)
 
-        rejected_execution =
-          unified_trace.steps
-          |> Enum.find(&(&1.source == "execution_record"))
-          |> Map.fetch!(:payload)
+        rejected_execution = execution_trace_step!(unified_trace, lower_dispatch.execution.id)
 
         {:ok,
          %{
@@ -993,10 +990,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         {:ok, unified_trace} =
           OperatorSurface.get_unified_trace(env.context, execution_ref, env.surface_opts)
 
-        failed_execution_step =
-          unified_trace.steps
-          |> Enum.find(&(&1.source == "execution_record"))
-          |> Map.fetch!(:payload)
+        failed_execution_step = execution_trace_step!(unified_trace, failed_execution.id)
 
         {:ok,
          %{
@@ -1216,10 +1210,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         {:ok, unified_trace} =
           OperatorSurface.get_unified_trace(env.context, failed_execution_ref, trace_opts)
 
-        failed_execution_step =
-          unified_trace.steps
-          |> Enum.find(&(&1.source == "execution_record"))
-          |> Map.fetch!(:payload)
+        failed_execution_step = execution_trace_step!(unified_trace, failed_execution.id)
 
         {:ok,
          %{
@@ -3142,6 +3133,27 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
   defp leases_invalidated?(results) when is_list(results) do
     Enum.all?(results, &lease_invalidated?/1)
+  end
+
+  defp execution_trace_step!(unified_trace, execution_id) do
+    unified_trace.steps
+    |> Enum.find(fn step ->
+      step.source == "execution_record" and trace_step_execution_id(step) == execution_id
+    end)
+    |> case do
+      nil ->
+        raise "unified trace missing execution_record step for #{execution_id}"
+
+      step ->
+        Map.fetch!(step, :payload)
+    end
+  end
+
+  defp trace_step_execution_id(step) do
+    payload = Map.fetch!(step, :payload)
+
+    Map.get(step, :ref) || Map.get(step, "ref") || Map.get(payload, :execution_id) ||
+      Map.get(payload, "execution_id")
   end
 
   defp ensure_store_local_ready!(storage_dir) do

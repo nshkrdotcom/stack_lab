@@ -104,8 +104,10 @@ For live provider checks, use `~/scripts/with_bash_secrets <command>`. It source
 `~/.bash/bash_secrets` and execs the command. Do not print secret values. Pipe
 `LINEAR_API_KEY` via stdin for Linear examples. GitHub live examples use `gh auth`
 or `GH_TOKEN`/`GITHUB_TOKEN` from the wrapper. Codex SDK examples use the existing
-Codex/OpenAI machine auth through the wrapper. Live provider smoke is not product
-acceptance unless it runs the product-owned Extravaganza command path.
+Codex/OpenAI machine auth through the wrapper. Live provider smoke is
+provider/substrate evidence only. Extravaganza product acceptance remains
+product-owned; StackLab may only validate it externally by running the public
+Extravaganza command path.
 
 <!-- gn-ten:repo-agent:start repo=stack_lab source_sha=ab276c0640772b73065ab12bf05d77be51f1bb67 -->
 # stack_lab Agent Instructions Draft

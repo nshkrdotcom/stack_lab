@@ -202,10 +202,10 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
 
   defp retry_until!(message, fun) do
     deadline = System.monotonic_time(:millisecond) + @startup_timeout_ms
-    retry_until!(message, fun, deadline, nil)
+    retry_until!(message, fun, deadline)
   end
 
-  defp retry_until!(message, fun, deadline, last_result) do
+  defp retry_until!(message, fun, deadline) do
     case fun.() do
       :ok ->
         :ok
@@ -214,17 +214,17 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
         remaining_ms = deadline - System.monotonic_time(:millisecond)
 
         if remaining_ms <= 0 do
-          raise "#{message}; last result: #{inspect(result || last_result)}"
+          raise "#{message}; last result: #{inspect(result)}"
         else
           ref = make_ref()
           Process.send_after(self(), {:remote_support_retry, ref}, min(25, remaining_ms))
 
           receive do
             {:nodeup, _node} ->
-              retry_until!(message, fun, deadline, result)
+              retry_until!(message, fun, deadline)
 
             {:remote_support_retry, ^ref} ->
-              retry_until!(message, fun, deadline, result)
+              retry_until!(message, fun, deadline)
           after
             remaining_ms ->
               raise "#{message}; last result: #{inspect(result)}"
