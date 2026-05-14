@@ -74,13 +74,13 @@ repeatable acceptance and regression scenarios.
 
 ```mermaid
 flowchart TD
-  Claim["Release or stack claim"] --> Spec["SpecCell"]
-  Claim --> Fixture["Fixture or scenario"]
+  Claim["Release<br/>claim"] --> Spec["SpecCell"]
+  Claim --> Fixture["Fixture<br/>scenario"]
   Claim --> Scanner["Scanner"]
-  Claim --> Docs["Docs ref"]
-  Claim --> QC["QC ref"]
-  Claim --> Receipt["Receipt ref"]
-  Spec --> Status["Open or closed release evidence"]
+  Claim --> Docs["Docs<br/>ref"]
+  Claim --> QC["QC<br/>ref"]
+  Claim --> Receipt["Receipt<br/>ref"]
+  Spec --> Status["Release<br/>evidence"]
   Fixture --> Status
   Scanner --> Status
   Docs --> Status
@@ -90,13 +90,13 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  Product["Extravaganza product path"] --> AppKit["AppKit"]
+  Product["Extravaganza<br/>product path"] --> AppKit["AppKit"]
   AppKit --> Mezzanine["Mezzanine"]
   Mezzanine --> Citadel["Citadel"]
-  Citadel --> Jido["Jido Integration"]
-  Jido --> Execution["Execution Plane"]
-  Execution --> Trace["AITrace and receipts"]
-  Trace --> StackLab["StackLab acceptance"]
+  Citadel --> Jido["Jido<br/>Integration"]
+  Jido --> Execution["Execution<br/>Plane"]
+  Execution --> Trace["AITrace<br/>receipts"]
+  Trace --> StackLab["StackLab<br/>acceptance"]
 ```
 
 The current proving set covers the active lower seam, the substrate dispatch
