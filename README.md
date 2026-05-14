@@ -90,13 +90,35 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  Product["Extravaganza<br/>product path"] --> AppKit["AppKit"]
+  Product["Product<br/>path"] --> AppKit["AppKit"]
   AppKit --> Mezzanine["Mezzanine"]
   Mezzanine --> Citadel["Citadel"]
   Citadel --> Jido["Jido<br/>Integration"]
   Jido --> Execution["Execution<br/>Plane"]
   Execution --> Trace["AITrace<br/>receipts"]
   Trace --> StackLab["StackLab<br/>acceptance"]
+```
+
+## Developer Flow Diagrams
+
+```mermaid
+flowchart TD
+  Example["Example<br/>project"] --> Harness["Support<br/>harness"]
+  Harness --> Scanner["Scanner<br/>package"]
+  Scanner --> Receipt["Receipt<br/>refs"]
+  Receipt --> Spec["SpecCell"]
+  Spec --> Proof["Release<br/>proof"]
+  Proof --> Status["Open<br/>status"]
+```
+
+```mermaid
+flowchart LR
+  Product["Product<br/>acceptance"] --> Shell["Product<br/>command"]
+  Shell --> External["External<br/>result"]
+  Lower["Lower<br/>harness"] --> Deterministic["Deterministic<br/>fixtures"]
+  Deterministic --> Receipts["Harness<br/>receipts"]
+  External --> Matrix["Proof<br/>matrix"]
+  Receipts --> Matrix
 ```
 
 The current proving set covers the active lower seam, the substrate dispatch
