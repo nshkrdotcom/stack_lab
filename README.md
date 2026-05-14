@@ -18,6 +18,58 @@ StackLab is the proving harness monorepo for the current platform buildout.
 It exists to make single-node boot, multi-node boot, fault injection, restart
 drills, and end-to-end examples repeatable from one workspace root.
 
+## Current gn-ten Stack Map
+
+StackLab is the place where the stack proves cross-repo claims from the outside.
+It should not be confused with any one runtime or product. It composes sibling
+repos, runs deterministic examples, checks scanners, and records which evidence
+backs each release claim.
+
+| Repo | Role in the proof stack | What StackLab verifies |
+|---|---|---|
+| `extravaganza` | product-owned coding-ops experience | external product acceptance through the product command path |
+| `app_kit` | northbound product boundary | no-bypass rules, DTO shape, product-safe controls, and lower-read leases |
+| `mezzanine` | reusable workflow and business engine layer | lifecycle, scheduler, workspace, source, Temporal/Postgres, receipt reduction, and recovery behavior |
+| `citadel` | Brain governance kernel | authority packet posture, host/substrate ingress separation, policy downgrade rejection, and traceable governance refs |
+| `jido_integration` | connector and runtime gateway | lower invocation, auth leases, connector read/write behavior, lower facts, and runtime-family evidence |
+| `execution_plane` | lower node/lane substrate | process/HTTP lanes, attestation, sandbox posture, and fallback-ladder evidence |
+| `outer_brain` | semantic memory and adaptive substrate | restart durability, semantic gateway behavior, context/prompt/guard/token/eval/adaptive contracts |
+| `ground_plane` | primitive substrate contracts | persistence profiles, debug capture policy, and primitive admission rules |
+| `AITrace` | evidence and replay plane | trace, replay, span, lineage, export, and redacted receipt evidence |
+
+The harness is deliberately external to most product code. When StackLab proves
+a product claim, it should run the product-owned command path instead of
+reimplementing product logic inside a harness. When it proves lower behavior, it
+uses deterministic fixtures, support packages, and scanner inputs that can be
+mapped back to source, tests, docs, and receipt evidence.
+
+## What Counts As Evidence Here
+
+StackLab treats evidence as structured proof, not log volume. A release claim is
+strong only when it is mapped to the code path, fixture or scenario, scanner,
+documentation ref, quality-control ref, and receipt ref that support it.
+
+The current harness covers:
+
+- single-node and multi-node lower round trips
+- governed AppKit to Mezzanine to Citadel to Jido Integration runs
+- tenant-scoped lower facts and read-lease rejection paths
+- Mezzanine Temporal/Postgres projection drift and restart recovery
+- version-skew and malformed-packet rejection
+- context-budget, cost-attribution, and semantic-failure seams
+- product-boundary no-bypass and synthetic second-product proofs
+- OuterBrain restart durability and semantic gateway behavior
+- Execution Plane process/HTTP lane behavior and fallback-ladder evidence
+- persistence-profile matrix receipts with explicit store, tier, capture, and
+  restart-claim fields
+- GEPA, TRINITY, cost/budget, and adaptive-control prior-fabric proofs
+- AITrace-backed receipt collection and release-proof mapping
+
+This makes StackLab the answer to "does the stack claim have executable proof?"
+It is not the owner of the product feature, the governance rule, the connector,
+or the lower runtime. It is the workspace that assembles those owners into
+repeatable acceptance and regression scenarios.
+
 The current proving set covers the active lower seam, the substrate dispatch
 owner, and the product-facing northbound surfaces:
 
