@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nshkrdotcom/stack_lab/actions/workflows/ci.yml">
-    <img alt="GitHub Actions Workflow Status" src="https://github.com/nshkrdotcom/stack_lab/actions/workflows/ci.yml/badge.svg" />
+  <a href="https://github.com/nshkrdotcom/stack_lab">
+    <img alt="GitHub: stack_lab" src="https://img.shields.io/badge/GitHub-stack_lab-0b0f14?logo=github" />
   </a>
   <a href="https://github.com/nshkrdotcom/stack_lab/blob/main/LICENSE">
     <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-0b0f14.svg" />
@@ -69,6 +69,35 @@ This makes StackLab the answer to "does the stack claim have executable proof?"
 It is not the owner of the product feature, the governance rule, the connector,
 or the lower runtime. It is the workspace that assembles those owners into
 repeatable acceptance and regression scenarios.
+
+## Proof Diagrams
+
+```mermaid
+flowchart TD
+  Claim["Release or stack claim"] --> Spec["SpecCell"]
+  Claim --> Fixture["Fixture or scenario"]
+  Claim --> Scanner["Scanner"]
+  Claim --> Docs["Docs ref"]
+  Claim --> QC["QC ref"]
+  Claim --> Receipt["Receipt ref"]
+  Spec --> Status["Open or closed release evidence"]
+  Fixture --> Status
+  Scanner --> Status
+  Docs --> Status
+  QC --> Status
+  Receipt --> Status
+```
+
+```mermaid
+flowchart LR
+  Product["Extravaganza product path"] --> AppKit["AppKit"]
+  AppKit --> Mezzanine["Mezzanine"]
+  Mezzanine --> Citadel["Citadel"]
+  Citadel --> Jido["Jido Integration"]
+  Jido --> Execution["Execution Plane"]
+  Execution --> Trace["AITrace and receipts"]
+  Trace --> StackLab["StackLab acceptance"]
+```
 
 The current proving set covers the active lower seam, the substrate dispatch
 owner, and the product-facing northbound surfaces:
