@@ -424,7 +424,8 @@ defmodule StackLab.FoundationGateScanner do
     |> Enum.with_index(1)
     |> Enum.flat_map(fn {line_content, line_number} ->
       tokens
-      |> Enum.filter(&String.contains?(line_content, &1))
+      |> Enum.filter(&line_contains_token?(line_content, &1))
+      |> Enum.reject(&ignored_finding?(checked_path, line_content, &1, rule))
       |> Enum.map(fn token ->
         %Finding{
           rule: rule,
@@ -443,7 +444,7 @@ defmodule StackLab.FoundationGateScanner do
 
   defp path_token_findings(checked_path, tokens, rule, attrs) do
     tokens
-    |> Enum.filter(&String.contains?(checked_path.path, &1))
+    |> Enum.filter(&line_contains_token?(checked_path.path, &1))
     |> Enum.map(fn token ->
       %Finding{
         rule: rule,
@@ -458,6 +459,75 @@ defmodule StackLab.FoundationGateScanner do
       }
     end)
   end
+
+  defp line_contains_token?(line_content, token) do
+    cond do
+      token_has_separator?(token) ->
+        String.contains?(line_content, token)
+
+      true ->
+        line_content
+        |> token_windows(byte_size(token))
+        |> Enum.any?(fn {before_token, candidate, after_token} ->
+          candidate == token and token_boundary?(before_token) and token_boundary?(after_token)
+        end)
+    end
+  end
+
+  defp token_has_separator?(token) do
+    token
+    |> String.to_charlist()
+    |> Enum.any?(&(not ascii_alnum?(&1)))
+  end
+
+  defp token_windows(line_content, token_size) do
+    max_start = byte_size(line_content) - token_size
+
+    if max_start < 0 do
+      []
+    else
+      Enum.map(0..max_start, fn start ->
+        before_token = if start == 0, do: nil, else: :binary.at(line_content, start - 1)
+        candidate = binary_part(line_content, start, token_size)
+
+        after_index = start + token_size
+
+        after_token =
+          if after_index >= byte_size(line_content),
+            do: nil,
+            else: :binary.at(line_content, after_index)
+
+        {before_token, candidate, after_token}
+      end)
+    end
+  end
+
+  defp token_boundary?(nil), do: true
+  defp token_boundary?(byte), do: not ascii_alnum?(byte)
+
+  defp ascii_alnum?(byte), do: byte in ?a..?z or byte in ?A..?Z or byte in ?0..?9
+
+  defp ignored_finding?(
+         %CheckedPath{path: path, zone: :foundation_ground_plane},
+         line_content,
+         "runtime",
+         :ground_plane_higher_layer_name
+       ) do
+    Path.basename(path) == "mix.exs" and String.contains?(line_content, "runtime:")
+  end
+
+  defp ignored_finding?(
+         %CheckedPath{path: path, zone: :foundation_ground_plane},
+         line_content,
+         "source",
+         :ground_plane_higher_layer_name
+       ) do
+    Path.basename(path) == "mix.exs" and
+      (String.contains?(line_content, "source_url:") or
+         String.contains?(line_content, "source_ref:"))
+  end
+
+  defp ignored_finding?(_checked_path, _line_content, _token, _rule), do: false
 
   defp no_regular_expression_tokens do
     [

@@ -131,6 +131,55 @@ defmodule StackLab.FoundationGateScannerTest do
     assert Enum.all?(receipt.findings, &(&1.owner_phase == "Phase 1"))
   end
 
+  test "does not treat higher-layer terms as substrings inside lower primitive words", %{
+    roots: roots
+  } do
+    path =
+      roots
+      |> Map.fetch!("ground_plane")
+      |> Path.join("core/ground_plane_contracts/lib/ground_plane/contracts/resource_ref.ex")
+
+    write_file(path, """
+    defmodule GroundPlane.Contracts.ResourceRef do
+      def new(resource_ref), do: {:ok, resource_ref}
+    end
+    """)
+
+    assert {:ok, receipt} = FoundationGateScanner.scan([path], target_roots: roots)
+    assert receipt.status == :pass
+  end
+
+  test "does not treat Mix dependency metadata as GroundPlane runtime/source ownership", %{
+    roots: roots
+  } do
+    path =
+      roots
+      |> Map.fetch!("ground_plane")
+      |> Path.join("core/ground_plane_contracts/mix.exs")
+
+    write_file(path, """
+    defmodule GroundPlane.Contracts.MixProject do
+      use Mix.Project
+
+      def project do
+        [
+          deps: deps(),
+          docs: [source_ref: "main", source_url: "https://example.test"]
+        ]
+      end
+
+      defp deps do
+        [
+          {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+        ]
+      end
+    end
+    """)
+
+    assert {:ok, receipt} = FoundationGateScanner.scan([path], target_roots: roots)
+    assert receipt.status == :pass
+  end
+
   test "rejects target scope drift", %{root: root, roots: roots} do
     outside_path = Path.join(root, "outside_repo/lib/example.ex")
     write_file(outside_path, "defmodule OutsideRepo.Example, do: nil\n")
