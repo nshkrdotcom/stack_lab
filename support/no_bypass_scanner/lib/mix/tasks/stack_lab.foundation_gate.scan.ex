@@ -21,30 +21,42 @@ defmodule Mix.Tasks.StackLab.FoundationGate.Scan do
         ]
       )
 
-    cond do
-      opts[:help] ->
-        print_help()
-
-      invalid != [] ->
-        Mix.raise("Invalid options: #{inspect(invalid)}")
-
-      true ->
-        scan_paths = requested_paths(opts, paths)
-        mode = if opts[:baseline_ok], do: :baseline, else: :hard_gate
-
-        case FoundationGateScanner.scan(scan_paths, mode: mode) do
-          {:ok, receipt} ->
-            output = if opts[:summary], do: FoundationGateScanner.summary(receipt), else: receipt
-            IO.inspect(output, label: "foundation_gate_receipt", pretty: true, limit: :infinity)
-
-            if receipt.status == :open_defect do
-              Mix.raise("foundation gate found #{length(receipt.findings)} finding(s)")
-            end
-
-          {:error, reason} ->
-            Mix.raise("foundation gate failed: #{inspect(reason)}")
-        end
+    if opts[:help] do
+      print_help()
+    else
+      run_scan(opts, paths, invalid)
     end
+  end
+
+  defp run_scan(_opts, _paths, invalid) when invalid != [] do
+    Mix.raise("Invalid options: #{inspect(invalid)}")
+  end
+
+  defp run_scan(opts, paths, _invalid) do
+    opts
+    |> requested_paths(paths)
+    |> FoundationGateScanner.scan(mode: scan_mode(opts))
+    |> handle_scan_result(opts)
+  end
+
+  defp scan_mode(opts) do
+    if opts[:baseline_ok], do: :baseline, else: :hard_gate
+  end
+
+  defp handle_scan_result({:ok, receipt}, opts) do
+    output = if opts[:summary], do: FoundationGateScanner.summary(receipt), else: receipt
+
+    Mix.shell().info(
+      "foundation_gate_receipt: " <> inspect(output, pretty: true, limit: :infinity)
+    )
+
+    if receipt.status == :open_defect do
+      Mix.raise("foundation gate found #{length(receipt.findings)} finding(s)")
+    end
+  end
+
+  defp handle_scan_result({:error, reason}, _opts) do
+    Mix.raise("foundation gate failed: #{inspect(reason)}")
   end
 
   defp requested_paths(opts, positional_paths) do

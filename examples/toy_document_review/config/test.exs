@@ -1,0 +1,65 @@
+import Config
+
+schema_setup? = System.get_env("STACK_LAB_TOY_SCHEMA_SETUP") == "1"
+
+config :logger, level: :warning
+
+config :mezzanine_config_registry, start_runtime_children?: not schema_setup?
+config :mezzanine_execution_engine, start_runtime_children?: not schema_setup?
+config :mezzanine_object_engine, start_runtime_children?: not schema_setup?
+config :mezzanine_audit_engine, start_runtime_children?: not schema_setup?
+
+config :mezzanine_config_registry, Mezzanine.ConfigRegistry.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "mezzanine_config_registry_test",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 2,
+  show_sensitive_data_on_connection_error: true
+
+config :mezzanine_execution_engine, Mezzanine.Execution.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "mezzanine_config_registry_test",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 2,
+  show_sensitive_data_on_connection_error: true
+
+config :mezzanine_object_engine, Mezzanine.Objects.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "mezzanine_config_registry_test",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 2,
+  show_sensitive_data_on_connection_error: true
+
+config :mezzanine_audit_engine, Mezzanine.Audit.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "mezzanine_config_registry_test",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 2,
+  show_sensitive_data_on_connection_error: true
+
+config :mezzanine_ops_domain, Mezzanine.OpsDomain.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "mezzanine_config_registry_test",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 2,
+  show_sensitive_data_on_connection_error: true
+
+config :mezzanine_execution_engine, Oban,
+  name: Mezzanine.Execution.Oban,
+  repo: Mezzanine.Execution.Repo,
+  engine: Oban.Engines.Basic,
+  notifier: Oban.Notifiers.Postgres,
+  peer: false,
+  queues: false,
+  plugins: false,
+  testing: :manual

@@ -461,17 +461,19 @@ defmodule StackLab.FoundationGateScanner do
   end
 
   defp line_contains_token?(line_content, token) do
-    cond do
-      token_has_separator?(token) ->
-        String.contains?(line_content, token)
-
-      true ->
-        line_content
-        |> token_windows(byte_size(token))
-        |> Enum.any?(fn {before_token, candidate, after_token} ->
-          candidate == token and token_boundary?(before_token) and token_boundary?(after_token)
-        end)
+    if token_has_separator?(token) do
+      String.contains?(line_content, token)
+    else
+      token_at_boundary?(line_content, token)
     end
+  end
+
+  defp token_at_boundary?(line_content, token) do
+    line_content
+    |> token_windows(byte_size(token))
+    |> Enum.any?(fn {before_token, candidate, after_token} ->
+      candidate == token and token_boundary?(before_token) and token_boundary?(after_token)
+    end)
   end
 
   defp token_has_separator?(token) do
@@ -486,20 +488,23 @@ defmodule StackLab.FoundationGateScanner do
     if max_start < 0 do
       []
     else
-      Enum.map(0..max_start, fn start ->
-        before_token = if start == 0, do: nil, else: :binary.at(line_content, start - 1)
-        candidate = binary_part(line_content, start, token_size)
-
-        after_index = start + token_size
-
-        after_token =
-          if after_index >= byte_size(line_content),
-            do: nil,
-            else: :binary.at(line_content, after_index)
-
-        {before_token, candidate, after_token}
-      end)
+      Enum.map(0..max_start, &token_window(line_content, token_size, &1))
     end
+  end
+
+  defp token_window(line_content, token_size, start) do
+    {
+      byte_before(line_content, start),
+      binary_part(line_content, start, token_size),
+      byte_at(line_content, start + token_size)
+    }
+  end
+
+  defp byte_before(_line_content, 0), do: nil
+  defp byte_before(line_content, start), do: :binary.at(line_content, start - 1)
+
+  defp byte_at(line_content, index) do
+    if index >= byte_size(line_content), do: nil, else: :binary.at(line_content, index)
   end
 
   defp token_boundary?(nil), do: true
@@ -544,6 +549,12 @@ defmodule StackLab.FoundationGateScanner do
     segments = path_segments(path)
     basename = Path.basename(path)
 
+    static_zone(segments, basename) ||
+      repo_special_zone(repo, segments) ||
+      repo_zone(repo, segments)
+  end
+
+  defp static_zone(segments, basename) do
     cond do
       any_segment?(segments, @doc_segments) or String.ends_with?(basename, ".md") ->
         :docs
@@ -551,6 +562,13 @@ defmodule StackLab.FoundationGateScanner do
       any_segment?(segments, @fixture_segments) ->
         :fixtures_tests
 
+      true ->
+        nil
+    end
+  end
+
+  defp repo_special_zone(repo, segments) do
+    cond do
       repo == "stack_lab" and Enum.member?(segments, "no_bypass_scanner") ->
         :scanner
 
@@ -563,22 +581,28 @@ defmodule StackLab.FoundationGateScanner do
       repo == "mezzanine" and adapter_path?(segments) ->
         :adapter
 
-      repo == "app_kit" and Enum.member?(segments, "core") ->
-        :foundation_app_kit
-
-      repo == "mezzanine" and Enum.member?(segments, "core") ->
-        :foundation_mezzanine
-
-      repo == "citadel" and citadel_generic_policy_path?(segments) ->
-        :foundation_citadel
-
-      repo == "ground_plane" and Enum.member?(segments, "core") ->
-        :foundation_ground_plane
-
       true ->
-        :other_project_code
+        nil
     end
   end
+
+  defp repo_zone("app_kit", segments) do
+    if Enum.member?(segments, "core"), do: :foundation_app_kit, else: :other_project_code
+  end
+
+  defp repo_zone("mezzanine", segments) do
+    if Enum.member?(segments, "core"), do: :foundation_mezzanine, else: :other_project_code
+  end
+
+  defp repo_zone("citadel", segments) do
+    if citadel_generic_policy_path?(segments), do: :foundation_citadel, else: :other_project_code
+  end
+
+  defp repo_zone("ground_plane", segments) do
+    if Enum.member?(segments, "core"), do: :foundation_ground_plane, else: :other_project_code
+  end
+
+  defp repo_zone(_repo, _segments), do: :other_project_code
 
   defp adapter_path?(segments) do
     Enum.member?(segments, "provider_adapters") or

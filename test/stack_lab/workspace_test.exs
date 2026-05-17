@@ -35,6 +35,7 @@ defmodule StackLab.WorkspaceTest do
     assert "examples/session_lineage_drill" in package_paths
     assert "examples/pressure_failover_drill" in package_paths
     assert "examples/deployment_receipts_drill" in package_paths
+    assert "examples/toy_document_review" in package_paths
     assert "examples/gepa_platform_roundtrip" in package_paths
     assert "examples/trinity_platform_roundtrip" in package_paths
     assert "examples/adaptive_control_roundtrip" in package_paths

@@ -37,6 +37,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/guardrail_roundtrip",
     "examples/replay_roundtrip",
     "examples/cost_roundtrip",
+    "examples/toy_document_review",
     "examples/gepa_platform_roundtrip",
     "examples/trinity_platform_roundtrip",
     "examples/adaptive_control_roundtrip",

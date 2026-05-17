@@ -75,7 +75,9 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
     if Node.alive?() do
       :ok
     else
-      start_distribution([])
+      with :ok <- ensure_epmd_started() do
+        start_distribution([])
+      end
     end
   end
 
@@ -157,6 +159,19 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
     case :peer.start_link(%{name: BoundedNames.peer_node_name(case_name)}) do
       {:ok, _peer_pid, _remote_node} = peer -> peer
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp ensure_epmd_started do
+    case System.find_executable("epmd") do
+      nil ->
+        {:error, :epmd_not_found}
+
+      epmd ->
+        case System.cmd(epmd, ["-daemon"]) do
+          {_output, 0} -> :ok
+          {output, status} -> {:error, {:epmd_start_failed, status, output}}
+        end
     end
   end
 
