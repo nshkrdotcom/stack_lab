@@ -361,6 +361,7 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
     assert {:ok, proof} = ToyDocumentReview.run_full_acceptance(service: service)
 
     assert proof.accepted?
+    assert proof.execution_route_ref == "generic_substrate:v1"
     assert proof.component_path == ToyDocumentReview.full_acceptance_components()
     assert proof.foundation.operation_count == 6
     assert proof.full_gate3.accepted?

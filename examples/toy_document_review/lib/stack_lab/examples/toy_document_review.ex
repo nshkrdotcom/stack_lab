@@ -98,12 +98,15 @@ defmodule StackLab.Examples.ToyDocumentReview do
     :projection_updated
   ]
 
+  @execution_route_ref "generic_substrate:v1"
+
   @extravaganza_required_field_groups %{
     standard_envelope: [
       :ok,
       :schema,
       :operation,
       :trace_id,
+      :execution_route_ref,
       :idempotency_key,
       :runtime_profile_ref,
       :data,
@@ -125,6 +128,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
       :source_publication_ref,
       :evidence_chain_ref,
       :event_page_ref,
+      :execution_route_ref,
       :idempotency_key
     ],
     run_detail_runtime_row: [
@@ -354,6 +358,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
        %{
          scenario: scenario(),
          accepted?: true,
+         execution_route_ref: @execution_route_ref,
          component_path: @full_acceptance_components,
          source_inputs: source_inputs(),
          state_mapping: state_mapping(),
