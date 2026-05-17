@@ -40,6 +40,7 @@ defmodule StackLab.NoBypassScanner.MixProject do
         "deps.get",
         "format --check-formatted",
         "stack_lab.structural_gate.scan --path lib --summary",
+        "stack_lab.no_regular_expression.scan --path lib --summary",
         "test",
         "credo --strict"
       ]

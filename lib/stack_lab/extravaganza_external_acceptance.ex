@@ -286,7 +286,8 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
 
   defp output_excerpt(output) do
     output
-    |> String.replace(~r/\s+/, " ")
+    |> String.split()
+    |> Enum.join(" ")
     |> String.slice(0, 500)
   end
 
