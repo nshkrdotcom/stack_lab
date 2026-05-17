@@ -20,6 +20,7 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
     assert Enum.sort(Map.keys(scenario.cases)) == [
              :bypass_rejections,
              :content_shape_gate,
+             :content_store_acceptance,
              :fixture_faults,
              :foundation_path,
              :operation_graph_gate,
@@ -53,6 +54,45 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
 
     assert Enum.all?(proof.redaction_schema_requirements, &is_binary(&1.schema_ref))
     assert Enum.all?(proof.redaction_schema_requirements, &is_binary(&1.redaction_ref))
+  end
+
+  test "content store acceptance proves deterministic refs and blocked production backends" do
+    proof = ToyDocumentReview.run_content_store_acceptance()
+
+    assert proof.gate == :content_store_acceptance
+    assert proof.fixture == :toy_document_review
+
+    assert proof.content_shape_gate.storage_modes_observed == [:inline]
+    assert proof.content_shape_gate.inline_threshold_accepted?
+    refute proof.content_shape_gate.production_content_addressed_load_bearing?
+    refute proof.content_shape_gate.production_streaming_load_bearing?
+
+    assert proof.content_shape_gate.backend_decision ==
+             :inline_until_real_payloads_exceed_threshold
+
+    assert proof.envelope_contracts.inline_payload_storage_mode == :inline
+    assert proof.envelope_contracts.content_addressed_result_storage_mode == :content_addressed
+    assert proof.envelope_contracts.stream_payload_storage_mode == :stream
+    assert String.starts_with?(proof.envelope_contracts.content_result_hash, "sha256:")
+    assert String.starts_with?(proof.envelope_contracts.content_result_ref, "content://")
+    assert String.starts_with?(proof.envelope_contracts.stream_payload_ref, "stream://")
+
+    assert proof.projection_access.inline_readback_mode == :inline_redacted
+    assert proof.projection_access.inline_data_visible?
+    assert proof.projection_access.content_addressed_readback_mode == :content_store_ref
+    refute proof.projection_access.content_addressed_data_visible?
+    assert proof.projection_access.stream_readback_mode == :stream_ref
+    refute proof.projection_access.stream_data_visible?
+
+    assert proof.content_store_contract.deterministic_content_ref_resolved?
+    assert proof.content_store_contract.cross_tenant_denied?
+    assert proof.content_store_contract.retained_delete_denied?
+
+    assert proof.content_store_contract.deterministic_content_hash ==
+             proof.envelope_contracts.content_result_hash
+
+    assert proof.final_decision ==
+             :content_addressed_and_streaming_backend_blocked_until_measured_payloads_require_it
   end
 
   test "operation graph gate proves parallel joins review gates optional failure and policies" do
