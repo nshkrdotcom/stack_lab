@@ -22,16 +22,16 @@ defmodule StackLab.Examples.ToyDocumentReview.Pack do
   alias StackLab.Examples.ToyDocumentReview.LocalHttpConnector
 
   @pack_slug "toy_document_review"
-  @version "1.0.0"
+  @version "1.0.1"
   @credential_scope_ref LocalHttpConnector.credential_scope_ref()
 
   def pack_slug, do: @pack_slug
   def version, do: @version
 
-  def manifest(manifest_digest) when is_binary(manifest_digest) do
+  def manifest(manifest_digest, version \\ @version) when is_binary(manifest_digest) do
     %Manifest{
       pack_slug: @pack_slug,
-      version: @version,
+      version: version,
       description: "Neutral document review product pack for generic substrate proof",
       profile_slots: profile_slots(),
       subject_kind_specs: [

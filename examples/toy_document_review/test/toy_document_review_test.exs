@@ -14,7 +14,10 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
 
     assert scenario.name == :toy_document_review
     assert scenario.pack_slug == "toy_document_review"
-    assert scenario.deterministic_command == "mix test"
+
+    assert scenario.deterministic_command ==
+             "mix stack_lab.proof_app.toy_document_review.acceptance --json"
+
     assert scenario.live_profiles == []
 
     assert Enum.sort(Map.keys(scenario.cases)) == [
@@ -23,9 +26,27 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
              :content_store_acceptance,
              :fixture_faults,
              :foundation_path,
+             :full_neutral_acceptance,
              :operation_graph_gate,
              :receipt_projection_replay
            ]
+  end
+
+  test "source inputs and state mapping cover upload and event-style updates" do
+    assert [
+             %{input_kind: :uploaded_document_source, external_state: "submitted"},
+             %{input_kind: :event_style_review_update, external_state: "review.completed"}
+           ] = ToyDocumentReview.source_inputs()
+
+    assert ToyDocumentReview.state_mapping()["submitted"] == %{
+             source_state: :open,
+             workflow_state: :submitted
+           }
+
+    assert ToyDocumentReview.state_mapping()["review.completed"] == %{
+             source_state: :terminal,
+             workflow_state: :reviewed
+           }
   end
 
   test "content shape gate measures payloads results and keeps content storage hypotheses blocked" do
@@ -139,6 +160,26 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
 
     assert proof.optional_branch_failure.failed_node_ref == refs.review_evidence
     assert proof.optional_branch_failure.allows_publication?
+
+    assert proof.concurrent_runtime_evidence_branch.source_done_ready_node_refs == [
+             refs.review_runtime,
+             refs.review_evidence
+           ]
+
+    assert proof.concurrent_runtime_evidence_branch.runtime_first_ready_node_refs == [
+             refs.review_evidence
+           ]
+
+    assert proof.concurrent_runtime_evidence_branch.evidence_first_ready_node_refs == [
+             refs.review_runtime
+           ]
+
+    assert proof.concurrent_runtime_evidence_branch.both_done_ready_node_refs == [
+             refs.review_publication
+           ]
+
+    assert proof.concurrent_runtime_evidence_branch.alternate_completion_orders_converge?
+
     assert proof.retry_cancellation_exclusion.retry_ready_node_refs == []
     assert proof.retry_cancellation_exclusion.canceled_ready_node_refs == []
 
@@ -280,6 +321,56 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
     assert proof.product_shape_comparison.generic_fact_coverage.lower_receipt_summary_present?
     assert proof.product_shape_comparison.generic_fact_coverage.result_access_summaries_present?
     assert proof.product_shape_comparison.generic_fact_coverage.lineage_refs_present?
+  end
+
+  test "appkit role-ref probe keeps concrete binding refs below AppKit" do
+    assert {:ok, proof} = ToyDocumentReview.appkit_role_ref_probe()
+
+    assert proof.accepted?
+    refute proof.concrete_binding_refs_seen?
+
+    assert proof.surfaces == [
+             :source_candidates,
+             :source_publication,
+             :runtime_operation,
+             :runtime_tool,
+             :evidence_collection,
+             :resource_effect,
+             :review_opened,
+             :trace_replay
+           ]
+
+    assert proof.operation_role_refs == [:run, :lookup]
+  end
+
+  test "full Gate 3 proof covers out-of-order replay negative controls and delayed export",
+       %{service: service} do
+    assert {:ok, proof} = ToyDocumentReview.run_full_gate3_proof(service: service)
+
+    assert proof.accepted?
+    assert proof.emit_order_replay.replay_complete?
+    assert proof.out_of_order_replay.order_diverged?
+    refute proof.out_of_order_replay.projection_diverged?
+    assert proof.missing_predecessor_negative_control.accepted?
+    assert proof.delayed_export_proof.accepted?
+    assert proof.retry_out_of_order_receipt_proof.order_diverged?
+    refute proof.retry_out_of_order_receipt_proof.projection_diverged?
+  end
+
+  test "full neutral acceptance crosses all required implementation layers", %{service: service} do
+    assert {:ok, proof} = ToyDocumentReview.run_full_acceptance(service: service)
+
+    assert proof.accepted?
+    assert proof.component_path == ToyDocumentReview.full_acceptance_components()
+    assert proof.foundation.operation_count == 6
+    assert proof.full_gate3.accepted?
+    assert proof.neutral_code_scan.accepted?
+    refute proof.live_acceptance.required?
+
+    assert proof.execution_plane.accepted?
+    assert proof.execution_plane.lower_simulation_configured?
+    assert proof.bypass_rejections.missing_manifest_fail_closed?
+    assert proof.fault_matrix.pagination_ordered?
   end
 
   test "local HTTP fixture covers deterministic fault and pagination behavior", %{

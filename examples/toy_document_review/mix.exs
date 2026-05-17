@@ -30,7 +30,8 @@ defmodule StackLab.ToyDocumentReview.MixProject do
         ci: :test,
         setup: :test,
         "registry.setup": :test,
-        "execution.setup": :test
+        "execution.setup": :test,
+        "stack_lab.proof_app.toy_document_review.acceptance": :test
       ]
     ]
   end
@@ -63,6 +64,8 @@ defmodule StackLab.ToyDocumentReview.MixProject do
 
   defp deps do
     [
+      {:app_kit_core, path: "#{@repo_root}/app_kit/core/app_kit_core"},
+      {:app_kit_runtime_gateway, path: "#{@repo_root}/app_kit/core/runtime_gateway"},
       {:mezzanine_pack_model, path: "#{@repo_root}/mezzanine/core/pack_model"},
       {:mezzanine_pack_compiler, path: "#{@repo_root}/mezzanine/core/pack_compiler"},
       {:mezzanine_config_registry, path: "#{@repo_root}/mezzanine/core/config_registry"},

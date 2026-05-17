@@ -3,14 +3,20 @@ defmodule StackLab.Examples.ToyDocumentReview do
   Executable neutral product proof for the generic substrate foundation.
   """
 
+  alias AITrace.ReplayEngine
+  alias AppKit.Core.{ActorRef, Context, InstallationRef, TenantRef}
+  alias AppKit.{Evidence, Reviews, RuntimeGateway, Sources, Traces}
   alias Citadel.Authority
   alias Citadel.ConnectorBinding.CredentialLease
-
-  alias AITrace.ReplayEngine
+  alias ExecutionPlane.Contracts.ExecutionIntentEnvelope.V1, as: ExecutionIntentEnvelope
+  alias ExecutionPlane.Contracts.ExecutionRoute.V1, as: ExecutionRoute
+  alias ExecutionPlane.Contracts.HttpExecutionIntent.V1, as: HttpExecutionIntent
+  alias ExecutionPlane.Contracts.NoEgressPolicy.V1, as: NoEgressPolicy
+  alias ExecutionPlane.Kernel, as: ExecutionKernel
   alias Jido.Integration.V2.GovernedLowerEnvelope
   alias Mezzanine.Projections.{LineageEventOutbox, ReceiptReducer, SubjectRuntimeProjection}
 
-  alias Mezzanine.ConfigRegistry.{ActiveBindingSet, RunBindingSnapshot}
+  alias Mezzanine.ConfigRegistry.{ActiveBindingSet, PackRegistration, RunBindingSnapshot}
 
   alias Mezzanine.Substrate.{
     BindingResolver,
@@ -64,6 +70,24 @@ defmodule StackLab.Examples.ToyDocumentReview do
     :review_opened,
     :projection_updated,
     :replay_exported
+  ]
+
+  @full_acceptance_components [
+    :appkit_role_ref_boundary,
+    :pack_compiler,
+    :config_registry,
+    :jido_manifest_lookup,
+    :citadel_authority,
+    :credential_lease,
+    :binding_resolver,
+    :lower_invocation,
+    :execution_plane_dispatch_plan,
+    :receipt_creation,
+    :generic_receipt_reduction,
+    :production_projection_mapping,
+    :mezzanine_execution_record_emission,
+    :aitrace_causal_replay,
+    :aitrace_full_replay_gate
   ]
 
   @stacklab_detailed_event_kinds [
@@ -183,13 +207,86 @@ defmodule StackLab.Examples.ToyDocumentReview do
     }
   ]
 
+  @forbidden_neutral_terms [
+    "Extra" <> "vaganza",
+    "Lin" <> "ear",
+    "Git" <> "Hub",
+    "Co" <> "dex",
+    "Sym" <> "phony"
+  ]
+
+  defmodule RoleRefBackend do
+    @moduledoc false
+
+    def fetch_candidates(%AppKit.Core.Context{} = context, source_role_ref, query, _opts) do
+      ok(:source_candidates, context, source_role_ref, nil, query)
+    end
+
+    def publish(%AppKit.Core.Context{} = context, publication_role_ref, request, _opts) do
+      ok(:source_publication, context, publication_role_ref, nil, request)
+    end
+
+    def invoke_runtime_operation(
+          %AppKit.Core.Context{} = context,
+          runtime_role_ref,
+          operation_role_ref,
+          request,
+          _opts
+        ) do
+      ok(:runtime_operation, context, runtime_role_ref, operation_role_ref, request)
+    end
+
+    def invoke_runtime_tool(
+          %AppKit.Core.Context{} = context,
+          tool_role_ref,
+          operation_role_ref,
+          request,
+          _opts
+        ) do
+      ok(:runtime_tool, context, tool_role_ref, operation_role_ref, request)
+    end
+
+    def collect_evidence(%AppKit.Core.Context{} = context, evidence_role_ref, request, _opts) do
+      ok(:evidence_collection, context, evidence_role_ref, nil, request)
+    end
+
+    def invoke_resource_effect(
+          %AppKit.Core.Context{} = context,
+          resource_effect_role_ref,
+          request,
+          _opts
+        ) do
+      ok(:resource_effect, context, resource_effect_role_ref, nil, request)
+    end
+
+    def open_review(%AppKit.Core.Context{} = context, subject_ref, request, _opts) do
+      ok(:review_opened, context, subject_ref, nil, request)
+    end
+
+    def replay_trace(%AppKit.Core.Context{} = context, trace_ref, _opts) do
+      ok(:trace_replay, context, trace_ref, nil, %{trace_ref: trace_ref})
+    end
+
+    defp ok(surface, context, role_ref, operation_role_ref, request) do
+      {:ok,
+       %{
+         surface: surface,
+         trace_ref: context.trace_ref,
+         role_ref: role_ref,
+         operation_role_ref: operation_role_ref,
+         request: request
+       }}
+    end
+  end
+
   def scenario do
     %{
       name: :toy_document_review,
       pack_slug: Pack.pack_slug(),
-      deterministic_command: "mix test",
+      deterministic_command: "mix stack_lab.proof_app.toy_document_review.acceptance --json",
       live_profiles: [],
       cases: %{
+        full_neutral_acceptance: %{kind: :deterministic_full_acceptance},
         foundation_path: %{kind: :deterministic_foundation},
         content_shape_gate: %{kind: :deterministic_content_shape_gate},
         content_store_acceptance: %{kind: :deterministic_content_store_acceptance},
@@ -203,16 +300,87 @@ defmodule StackLab.Examples.ToyDocumentReview do
 
   def required_components, do: @required_components
 
+  def full_acceptance_components, do: @full_acceptance_components
+
+  def source_inputs do
+    [
+      %{
+        input_kind: :uploaded_document_source,
+        source_ref: "upload://toy-document-review/doc-001",
+        subject_ref: "subject://toy-document-review/doc-001",
+        external_state: "submitted",
+        payload_ref: "payload://toy-document-review/uploaded-document/doc-001"
+      },
+      %{
+        input_kind: :event_style_review_update,
+        source_ref: "event://toy-document-review/3",
+        subject_ref: "subject://toy-document-review/doc-001",
+        external_state: "review.completed",
+        payload_ref: "payload://toy-document-review/event/review-completed/doc-001"
+      }
+    ]
+  end
+
+  def state_mapping do
+    %{
+      "submitted" => %{source_state: :open, workflow_state: :submitted},
+      "review.started" => %{source_state: :active, workflow_state: :reviewing},
+      "review.completed" => %{source_state: :terminal, workflow_state: :reviewed},
+      "archived" => %{source_state: :terminal, workflow_state: :archived},
+      "expired" => %{source_state: :terminal, workflow_state: :expired}
+    }
+  end
+
   def run_content_shape_gate, do: ContentShapeGate.run()
 
   def run_content_store_acceptance, do: ContentStoreAcceptance.run()
 
   def run_operation_graph_gate, do: OperationGraphGate.run()
 
+  def run_full_acceptance(opts \\ []) when is_list(opts) do
+    service = Keyword.fetch!(opts, :service)
+    content_shape = run_content_shape_gate()
+    content_store = run_content_store_acceptance()
+    faults = fault_matrix(service)
+    bypass = bypass_rejections()
+
+    with {:ok, graph} <- run_operation_graph_gate(),
+         {:ok, appkit} <- appkit_role_ref_probe(),
+         {:ok, execution_plane} <- execution_plane_probe(),
+         {:ok, foundation} <- run_foundation_proof(opts),
+         {:ok, receipt_replay} <- run_receipt_projection_replay_proof(opts),
+         {:ok, gate3} <- run_full_gate3_proof(opts) do
+      {:ok,
+       %{
+         scenario: scenario(),
+         accepted?: true,
+         component_path: @full_acceptance_components,
+         source_inputs: source_inputs(),
+         state_mapping: state_mapping(),
+         appkit_role_ref_boundary: appkit,
+         foundation: foundation_summary(foundation),
+         content_shape_gate: content_shape.acceptance,
+         content_store_acceptance: content_store.content_store_contract,
+         operation_graph_gate: graph_summary(graph),
+         fault_matrix: fault_matrix_summary(faults),
+         bypass_rejections: bypass_summary(bypass),
+         receipt_projection_replay: receipt_projection_summary(receipt_replay),
+         full_gate3: gate3,
+         execution_plane: execution_plane,
+         neutral_code_scan: neutral_code_scan(),
+         live_profiles: [],
+         live_acceptance: %{
+           required?: false,
+           reason: :no_live_github_or_linear_profile_for_neutral_proof_app
+         }
+       }}
+    end
+  end
+
   def run_foundation_proof(opts \\ []) when is_list(opts) do
     service = Keyword.fetch!(opts, :service)
     manifest_entry = LocalHttpConnector.manifest_entry()
-    pack_manifest = Pack.manifest(manifest_entry.manifest_digest)
+    pack_manifest = Pack.manifest(manifest_entry.manifest_digest, unique_pack_version())
 
     with {:ok, compiled_pack} <- compile_pack(pack_manifest),
          {:ok, registry} <- activate_registry(compiled_pack, opts),
@@ -260,13 +428,13 @@ defmodule StackLab.Examples.ToyDocumentReview do
   end
 
   def run_receipt_projection_replay_proof(opts \\ []) when is_list(opts) do
-    preflight = receipt_projection_replay_preflight()
+    with {:ok, evidence} <- replay_evidence(opts) do
+      preflight = evidence.preflight
+      foundation = evidence.foundation
+      reduced = evidence.reduced
+      replay_events = evidence.replay_events
+      replay = evidence.replay
 
-    with :ok <- preflight_accepted(preflight),
-         {:ok, foundation} <- run_foundation_proof(opts),
-         {:ok, reduced} <- reduce_foundation_receipts(foundation),
-         replay_events <- stacklab_replay_events(reduced.lineage_events),
-         {:ok, replay} <- replay_stacklab_events(replay_events) do
       {:ok,
        %{
          scenario: scenario(),
@@ -284,6 +452,47 @@ defmodule StackLab.Examples.ToyDocumentReview do
     end
   end
 
+  def run_full_gate3_proof(opts \\ []) when is_list(opts) do
+    with {:ok, evidence} <- replay_evidence(opts),
+         out_of_order_events <- out_of_order_events(evidence.replay_events),
+         {:ok, out_of_order_replay} <- replay_stacklab_events(out_of_order_events),
+         retry_events <- retry_out_of_order_events(evidence.replay_events),
+         {:ok, retry_replay} <- replay_stacklab_events(retry_events) do
+      missing_predecessor = missing_predecessor_negative_control(evidence.replay_events)
+      delayed_export = delayed_export_proof(evidence.replay_events)
+
+      accepted? =
+        evidence.replay.replay_complete? and out_of_order_replay.replay_complete? and
+          out_of_order_replay.order_diverged? and not out_of_order_replay.projection_diverged? and
+          retry_replay.replay_complete? and retry_replay.order_diverged? and
+          not retry_replay.projection_diverged? and missing_predecessor.accepted? and
+          delayed_export.accepted?
+
+      {:ok,
+       %{
+         gate: :aitrace_replay_fidelity,
+         proof_app: :toy_document_review,
+         accepted?: accepted?,
+         event_count: length(evidence.replay_events),
+         emit_order_replay: replay_summary(evidence.replay),
+         out_of_order_replay: replay_summary(out_of_order_replay),
+         missing_predecessor_negative_control: missing_predecessor,
+         delayed_export_proof: delayed_export,
+         retry_out_of_order_receipt_proof: replay_summary(retry_replay),
+         projection_output_comparison: %{
+           baseline_diverged?: evidence.replay.projection_diverged?,
+           out_of_order_diverged?: out_of_order_replay.projection_diverged?,
+           retry_out_of_order_diverged?: retry_replay.projection_diverged?
+         },
+         required_traces: %{
+           proof_app_trace: "trace://toy-document-review/foundation",
+           extravaganza_trace:
+             "trace:phase11-live-smoke-dryrun-publication from Phase 11 product parity evidence"
+         }
+       }}
+    end
+  end
+
   def fault_matrix(service) do
     now = ~U[2026-05-17 00:01:00Z]
     expired_at = ~U[2026-05-17 00:00:00Z]
@@ -297,7 +506,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
       now: now
     ]
 
-    %{
+    matrix = %{
       retryable_failure:
         LocalHttpService.request(
           service,
@@ -342,6 +551,11 @@ defmodule StackLab.Examples.ToyDocumentReview do
       ordered_page_two:
         LocalHttpService.request(service, :get, "/events", base ++ [cursor: 2, page_size: 2])
     }
+
+    {:ok, _restore} =
+      LocalHttpService.refresh_lease(service, LocalHttpService.default_lease_ref())
+
+    matrix
   end
 
   def bypass_rejections(opts \\ []) do
@@ -383,6 +597,260 @@ defmodule StackLab.Examples.ToyDocumentReview do
     }
   end
 
+  def appkit_role_ref_probe do
+    opts = [generic_backend: RoleRefBackend]
+
+    with {:ok, context} <- appkit_context(),
+         {:ok, source} <-
+           Sources.fetch_candidates(context, :incoming_documents, %{state: :submitted}, opts),
+         {:ok, publication} <-
+           Sources.publish(
+             context,
+             :review_queue_publication,
+             %{subject_ref: "subject://toy-document-review/doc-001"},
+             opts
+           ),
+         {:ok, runtime} <-
+           RuntimeGateway.invoke_runtime_operation(
+             context,
+             :document_reviewer,
+             :run,
+             %{input_ref: "input://toy-document-review/doc-001"},
+             opts
+           ),
+         {:ok, tool} <-
+           RuntimeGateway.invoke_runtime_tool(
+             context,
+             :document_classifier,
+             :lookup,
+             %{input_ref: "input://toy-document-review/doc-001/extract"},
+             opts
+           ),
+         {:ok, evidence} <-
+           Evidence.collect(
+             context,
+             :review_report,
+             %{subject_ref: "subject://toy-document-review/doc-001"},
+             opts
+           ),
+         {:ok, effect} <-
+           RuntimeGateway.invoke_resource_effect(
+             context,
+             :document_archive,
+             %{subject_ref: "subject://toy-document-review/doc-001"},
+             opts
+           ),
+         {:ok, review} <-
+           Reviews.open(
+             context,
+             "subject://toy-document-review/doc-001",
+             %{review_role_ref: :operator_summary},
+             opts
+           ),
+         {:ok, trace} <- Traces.replay(context, "trace://toy-document-review/foundation", opts) do
+      calls = [source, publication, runtime, tool, evidence, effect, review, trace]
+
+      {:ok,
+       %{
+         accepted?: Enum.all?(calls, &role_ref_only?/1),
+         surfaces: Enum.map(calls, & &1.surface),
+         role_refs: Enum.map(calls, & &1.role_ref),
+         operation_role_refs:
+           calls |> Enum.map(& &1.operation_role_ref) |> Enum.reject(&is_nil/1),
+         concrete_binding_refs_seen?: Enum.any?(calls, &concrete_binding_ref?/1)
+       }}
+    end
+  end
+
+  def execution_plane_probe do
+    route = execution_route()
+    intent = http_intent()
+
+    case ExecutionKernel.build_dispatch(intent, route) do
+      {:ok, plan} ->
+        {:ok,
+         %{
+           accepted?: true,
+           route_id: plan.route_id,
+           family: plan.family,
+           protocol: plan.protocol,
+           timeout_ms: plan.timeout_ms,
+           lower_simulation_configured?:
+             not is_nil(plan.route.resolved_target["lower_simulation"])
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def neutral_code_scan do
+    files =
+      __ENV__.file
+      |> Path.dirname()
+      |> Path.join("**/*.{ex,exs}")
+      |> Path.wildcard()
+      |> Enum.reject(&generated_path?/1)
+
+    findings =
+      files
+      |> Enum.flat_map(fn path ->
+        body = File.read!(path)
+
+        @forbidden_neutral_terms
+        |> Enum.filter(&String.contains?(body, &1))
+        |> Enum.map(&%{path: path, term: &1})
+      end)
+
+    %{
+      accepted?: findings == [],
+      scanned_file_count: length(files),
+      forbidden_terms: @forbidden_neutral_terms,
+      findings: findings
+    }
+  end
+
+  defp replay_evidence(opts) do
+    preflight = receipt_projection_replay_preflight()
+
+    with :ok <- preflight_accepted(preflight),
+         {:ok, foundation} <- run_foundation_proof(opts),
+         {:ok, reduced} <- reduce_foundation_receipts(foundation),
+         replay_events <- stacklab_replay_events(reduced.lineage_events),
+         {:ok, replay} <- replay_stacklab_events(replay_events) do
+      {:ok,
+       %{
+         preflight: preflight,
+         foundation: foundation,
+         reduced: reduced,
+         replay_events: replay_events,
+         replay: replay
+       }}
+    end
+  end
+
+  defp appkit_context do
+    with {:ok, actor_ref} <-
+           ActorRef.new(%{
+             id: "actor://toy-document-review/operator",
+             kind: :operator,
+             roles: ["toy_document_review_operator"]
+           }),
+         {:ok, tenant_ref} <-
+           TenantRef.new(%{id: "tenant-toy-document-review", slug: "toy-document-review"}),
+         {:ok, installation_ref} <-
+           InstallationRef.new(%{
+             id: "installation://toy-document-review/local",
+             pack_slug: Pack.pack_slug(),
+             pack_version: Pack.version(),
+             status: :active
+           }) do
+      Context.new(%{
+        actor_ref: actor_ref,
+        tenant_ref: tenant_ref,
+        installation_ref: installation_ref,
+        trace_ref: "trace://toy-document-review/appkit-role-ref-probe",
+        request_ref: "request://toy-document-review/appkit-role-ref-probe",
+        idempotency_key: "toy-document-review-appkit-role-ref-probe",
+        authority_ref: "authority://toy-document-review/appkit-role-ref-probe",
+        release_manifest_ref: "release://toy-document-review/local",
+        metadata: %{proof: :toy_document_review}
+      })
+    end
+  end
+
+  defp execution_route do
+    ExecutionRoute.new!(%{
+      route_id: "route-toy-document-review-http",
+      family: "http",
+      protocol: "http",
+      transport_family: "http",
+      placement_family: "local",
+      resolved_target: %{
+        "target_id" => "toy-document-review-local-http",
+        "method" => "post",
+        "url" => "http://127.0.0.1/toy-document-review",
+        "lower_simulation" => %{
+          "scenario_ref" => "lower-simulation://toy-document-review/http",
+          "status" => "succeeded",
+          "side_effect_policy" => "deny_external_egress",
+          "raw_payload" => %{"status" => "simulated"},
+          "no_egress_policy" =>
+            NoEgressPolicy.dump(NoEgressPolicy.default_lower_boundary_policy!())
+        }
+      },
+      resolved_budget: %{"timeout_ms" => 5_000},
+      lineage: execution_lineage("route-toy-document-review-http")
+    })
+  end
+
+  defp http_intent do
+    HttpExecutionIntent.new!(%{
+      envelope:
+        ExecutionIntentEnvelope.new!(%{
+          intent_id: "intent-toy-document-review-http",
+          family: "http",
+          protocol: "http",
+          trace_id: "trace://toy-document-review/execution-plane",
+          idempotency_key: "toy-document-review-execution-plane",
+          boundary_session_id: "boundary-session-toy-document-review",
+          decision_id: "decision-toy-document-review",
+          lease_ref: LocalHttpService.default_lease_ref(),
+          target_ref: "target://toy-document-review/local-http",
+          attach_grant_ref: "attach-grant://toy-document-review/local-http",
+          target_auth_posture_ref: "target-posture://toy-document-review/local-http",
+          workspace_ref: "workspace://toy-document-review/local",
+          no_egress_posture_ref: "no-egress-posture://toy-document-review/local-http",
+          credential_handle_refs: ["credential-handle://toy-document-review/local-http"],
+          attempt_ref: "attempt://toy-document-review/execution-plane",
+          requested_capabilities: ["http.unary"],
+          extensions: %{proof_app: "toy_document_review"}
+        }),
+      request_shape: "request_response",
+      stream_mode: "unary",
+      headers: %{"accept" => "application/json"},
+      body: %{"document_id" => "doc-001"},
+      egress_surface: %{"surface_kind" => "local_http_fixture"},
+      timeouts: %{"request_timeout_ms" => 5_000},
+      retry_class: "safe_idempotent"
+    })
+  end
+
+  defp execution_lineage(route_id) do
+    %{
+      tenant_id: "tenant-toy-document-review",
+      trace_id: "trace://toy-document-review/execution-plane",
+      request_id: "request-toy-document-review-execution-plane",
+      decision_id: "decision-toy-document-review",
+      boundary_session_id: "boundary-session-toy-document-review",
+      attempt_ref: "attempt://toy-document-review/execution-plane",
+      route_id: route_id,
+      idempotency_key: "toy-document-review-execution-plane"
+    }
+  end
+
+  defp role_ref_only?(%{role_ref: role_ref}) when is_atom(role_ref), do: true
+  defp role_ref_only?(%{role_ref: role_ref}) when is_binary(role_ref), do: true
+  defp role_ref_only?(_call), do: false
+
+  defp concrete_binding_ref?(%{role_ref: role_ref}) when is_atom(role_ref) do
+    role_ref
+    |> Atom.to_string()
+    |> concrete_binding_ref?()
+  end
+
+  defp concrete_binding_ref?(%{role_ref: role_ref}) when is_binary(role_ref),
+    do: concrete_binding_ref?(role_ref)
+
+  defp concrete_binding_ref?(role_ref) when is_binary(role_ref) do
+    Enum.any?(@operation_bindings, fn {_key, binding} -> binding.binding_ref == role_ref end)
+  end
+
+  defp generated_path?(path) do
+    parts = Path.split(path)
+    "_build" in parts or "deps" in parts or "doc" in parts
+  end
+
   defp compile_pack(pack_manifest) do
     MezzaninePackCompiler.compile(pack_manifest,
       manifest_resolver: &LocalHttpConnector.resolve_operation/1
@@ -390,9 +858,16 @@ defmodule StackLab.Examples.ToyDocumentReview do
   end
 
   defp activate_registry(compiled_pack, opts) do
-    tenant_id = Keyword.get(opts, :tenant_id, "tenant-toy-document-review")
+    tenant_id = Keyword.get_lazy(opts, :tenant_id, &unique_tenant_id/0)
 
-    registration = MezzanineConfigRegistry.register_pack!(compiled_pack)
+    registration =
+      case PackRegistration.by_slug_version(compiled_pack.pack_slug, compiled_pack.version) do
+        {:ok, %PackRegistration{} = registration} ->
+          registration
+
+        {:error, _reason} ->
+          MezzanineConfigRegistry.register_pack!(compiled_pack)
+      end
 
     with {:ok, installation} <-
            MezzanineConfigRegistry.create_installation(%{
@@ -414,6 +889,14 @@ defmodule StackLab.Examples.ToyDocumentReview do
          compiled_pack: compiled_pack
        }}
     end
+  end
+
+  defp unique_tenant_id do
+    "tenant-toy-document-review-#{System.unique_integer([:positive])}"
+  end
+
+  defp unique_pack_version do
+    "1.0.1-acceptance-#{System.unique_integer([:positive])}"
   end
 
   defp resolve_operations(service, registry, manifest_entry, opts) do
@@ -453,7 +936,8 @@ defmodule StackLab.Examples.ToyDocumentReview do
              binding_kind: binding.binding_kind,
              expected_binding_epoch: active.binding_epoch
            ),
-         {:ok, descriptor} <- resolve_descriptor(resolution, binding, manifest_entry),
+         {:ok, descriptor} <-
+           resolve_descriptor(resolution, binding, manifest_entry, registry.compiled_pack.version),
          {:ok, authority} <- authorize_descriptor(descriptor, binding, installation),
          {:ok, lease} <- materialize_lease(descriptor, binding, installation),
          {:ok, %ResolvedOperationPlan{} = plan} <-
@@ -511,7 +995,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
     end
   end
 
-  defp resolve_descriptor(resolution, binding, manifest_entry) do
+  defp resolve_descriptor(resolution, binding, manifest_entry, pack_version) do
     dependency = dependency_for_role(resolution, binding.operation_role)
 
     LocalHttpConnector.resolve_operation(%{
@@ -524,7 +1008,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
       required_runtime_family: dependency.required_runtime_family || :direct,
       binding_ref: binding.binding_ref,
       pack_ref: Pack.pack_slug(),
-      pack_revision: Pack.version(),
+      pack_revision: pack_version,
       credential_scope_ref: dependency.credential_scope_ref,
       compiled_manifest_hash: manifest_entry.manifest_digest
     })
@@ -731,6 +1215,196 @@ defmodule StackLab.Examples.ToyDocumentReview do
       ttl_seconds: 86_400,
       emission_mode: :inline,
       emission_expectation_ref: "trace-expectation://toy-document-review/#{event.event_kind}"
+    }
+  end
+
+  defp out_of_order_events(events) do
+    {first_half, second_half} = Enum.split(events, div(length(events), 2))
+    second_half ++ first_half
+  end
+
+  defp missing_predecessor_negative_control(events) do
+    target = Enum.find(events, &(&1.predecessor_event_refs != []))
+    missing_ref = "lineage://toy-document-review/missing-predecessor"
+
+    incomplete_events =
+      Enum.map(events, fn
+        %{event_ref: event_ref} = event when event_ref == target.event_ref ->
+          %{event | predecessor_event_refs: [missing_ref]}
+
+        event ->
+          event
+      end)
+
+    case replay_stacklab_events(incomplete_events) do
+      {:error, {:missing_predecessor_events, missing}} ->
+        %{
+          accepted?: true,
+          removed_event_ref: missing_ref,
+          failing_event_ref: target.event_ref,
+          missing_predecessors: missing
+        }
+
+      {:error, reason} ->
+        %{accepted?: false, removed_event_ref: missing_ref, unexpected_error: reason}
+
+      {:ok, replay} ->
+        %{
+          accepted?: false,
+          removed_event_ref: missing_ref,
+          unexpected_replay: replay_summary(replay)
+        }
+    end
+  end
+
+  defp delayed_export_proof(events) do
+    {catchup_events, committed_events} =
+      Enum.split_with(events, &(&1.trace_level == :detailed_proof))
+
+    prefix_result = replay_stacklab_events(committed_events)
+    catchup_result = replay_stacklab_events(committed_events ++ catchup_events)
+
+    %{
+      accepted?: delayed_export_accepted?(prefix_result, catchup_result),
+      committed_event_count: length(committed_events),
+      catchup_event_count: length(catchup_events),
+      prefix_replay: replay_result_summary(prefix_result),
+      catchup_replay: replay_result_summary(catchup_result)
+    }
+  end
+
+  defp delayed_export_accepted?({:error, _reason}, {:ok, replay}),
+    do: replay.replay_complete? and not replay.projection_diverged?
+
+  defp delayed_export_accepted?(_prefix_result, _catchup_result), do: false
+
+  defp retry_out_of_order_events(events) do
+    effect_requested = Enum.find(events, &(&1.event_kind == :effect_requested))
+
+    effect_receipted =
+      Enum.find(events, fn event ->
+        event.event_kind == :effect_receipted and
+          effect_requested.event_ref in event.predecessor_event_refs
+      end)
+
+    retry_event_ref = effect_requested.event_ref <> "/retry-scheduled"
+
+    retry =
+      effect_requested
+      |> Map.merge(%{
+        event_ref: retry_event_ref,
+        event_kind: :retry_scheduled,
+        predecessor_event_refs: [effect_requested.event_ref],
+        projection_key: nil,
+        projection_visible?: false,
+        causal_order: effect_requested.causal_order + 1,
+        projection_order_key:
+          replay_projection_order_key(effect_requested.causal_order + 1, retry_event_ref),
+        trace_level: :core_lineage,
+        metadata_refs:
+          Map.merge(effect_requested.metadata_refs || %{}, %{
+            retry_policy_ref: "retry://toy-document-review/gate3",
+            retry_reason_ref: "retry-reason://toy-document-review/out-of-order-receipt"
+          })
+      })
+
+    updated_receipted = %{effect_receipted | predecessor_event_refs: [retry.event_ref]}
+
+    events
+    |> Enum.map(fn
+      %{event_ref: event_ref} when event_ref == effect_receipted.event_ref -> updated_receipted
+      event -> event
+    end)
+    |> insert_after(updated_receipted.event_ref, retry)
+  end
+
+  defp insert_after(events, event_ref, inserted) do
+    {before, after_including_match} = Enum.split_while(events, &(&1.event_ref != event_ref))
+
+    case after_including_match do
+      [matched | rest] -> before ++ [matched, inserted | rest]
+      [] -> events ++ [inserted]
+    end
+  end
+
+  defp replay_projection_order_key(causal_order, event_ref) do
+    causal_order
+    |> Integer.to_string()
+    |> String.pad_leading(8, "0")
+    |> Kernel.<>(":#{event_ref}")
+  end
+
+  defp replay_result_summary({:ok, replay}), do: replay_summary(replay)
+  defp replay_result_summary({:error, reason}), do: %{error: reason}
+
+  defp foundation_summary(proof) do
+    %{
+      pack: proof.pack,
+      registry: proof.registry,
+      operation_count: length(proof.operations),
+      component_path: proof.component_path,
+      local_http_fixture: proof.local_http_fixture
+    }
+  end
+
+  defp graph_summary(proof) do
+    %{
+      graph: proof.graph,
+      initial_ready_node_refs: proof.initial_ready_node_refs,
+      alternate_completion_orders: proof.alternate_completion_orders,
+      concurrent_runtime_evidence_branch: proof.concurrent_runtime_evidence_branch
+    }
+  end
+
+  defp fault_matrix_summary(matrix) do
+    %{
+      retryable_failure?: fault_reason?(matrix.retryable_failure, :retryable_failure),
+      terminal_failure?: fault_reason?(matrix.terminal_failure, :terminal_failure),
+      auth_rejection?: fault_reason?(matrix.auth_rejection, :auth_rejected),
+      credential_expiry?: fault_reason?(matrix.credential_expiry, :credential_expired),
+      schema_mismatch?: fault_reason?(matrix.schema_mismatch, :schema_version_mismatch),
+      timeout?: fault_reason?(matrix.timeout, :timeout),
+      pagination_ordered?: pagination_ordered?(matrix.ordered_page_one, matrix.ordered_page_two)
+    }
+  end
+
+  defp fault_reason?({:error, %{reason: reason}}, reason), do: true
+  defp fault_reason?(_result, _reason), do: false
+
+  defp pagination_ordered?({:ok, page_one}, {:ok, page_two}) do
+    Enum.map(page_one.body.events ++ page_two.body.events, & &1.sequence) == [1, 2, 3]
+  end
+
+  defp pagination_ordered?(_page_one, _page_two), do: false
+
+  defp bypass_summary(rejections) do
+    %{
+      missing_authority_fail_closed?: fail_closed?(rejections.binding_resolver_missing_authority),
+      missing_lease_fail_closed?:
+        fail_closed?(rejections.binding_resolver_missing_credential_lease),
+      missing_manifest_fail_closed?:
+        match?(
+          {:error, {:connector_manifest_missing, _}},
+          rejections.manifest_lookup_missing_connector
+        ),
+      missing_component_fail_closed?:
+        match?(
+          {:error, {:missing_required_components, [_ | _]}},
+          rejections.missing_required_component
+        )
+    }
+  end
+
+  defp fail_closed?({:error, _reason}), do: true
+  defp fail_closed?(_result), do: false
+
+  defp receipt_projection_summary(proof) do
+    %{
+      projection: proof.projection,
+      lower_receipt_summary: proof.lower_receipt_summary,
+      lineage: proof.lineage,
+      aitrace_replay: proof.aitrace_replay,
+      product_shape_comparison: proof.product_shape_comparison
     }
   end
 

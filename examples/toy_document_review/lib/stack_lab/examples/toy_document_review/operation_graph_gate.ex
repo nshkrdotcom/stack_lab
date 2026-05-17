@@ -131,6 +131,7 @@ defmodule StackLab.Examples.ToyDocumentReview.OperationGraphGate do
            ready_node_refs: ready_node_refs(publication_facts),
            allows_publication?: @review_publication in ready_node_refs(publication_facts)
          },
+         concurrent_runtime_evidence_branch: concurrent_runtime_evidence_branch(),
          retry_cancellation_exclusion: %{
            retry_ready_node_refs:
              publication_facts
@@ -171,7 +172,61 @@ defmodule StackLab.Examples.ToyDocumentReview.OperationGraphGate do
     ]
   end
 
-  defp ready_node_refs(facts), do: OperationGraphExecutor.ready_node_refs(graph(), facts)
+  defp concurrent_runtime_evidence_branch do
+    graph = %{
+      graph_ref: "operation-graph://toy-document-review/concurrent-runtime-evidence",
+      nodes:
+        Enum.filter(@nodes, fn node ->
+          node.node_ref in [
+            @document_source,
+            @review_runtime,
+            @review_evidence,
+            @review_publication
+          ]
+        end),
+      dependencies: [
+        dependency(@document_source, @review_runtime, :blocks_on_success, :required),
+        dependency(@document_source, @review_evidence, :blocks_on_success, :required),
+        dependency(@review_runtime, @review_publication, :blocks_on_success, :required),
+        dependency(@review_evidence, @review_publication, :blocks_on_success, :required)
+      ]
+    }
+
+    source_done = reduce_events([event(@document_source, :succeeded)])
+
+    runtime_first =
+      reduce_events([
+        event(@document_source, :succeeded),
+        event(@review_runtime, :succeeded)
+      ])
+
+    evidence_first =
+      reduce_events([
+        event(@document_source, :succeeded),
+        event(@review_evidence, :succeeded)
+      ])
+
+    both_done =
+      reduce_events([
+        event(@document_source, :succeeded),
+        event(@review_runtime, :succeeded),
+        event(@review_evidence, :succeeded)
+      ])
+
+    %{
+      graph_ref: graph.graph_ref,
+      source_done_ready_node_refs: ready_node_refs(graph, source_done),
+      runtime_first_ready_node_refs: ready_node_refs(graph, runtime_first),
+      evidence_first_ready_node_refs: ready_node_refs(graph, evidence_first),
+      both_done_ready_node_refs: ready_node_refs(graph, both_done),
+      alternate_completion_orders_converge?:
+        ready_node_refs(graph, both_done) == [@review_publication]
+    }
+  end
+
+  defp ready_node_refs(facts), do: ready_node_refs(graph(), facts)
+
+  defp ready_node_refs(graph, facts), do: OperationGraphExecutor.ready_node_refs(graph, facts)
 
   defp reduce_events(events) do
     events
