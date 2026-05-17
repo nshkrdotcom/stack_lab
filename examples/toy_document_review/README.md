@@ -9,3 +9,9 @@ resolves operations through Jido manifest lookup, authorizes through Citadel,
 materializes credential leases, crosses the BindingResolver envelope, invokes
 the local connector, and produces lower and substrate receipt shapes without
 Extravaganza provider nouns.
+
+The same proof app also owns the Phase 4B operation-graph gate. That gate uses a
+six-node document-review graph to prove parallel root coordination, stable join
+readiness under alternate completion orders, review and confirmation gates,
+optional branch failure propagation, retry/cancellation exclusion, and workflow
+activity intent policy/ref propagation.

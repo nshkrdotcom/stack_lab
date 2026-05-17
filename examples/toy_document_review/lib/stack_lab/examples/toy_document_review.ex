@@ -19,7 +19,12 @@ defmodule StackLab.Examples.ToyDocumentReview do
     ResolvedOperationPlan
   }
 
-  alias StackLab.Examples.ToyDocumentReview.{LocalHttpConnector, LocalHttpService, Pack}
+  alias StackLab.Examples.ToyDocumentReview.{
+    LocalHttpConnector,
+    LocalHttpService,
+    OperationGraphGate,
+    Pack
+  }
 
   @required_components [
     :pack_compiler,
@@ -85,6 +90,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
       live_profiles: [],
       cases: %{
         foundation_path: %{kind: :deterministic_foundation},
+        operation_graph_gate: %{kind: :deterministic_operation_graph_gate},
         fixture_faults: %{kind: :local_http_fault_matrix},
         bypass_rejections: %{kind: :required_component_rejections}
       }
@@ -92,6 +98,8 @@ defmodule StackLab.Examples.ToyDocumentReview do
   end
 
   def required_components, do: @required_components
+
+  def run_operation_graph_gate, do: OperationGraphGate.run()
 
   def run_foundation_proof(opts \\ []) when is_list(opts) do
     service = Keyword.fetch!(opts, :service)

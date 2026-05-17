@@ -20,8 +20,76 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
     assert Enum.sort(Map.keys(scenario.cases)) == [
              :bypass_rejections,
              :fixture_faults,
-             :foundation_path
+             :foundation_path,
+             :operation_graph_gate
            ]
+  end
+
+  test "operation graph gate proves parallel joins review gates optional failure and policies" do
+    assert {:ok, proof} = ToyDocumentReview.run_operation_graph_gate()
+
+    refs = StackLab.Examples.ToyDocumentReview.OperationGraphGate.node_refs()
+
+    assert proof.graph.node_count == 6
+
+    assert proof.graph.dependency_relations == [
+             :blocks_on_confirmation,
+             :blocks_on_review,
+             :blocks_on_success,
+             :parallel_allowed
+           ]
+
+    assert proof.initial_ready_node_refs == [
+             refs.document_source,
+             refs.review_extract_tool
+           ]
+
+    assert proof.one_branch_ready_node_refs == [refs.review_extract_tool]
+    assert proof.alternate_completion_orders.converge?
+
+    assert proof.alternate_completion_orders.source_first_ready_node_refs == [
+             refs.review_runtime
+           ]
+
+    assert proof.alternate_completion_orders.tool_first_ready_node_refs == [
+             refs.review_runtime
+           ]
+
+    assert proof.review_confirmation_gate.before_review_ready_node_refs == [
+             refs.review_evidence
+           ]
+
+    assert proof.review_confirmation_gate.before_confirmation_ready_node_refs == [
+             refs.review_evidence
+           ]
+
+    assert proof.review_confirmation_gate.after_confirmation_ready_node_refs == [
+             refs.review_publication
+           ]
+
+    assert proof.optional_branch_failure.failed_node_ref == refs.review_evidence
+    assert proof.optional_branch_failure.allows_publication?
+    assert proof.retry_cancellation_exclusion.retry_ready_node_refs == []
+    assert proof.retry_cancellation_exclusion.canceled_ready_node_refs == []
+
+    assert [intent] = proof.publication_activity_intents
+    assert intent.node_ref == refs.review_publication
+    assert intent.operation_context_ref == "operation-context://toy-document-review/graph-gate"
+    assert intent.operation_plan_ref == "operation-plan://toy-document-review/review-publication"
+
+    assert intent.predecessor_event_refs == [
+             "event://toy-document-review/review_runtime/succeeded",
+             "event://toy-document-review/review-runtime/reviewed",
+             "event://toy-document-review/review-runtime/confirmed",
+             "event://toy-document-review/review_evidence/failed"
+           ]
+
+    assert intent.retry_policy == %{max_attempts: 2, backoff: :linear}
+    assert intent.timeout_policy == %{timeout_ms: 30_000}
+
+    assert intent.cancellation_policy == %{
+             cancellation_scope_ref: "cancel://toy-document-review/review-run"
+           }
   end
 
   test "foundation proof crosses pack registry manifest authority lease resolver and receipt path",
