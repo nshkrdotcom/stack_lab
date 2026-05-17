@@ -20,6 +20,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
   }
 
   alias StackLab.Examples.ToyDocumentReview.{
+    ContentShapeGate,
     LocalHttpConnector,
     LocalHttpService,
     OperationGraphGate,
@@ -90,6 +91,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
       live_profiles: [],
       cases: %{
         foundation_path: %{kind: :deterministic_foundation},
+        content_shape_gate: %{kind: :deterministic_content_shape_gate},
         operation_graph_gate: %{kind: :deterministic_operation_graph_gate},
         fixture_faults: %{kind: :local_http_fault_matrix},
         bypass_rejections: %{kind: :required_component_rejections}
@@ -98,6 +100,8 @@ defmodule StackLab.Examples.ToyDocumentReview do
   end
 
   def required_components, do: @required_components
+
+  def run_content_shape_gate, do: ContentShapeGate.run()
 
   def run_operation_graph_gate, do: OperationGraphGate.run()
 

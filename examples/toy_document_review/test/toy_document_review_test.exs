@@ -19,10 +19,39 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
 
     assert Enum.sort(Map.keys(scenario.cases)) == [
              :bypass_rejections,
+             :content_shape_gate,
              :fixture_faults,
              :foundation_path,
              :operation_graph_gate
            ]
+  end
+
+  test "content shape gate measures payloads results and keeps content storage hypotheses blocked" do
+    proof = ToyDocumentReview.run_content_shape_gate()
+
+    assert proof.gate == :content_store_shape
+    assert proof.fixture == :toy_document_review
+    assert proof.payload_count == 6
+    assert proof.result_count == 8
+    assert proof.streaming_occurrence_count == 0
+    assert proof.storage_modes_observed == [:inline]
+    assert proof.largest_observed_byte_size < proof.inline_threshold_bytes
+
+    assert proof.source_categories.provider_response == 3
+    assert proof.source_categories.product_authored_content == 6
+    assert proof.source_categories.normalized_platform_record == 3
+    assert proof.source_categories.operator_visible_output == 2
+
+    assert proof.acceptance.default_inline_threshold_accepted?
+    refute proof.acceptance.production_content_addressed_load_bearing?
+    refute proof.acceptance.production_streaming_load_bearing?
+
+    assert proof.acceptance.backend_decision == :inline_until_real_payloads_exceed_threshold
+    assert :operation_receipt in proof.acceptance.retention_refs_required
+    assert :projection in proof.acceptance.retention_refs_required
+
+    assert Enum.all?(proof.redaction_schema_requirements, &is_binary(&1.schema_ref))
+    assert Enum.all?(proof.redaction_schema_requirements, &is_binary(&1.redaction_ref))
   end
 
   test "operation graph gate proves parallel joins review gates optional failure and policies" do
