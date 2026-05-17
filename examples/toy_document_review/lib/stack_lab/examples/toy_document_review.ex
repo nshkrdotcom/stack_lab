@@ -6,7 +6,9 @@ defmodule StackLab.Examples.ToyDocumentReview do
   alias Citadel.Authority
   alias Citadel.ConnectorBinding.CredentialLease
 
+  alias AITrace.ReplayEngine
   alias Jido.Integration.V2.GovernedLowerEnvelope
+  alias Mezzanine.Projections.{LineageEventOutbox, ReceiptReducer, SubjectRuntimeProjection}
 
   alias Mezzanine.ConfigRegistry.{ActiveBindingSet, RunBindingSnapshot}
 
@@ -16,7 +18,9 @@ defmodule StackLab.Examples.ToyDocumentReview do
     OperationContext,
     OperationReceipt,
     OperationRequest,
-    ResolvedOperationPlan
+    PayloadEnvelope,
+    ResolvedOperationPlan,
+    ResultEnvelope
   }
 
   alias StackLab.Examples.ToyDocumentReview.{
@@ -37,6 +41,101 @@ defmodule StackLab.Examples.ToyDocumentReview do
     :lower_invocation,
     :receipt_creation
   ]
+
+  @phase5_components @required_components ++
+                       [
+                         :generic_receipt_reduction,
+                         :production_projection_mapping,
+                         :mezzanine_execution_record_emission,
+                         :aitrace_causal_replay
+                       ]
+
+  @phase5_replay_event_kinds [
+    :command_recorded,
+    :workflow_started,
+    :operation_requested,
+    :jido_manifest_resolved,
+    :credential_lease_materialized,
+    :effect_requested,
+    :effect_receipted,
+    :receipt_reduced,
+    :evidence_attached,
+    :review_opened,
+    :projection_updated,
+    :replay_exported
+  ]
+
+  @stacklab_detailed_event_kinds [
+    :operation_requested,
+    :effect_requested,
+    :effect_receipted,
+    :receipt_reduced,
+    :projection_updated
+  ]
+
+  @extravaganza_required_field_groups %{
+    standard_envelope: [
+      :ok,
+      :schema,
+      :operation,
+      :trace_id,
+      :idempotency_key,
+      :runtime_profile_ref,
+      :data,
+      :refs,
+      :warnings,
+      :generated_at
+    ],
+    refs: [
+      :subject_ref,
+      :run_ref,
+      :workflow_ref,
+      :runtime_profile_ref,
+      :authority_ref,
+      :decision_ref,
+      :connector_manifest_ref,
+      :capability_negotiation_ref,
+      :lower_request_ref,
+      :lower_receipt_ref,
+      :source_publication_ref,
+      :evidence_chain_ref,
+      :event_page_ref,
+      :idempotency_key
+    ],
+    run_detail_runtime_row: [
+      :subject_ref,
+      :run_ref,
+      :execution_ref,
+      :workflow_ref,
+      :state,
+      :status_reason,
+      :updated_at,
+      :session_ref,
+      :workspace_ref,
+      :token_totals
+    ],
+    provider_request_response: [
+      :provider,
+      :operation,
+      :provider_request_ref,
+      :provider_response_ref,
+      :provider_request_sent?,
+      :provider_response_received?,
+      :receipt_recorded?,
+      :raw_material_present?
+    ],
+    lower_receipt: [:lower_receipt_ref, :attempt_ref, :status],
+    event_page_entry: [
+      :event_ref,
+      :event_seq,
+      :event_kind,
+      :observed_at,
+      :run_ref,
+      :subject_ref,
+      :attempt_ref,
+      :extensions
+    ]
+  }
 
   @operation_bindings [
     source_read: %{
@@ -93,6 +192,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
         foundation_path: %{kind: :deterministic_foundation},
         content_shape_gate: %{kind: :deterministic_content_shape_gate},
         operation_graph_gate: %{kind: :deterministic_operation_graph_gate},
+        receipt_projection_replay: %{kind: :deterministic_receipt_projection_replay},
         fixture_faults: %{kind: :local_http_fault_matrix},
         bypass_rejections: %{kind: :required_component_rejections}
       }
@@ -126,6 +226,56 @@ defmodule StackLab.Examples.ToyDocumentReview do
          operations: operations,
          local_http_fixture: fixture_summary(service),
          component_path: @required_components
+       }}
+    end
+  end
+
+  def receipt_projection_replay_preflight do
+    components = %{
+      generic_receipt_reduction: module_function_exported?(ReceiptReducer, :reduce, 2),
+      production_projection_mapping:
+        module_function_exported?(SubjectRuntimeProjection, :from_operation_receipts, 2),
+      mezzanine_execution_record_emission:
+        module_function_exported?(LineageEventOutbox, :events_for_projection, 3),
+      aitrace_causal_replay: module_function_exported?(ReplayEngine, :replay_lineage_events, 2)
+    }
+
+    blocked =
+      components
+      |> Enum.reject(fn {_component, present?} -> present? end)
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.sort()
+
+    %{
+      gate: :phase5_toy_receipt_projection_replay_preflight,
+      accepted?: blocked == [],
+      components: components,
+      blocked_components: blocked,
+      required_path: @phase5_components
+    }
+  end
+
+  def run_receipt_projection_replay_proof(opts \\ []) when is_list(opts) do
+    preflight = receipt_projection_replay_preflight()
+
+    with :ok <- preflight_accepted(preflight),
+         {:ok, foundation} <- run_foundation_proof(opts),
+         {:ok, reduced} <- reduce_foundation_receipts(foundation),
+         replay_events <- stacklab_replay_events(reduced.lineage_events),
+         {:ok, replay} <- replay_stacklab_events(replay_events) do
+      {:ok,
+       %{
+         scenario: scenario(),
+         preflight: preflight,
+         component_path: @phase5_components,
+         reducer_module: reduced.reducer_module,
+         projection_module: reduced.projection.__struct__,
+         projection: projection_summary(reduced),
+         lower_receipt_summary: lower_receipt_summary(reduced),
+         lineage: lineage_summary(replay_events),
+         aitrace_replay: replay_summary(replay),
+         product_shape_comparison: product_shape_comparison(reduced),
+         foundation_component_path: foundation.component_path
        }}
     end
   end
@@ -325,7 +475,16 @@ defmodule StackLab.Examples.ToyDocumentReview do
              credential_lease_ref: lease.credential_lease_ref,
              lease_expires_at: lease.expires_at
            ),
-         {:ok, receipt} <- operation_receipt(plan, lower_receipt, opts) do
+         {:ok, receipt} <-
+           operation_receipt(
+             operation_key,
+             binding,
+             descriptor,
+             plan,
+             mezzanine_envelope,
+             lower_receipt,
+             opts
+           ) do
       {:ok,
        %{
          operation_key: operation_key,
@@ -342,7 +501,8 @@ defmodule StackLab.Examples.ToyDocumentReview do
          lower_invocation_used?: instruction.operation_ref == plan.operation_ref,
          lower_receipt_ref: lower_receipt.lower_receipt_ref,
          receipt_ref: receipt.receipt_ref,
-         receipt_status: receipt.status
+         receipt_status: receipt.status,
+         operation_receipt: receipt
        }}
     end
   end
@@ -464,7 +624,35 @@ defmodule StackLab.Examples.ToyDocumentReview do
     })
   end
 
-  defp operation_receipt(plan, lower_receipt, _opts) do
+  defp operation_receipt(
+         operation_key,
+         binding,
+         descriptor,
+         plan,
+         mezzanine_envelope,
+         lower_receipt,
+         _opts
+       ) do
+    {:ok, payload_envelope} =
+      PayloadEnvelope.new(%{
+        payload_ref: "payload://toy-document-review/#{operation_key}",
+        storage_mode: :inline,
+        schema_ref: descriptor.input_schema_ref,
+        redaction_ref: "redaction://toy-document-review/input/ref-only",
+        data: mezzanine_envelope.payload,
+        retention_refs: ["retention://toy-document-review/proof"]
+      })
+
+    {:ok, result} =
+      ResultEnvelope.new(%{
+        result_ref: "result://toy-document-review/#{operation_key}",
+        storage_mode: :inline,
+        schema_ref: descriptor.output_schema_ref,
+        redaction_ref: "redaction://toy-document-review/result/ref-only",
+        data: redacted_result_data(lower_receipt),
+        retention_refs: ["retention://toy-document-review/proof"]
+      })
+
     OperationReceipt.new(%{
       receipt_ref: "receipt://toy-document-review/#{plan.operation_ref}",
       operation_context_ref: plan.operation_context_ref,
@@ -473,14 +661,220 @@ defmodule StackLab.Examples.ToyDocumentReview do
       status: receipt_status(lower_receipt.status),
       started_at: ~U[2026-05-17 00:01:00Z],
       completed_at: ~U[2026-05-17 00:01:30Z],
-      result: %{
-        lower_receipt_ref: lower_receipt.lower_receipt_ref,
-        lower_status: Atom.to_string(lower_receipt.status)
-      },
+      result: result,
       lineage_event_refs: ["lineage://toy-document-review/#{plan.operation_ref}"],
-      metadata: %{path: "generic"}
+      metadata: %{
+        path: "generic",
+        operation_role: projection_role(binding.binding_kind),
+        operation_class: binding.operation_class,
+        subject_ref: lower_receipt.subject_ref,
+        connector_manifest_ref: lower_receipt.connector_manifest_ref,
+        credential_lease_ref: LocalHttpService.default_lease_ref(),
+        effect_request_ref: lower_receipt.lower_request_ref,
+        evidence_ref: evidence_ref(binding, lower_receipt),
+        payload_envelope: payload_envelope,
+        provider_object_refs: provider_object_refs(operation_key, lower_receipt),
+        provider_facts: provider_facts(operation_key, descriptor, lower_receipt),
+        extensions: %{
+          "toy_document_review.operation" => Atom.to_string(operation_key),
+          "toy_document_review.lower_receipt_ref" => lower_receipt.lower_receipt_ref
+        }
+      }
     })
   end
+
+  defp preflight_accepted(%{accepted?: true}), do: :ok
+
+  defp preflight_accepted(%{blocked_components: blocked}),
+    do: {:error, {:blocked_phase5_proof, blocked}}
+
+  defp reduce_foundation_receipts(%{operations: operations}) do
+    receipts = Enum.map(operations, &Map.fetch!(&1, :operation_receipt))
+
+    ReceiptReducer.reduce(receipts,
+      operation_context_ref: operation_context().operation_context_ref,
+      subject_ref: "subject://toy-document-review/doc-001",
+      lineage_event_contract: :full_execution,
+      review_state: :opened
+    )
+  end
+
+  defp replay_stacklab_events(events) do
+    ReplayEngine.replay_lineage_events(events,
+      trace_profile: :stacklab_proof,
+      required_event_kinds: @phase5_replay_event_kinds
+    )
+  end
+
+  defp stacklab_replay_events(events) do
+    Enum.map(events, fn event ->
+      Map.merge(event, %{
+        trace_level: trace_level_for_event(event.event_kind),
+        metadata_refs: Map.merge(event.metadata_refs || %{}, trace_metadata_refs(event))
+      })
+    end)
+  end
+
+  defp trace_level_for_event(event_kind) when event_kind in @stacklab_detailed_event_kinds,
+    do: :detailed_proof
+
+  defp trace_level_for_event(:replay_exported), do: :replay_minimum
+  defp trace_level_for_event(_event_kind), do: :core_lineage
+
+  defp trace_metadata_refs(event) do
+    %{
+      retention_policy_ref: "retention://stacklab/toy-document-review/phase5",
+      ttl_seconds: 86_400,
+      emission_mode: :inline,
+      emission_expectation_ref: "trace-expectation://toy-document-review/#{event.event_kind}"
+    }
+  end
+
+  defp projection_summary(%{projection: projection}) do
+    %{
+      projection_ref: projection.projection_ref,
+      operation_context_ref: projection.operation_context_ref,
+      subject_ref: projection.subject_ref,
+      status: projection.status,
+      operation_roles: Enum.map(projection.operations, & &1.operation_role),
+      operation_classes: Enum.map(projection.operations, & &1.operation_class),
+      operation_count: length(projection.operations),
+      evidence_count: length(projection.evidence),
+      source_publication_count: length(projection.source_publications),
+      resource_effect_count: length(projection.resource_effects),
+      provider_object_refs: projection.provider_object_refs,
+      provider_fact_count: length(projection.provider_facts),
+      lineage_event_ref_count: length(projection.lineage_event_refs)
+    }
+  end
+
+  defp lower_receipt_summary(%{lower_receipt_summary: summary}) do
+    %{
+      summary_ref: summary.summary_ref,
+      status: summary.status,
+      operation_count: length(summary.operations),
+      provider_object_refs: summary.provider_object_refs,
+      metadata: summary.metadata
+    }
+  end
+
+  defp lineage_summary(events) do
+    %{
+      event_count: length(events),
+      event_kinds: events |> Enum.map(& &1.event_kind) |> Enum.uniq() |> Enum.sort(),
+      trace_levels: events |> Enum.map(& &1.trace_level) |> Enum.uniq() |> Enum.sort(),
+      projection_visible_event_refs:
+        events
+        |> Enum.filter(& &1.projection_visible?)
+        |> Enum.map(& &1.event_ref)
+    }
+  end
+
+  defp replay_summary(replay) do
+    %{
+      replay_complete?: replay.replay_complete?,
+      order_diverged?: replay.order_diverged?,
+      projection_diverged?: replay.projection_diverged?,
+      trace_profile: replay.trace_level_policy.profile,
+      required_trace_level: replay.trace_level_policy.required_trace_level,
+      proof_event_kinds: replay.trace_level_policy.required_event_kinds,
+      emit_order_event_count: length(replay.emit_order_event_refs),
+      causal_order_event_count: length(replay.causal_order_event_refs)
+    }
+  end
+
+  defp product_shape_comparison(%{projection: projection, lower_receipt_summary: summary}) do
+    coverage = %{
+      operation_roles_complete?: complete_operation_roles?(projection),
+      provider_object_refs_present?: map_size(projection.provider_object_refs) > 0,
+      provider_facts_present?: projection.provider_facts != [],
+      lower_receipt_summary_present?:
+        present?(summary.summary_ref) and summary.status == :succeeded and
+          summary.operations != [],
+      result_access_summaries_present?:
+        Enum.all?(projection.operations, &present?(&1.result_ref)),
+      lineage_refs_present?: projection.lineage_event_refs != []
+    }
+
+    %{
+      accepted?: Enum.all?(Map.values(coverage)),
+      checked_against: :deterministic_output_migration_table,
+      extravaganza_required_field_groups: @extravaganza_required_field_groups,
+      generic_fact_coverage: coverage,
+      mapping: %{
+        standard_envelope: :product_presenter_over_generic_projection,
+        refs: :headless_json_refs_from_generic_projection_and_lower_receipt_summary,
+        run_detail_runtime_row: :product_run_presenter_over_subject_runtime_projection,
+        provider_request_response: :product_provider_facts_from_projection_metadata,
+        lower_receipt: :terminal_lower_receipt_shape_and_lower_receipt_summary,
+        event_page_entry: :lineage_event_outbox_with_product_presenter
+      }
+    }
+  end
+
+  defp complete_operation_roles?(projection) do
+    roles = Enum.map(projection.operations, & &1.operation_role)
+
+    Enum.all?(
+      [:source, :publication, :runtime, :tool, :evidence, :resource_effect],
+      &(&1 in roles)
+    )
+  end
+
+  defp redacted_result_data(lower_receipt) do
+    %{
+      lower_receipt_ref: lower_receipt.lower_receipt_ref,
+      lower_request_ref: lower_receipt.lower_request_ref,
+      status: lower_receipt.status,
+      artifact_refs: lower_receipt.artifact_refs,
+      observed_at: lower_receipt.observed_at
+    }
+  end
+
+  defp provider_object_refs(operation_key, lower_receipt) do
+    %{
+      "local_http_fixture" => [
+        "provider-object://toy-document-review/#{operation_key}",
+        lower_receipt.lower_receipt_ref
+      ]
+    }
+  end
+
+  defp provider_facts(operation_key, descriptor, lower_receipt) do
+    [
+      %{
+        fact_ref: "provider-fact://toy-document-review/#{operation_key}",
+        fact_kind: :local_http_lower_receipt,
+        operation_ref: descriptor.operation_ref,
+        connector_manifest_ref: lower_receipt.connector_manifest_ref,
+        lower_receipt_ref: lower_receipt.lower_receipt_ref
+      }
+    ]
+  end
+
+  defp evidence_ref(%{binding_kind: :evidence}, lower_receipt) do
+    case lower_receipt.artifact_refs do
+      [artifact_ref | _rest] -> artifact_ref
+      [] -> lower_receipt.lower_receipt_ref
+    end
+  end
+
+  defp evidence_ref(_binding, _lower_receipt), do: nil
+
+  defp projection_role(:source), do: :source
+  defp projection_role(:source_publication), do: :publication
+  defp projection_role(:runtime), do: :runtime
+  defp projection_role(:runtime_tool), do: :tool
+  defp projection_role(:evidence), do: :evidence
+  defp projection_role(:resource_effect), do: :resource_effect
+
+  defp module_function_exported?(module, function, arity) do
+    Code.ensure_loaded?(module) and function_exported?(module, function, arity)
+  end
+
+  defp present?(value) when is_binary(value), do: value != ""
+  defp present?(nil), do: false
+  defp present?(_value), do: true
 
   defp operation_context do
     struct!(

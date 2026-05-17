@@ -22,7 +22,8 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
              :content_shape_gate,
              :fixture_faults,
              :foundation_path,
-             :operation_graph_gate
+             :operation_graph_gate,
+             :receipt_projection_replay
            ]
   end
 
@@ -148,6 +149,97 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
     assert Enum.all?(proof.operations, & &1.binding_resolver_used?)
     assert Enum.all?(proof.operations, & &1.lower_invocation_used?)
     assert Enum.all?(proof.operations, &(&1.receipt_status == :succeeded))
+
+    assert Enum.all?(
+             proof.operations,
+             &match?(%Mezzanine.Substrate.OperationReceipt{}, &1.operation_receipt)
+           )
+  end
+
+  test "receipt projection replay preflight requires production reducer projection outbox and replay" do
+    preflight = ToyDocumentReview.receipt_projection_replay_preflight()
+
+    assert preflight.gate == :phase5_toy_receipt_projection_replay_preflight
+    assert preflight.accepted?
+    assert preflight.blocked_components == []
+    assert preflight.components.generic_receipt_reduction
+    assert preflight.components.production_projection_mapping
+    assert preflight.components.mezzanine_execution_record_emission
+    assert preflight.components.aitrace_causal_replay
+
+    assert preflight.required_path == [
+             :pack_compiler,
+             :config_registry,
+             :jido_manifest_lookup,
+             :citadel_authority,
+             :credential_lease,
+             :binding_resolver,
+             :lower_invocation,
+             :receipt_creation,
+             :generic_receipt_reduction,
+             :production_projection_mapping,
+             :mezzanine_execution_record_emission,
+             :aitrace_causal_replay
+           ]
+  end
+
+  test "receipt projection replay proof crosses production reducer and AITrace proof profile",
+       %{service: service} do
+    assert {:ok, proof} = ToyDocumentReview.run_receipt_projection_replay_proof(service: service)
+
+    assert proof.preflight.accepted?
+    assert proof.reducer_module == Mezzanine.Projections.ReceiptReducer
+    assert proof.projection_module == Mezzanine.Projections.SubjectRuntimeProjection
+
+    assert proof.projection.status == :succeeded
+    assert proof.projection.operation_count == 6
+
+    assert proof.projection.operation_roles == [
+             :source,
+             :publication,
+             :runtime,
+             :evidence,
+             :tool,
+             :resource_effect
+           ]
+
+    assert proof.projection.evidence_count == 1
+    assert proof.projection.source_publication_count == 1
+    assert proof.projection.resource_effect_count == 1
+    assert proof.projection.provider_fact_count == 6
+    assert proof.lower_receipt_summary.status == :succeeded
+    assert proof.lower_receipt_summary.operation_count == 6
+
+    assert proof.lineage.event_kinds == [
+             :command_recorded,
+             :credential_lease_materialized,
+             :effect_receipted,
+             :effect_requested,
+             :evidence_attached,
+             :jido_manifest_resolved,
+             :operation_requested,
+             :projection_updated,
+             :receipt_reduced,
+             :replay_exported,
+             :review_opened,
+             :workflow_started
+           ]
+
+    assert proof.lineage.trace_levels == [:core_lineage, :detailed_proof, :replay_minimum]
+    assert [_projection_event_ref] = proof.lineage.projection_visible_event_refs
+
+    assert proof.aitrace_replay.replay_complete?
+    refute proof.aitrace_replay.projection_diverged?
+    assert proof.aitrace_replay.trace_profile == :stacklab_proof
+    assert proof.aitrace_replay.required_trace_level == :detailed_proof
+
+    assert proof.product_shape_comparison.accepted?
+    assert proof.product_shape_comparison.generic_fact_coverage.operation_roles_complete?
+    assert proof.product_shape_comparison.generic_fact_coverage.provider_object_refs_present?
+    assert proof.product_shape_comparison.generic_fact_coverage.provider_facts_present?
+    assert proof.product_shape_comparison.generic_fact_coverage.lower_receipt_summary_present?
+    assert proof.product_shape_comparison.generic_fact_coverage.result_access_summaries_present?
+    assert proof.product_shape_comparison.generic_fact_coverage.lineage_refs_present?
   end
 
   test "local HTTP fixture covers deterministic fault and pagination behavior", %{

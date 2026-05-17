@@ -67,6 +67,7 @@ defmodule StackLab.ToyDocumentReview.MixProject do
       {:mezzanine_pack_compiler, path: "#{@repo_root}/mezzanine/core/pack_compiler"},
       {:mezzanine_config_registry, path: "#{@repo_root}/mezzanine/core/config_registry"},
       {:mezzanine_substrate_model, path: "#{@repo_root}/mezzanine/core/substrate_model"},
+      {:mezzanine_projection_engine, path: "#{@repo_root}/mezzanine/core/projection_engine"},
       {:mezzanine_workflow_runtime, path: "#{@repo_root}/mezzanine/core/workflow_runtime"},
       {:jido_integration_contracts,
        path: "#{@repo_root}/jido_integration/core/contracts", override: true},
@@ -76,6 +77,9 @@ defmodule StackLab.ToyDocumentReview.MixProject do
        path: "#{@repo_root}/execution_plane/core/execution_plane", override: true},
       {:citadel_governance, path: "#{@repo_root}/citadel/core/citadel_governance"},
       {:citadel_connector_binding, path: "#{@repo_root}/citadel/core/connector_binding"},
+      {:aitrace, path: "#{@repo_root}/AITrace", override: true},
+      {:ai_trace_replay_contracts, path: "#{@repo_root}/AITrace/core/replay_contracts"},
+      {:ai_trace_replay_engine, path: "#{@repo_root}/AITrace/core/replay_engine"},
       {:ecto_sql, "~> 3.13"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
