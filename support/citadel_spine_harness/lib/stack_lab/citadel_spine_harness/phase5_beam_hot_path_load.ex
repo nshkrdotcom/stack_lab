@@ -24,7 +24,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     @moduledoc false
     use GenServer
 
-    def start(opts), do: GenServer.start(__MODULE__, opts)
+    def start(opts), do: GenServer.start_link(__MODULE__, opts)
 
     def release(pid, count \\ 1) when is_pid(pid) and count >= 1 do
       Enum.each(1..count, fn _index -> send(pid, :release_consumer) end)
@@ -70,7 +70,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     @moduledoc false
     use GenServer
 
-    def start(opts), do: GenServer.start(__MODULE__, opts)
+    def start(opts), do: GenServer.start_link(__MODULE__, opts)
     def count(pid), do: GenServer.call(pid, :count)
     def observed_signal_ids(pid), do: GenServer.call(pid, :observed_signal_ids)
 

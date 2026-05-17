@@ -4,6 +4,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupportLifecycleTest do
   alias StackLab.CitadelSpineHarness.BoundedNames
   alias StackLab.CitadelSpineHarness.RemoteSpine
   alias StackLab.CitadelSpineHarness.RemoteSupport
+  alias StackLab.CitadelSpineHarness.RuntimeProcesses
 
   test "local distributed node names are run-scoped instead of fixed slots" do
     names = for _index <- 1..16, do: BoundedNames.local_node_name()
@@ -24,7 +25,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupportLifecycleTest do
   test "two harness tests can start remote spine peers concurrently" do
     tasks =
       for case_name <- [:concurrent_remote_spine_a, :concurrent_remote_spine_b] do
-        Task.async(fn ->
+        RuntimeProcesses.async(fn ->
           remote = RemoteSupport.start_remote_spine!(case_name)
 
           try do

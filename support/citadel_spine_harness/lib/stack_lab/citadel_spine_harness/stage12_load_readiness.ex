@@ -9,6 +9,7 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadiness do
     AITraceClaimCheckTraceContinuity,
     AppKitOperationalSurface,
     MezzanineSubstrate,
+    RuntimeProcesses,
     Stage9OrchestrationRecovery
   }
 
@@ -179,7 +180,7 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadiness do
       try do
         query_results =
           1..@pool_query_concurrency
-          |> Task.async_stream(
+          |> RuntimeProcesses.async_stream(
             fn _index ->
               SQL.query!(Repo, @pool_query_sql, [])
               :ok

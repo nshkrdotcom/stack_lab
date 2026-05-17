@@ -41,6 +41,7 @@ defmodule StackLab.NoBypassScanner.MixProject do
         "format --check-formatted",
         "stack_lab.structural_gate.scan --path lib --summary",
         "stack_lab.no_regular_expression.scan --path lib --summary",
+        "stack_lab.process_supervision.scan --path lib --summary",
         "test",
         "credo --strict"
       ]

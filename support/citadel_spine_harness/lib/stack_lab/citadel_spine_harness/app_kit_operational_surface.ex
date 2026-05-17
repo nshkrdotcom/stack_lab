@@ -15,6 +15,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   alias Jido.Integration.V2.StoreLocal.SubmissionLedger
   alias Jido.Integration.V2.SubmissionAcceptance
   alias Jido.Integration.V2.TenantScope
+  alias StackLab.CitadelSpineHarness.RuntimeProcesses
 
   alias AppKit.Core.{
     ExecutionRef,
@@ -3005,7 +3006,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
   defp emit_stream_invalidation_burst!(lease_id, count, max_concurrency) do
     1..count
-    |> Task.async_stream(
+    |> RuntimeProcesses.async_stream(
       fn index ->
         {:ok, [row]} =
           Leasing.invalidate_stream_attach_lease(

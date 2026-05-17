@@ -5,6 +5,11 @@ defmodule StackLab.CitadelSpineHarness.RuntimeResourceOwner do
 
   @held_key {__MODULE__, :held}
 
+  @spec start_link(keyword()) :: GenServer.on_start()
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, [], Keyword.put_new(opts, :name, __MODULE__))
+  end
+
   @spec transaction((-> result)) :: result when result: var
   def transaction(fun) when is_function(fun, 0) do
     if Process.get(@held_key) do
@@ -60,9 +65,15 @@ defmodule StackLab.CitadelSpineHarness.RuntimeResourceOwner do
   end
 
   defp ensure_started! do
-    case GenServer.start(__MODULE__, [], name: __MODULE__) do
-      {:ok, _pid} -> :ok
-      {:error, {:already_started, _pid}} -> :ok
+    case Process.whereis(__MODULE__) do
+      pid when is_pid(pid) ->
+        :ok
+
+      nil ->
+        case Application.ensure_all_started(:stack_lab_citadel_spine_harness) do
+          {:ok, _started} -> :ok
+          {:error, reason} -> raise "failed to start runtime resource owner: #{inspect(reason)}"
+        end
     end
   end
 

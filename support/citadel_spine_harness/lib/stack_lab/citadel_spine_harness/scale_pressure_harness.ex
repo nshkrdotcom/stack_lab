@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.ScalePressureHarness do
   @moduledoc false
 
+  alias StackLab.CitadelSpineHarness.RuntimeProcesses
+
   @contract_name "ScalePressureProfile.v1"
   @scenario 610
   @tenant_count 3
@@ -253,12 +255,15 @@ defmodule StackLab.CitadelSpineHarness.ScalePressureHarness do
   end
 
   defp run_bounded_local_pressure(profile) do
-    {:ok, counter} = Agent.start_link(fn -> %{current: 0, max: 0} end)
+    {:ok, counter} =
+      RuntimeProcesses.start_agent(fn ->
+        %{current: 0, max: 0}
+      end)
 
     try do
       results =
         1..profile.work_item_count
-        |> Task.async_stream(
+        |> RuntimeProcesses.async_stream(
           fn index -> run_pressure_item(counter, index) end,
           max_concurrency: profile.concurrency_cap,
           timeout: profile.timeout.work_item_timeout_ms,

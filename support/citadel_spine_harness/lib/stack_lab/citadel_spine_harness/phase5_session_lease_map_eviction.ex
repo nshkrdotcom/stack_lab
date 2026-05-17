@@ -22,7 +22,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
     @moduledoc false
     use GenServer
 
-    def start(opts), do: GenServer.start(__MODULE__, opts)
+    def start(opts), do: GenServer.start_link(__MODULE__, opts)
 
     def release(pid, signal_id) do
       send(pid, {:release_consumer, signal_id})

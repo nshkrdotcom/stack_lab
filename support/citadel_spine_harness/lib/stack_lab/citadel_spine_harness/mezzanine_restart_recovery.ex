@@ -5,7 +5,13 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
   alias Mezzanine.Execution.ExecutionRecord
   alias Mezzanine.Objects.SubjectRecord
   alias Mezzanine.RuntimeScheduler.ReconcileOnStart
-  alias StackLab.CitadelSpineHarness.{DispatchProbe, LowerGatewayStub, MezzanineSubstrate}
+
+  alias StackLab.CitadelSpineHarness.{
+    DispatchProbe,
+    LowerGatewayStub,
+    MezzanineSubstrate,
+    RuntimeProcesses
+  }
 
   @tenant_id "tenant-1"
   @dispatch_snapshot %{
@@ -144,8 +150,8 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
   defp crash_after_submission!(execution_id, ledger) do
     parent = self()
 
-    {pid, ref} =
-      spawn_monitor(fn ->
+    {:ok, pid} =
+      RuntimeProcesses.start_task_child(fn ->
         LowerGatewayStub.with_handlers(
           %{
             dispatch: fn [claimed] ->
@@ -159,6 +165,8 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
           end
         )
       end)
+
+    ref = Process.monitor(pid)
 
     claimed =
       receive do
@@ -177,7 +185,7 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
   end
 
   defp start_submission_ledger do
-    Agent.start_link(fn ->
+    RuntimeProcesses.start_agent(fn ->
       %{submissions: %{}, unique_submission_count: 0, duplicate_replay_count: 0}
     end)
   end
