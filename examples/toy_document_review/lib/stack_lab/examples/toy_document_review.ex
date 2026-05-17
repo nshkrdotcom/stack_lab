@@ -892,11 +892,15 @@ defmodule StackLab.Examples.ToyDocumentReview do
   end
 
   defp unique_tenant_id do
-    "tenant-toy-document-review-#{System.unique_integer([:positive])}"
+    "tenant-toy-document-review-#{unique_suffix()}"
   end
 
   defp unique_pack_version do
-    "1.0.1-acceptance-#{System.unique_integer([:positive])}"
+    "1.0.1-acceptance-#{unique_suffix()}"
+  end
+
+  defp unique_suffix do
+    "#{System.os_time(:nanosecond)}-#{System.unique_integer([:positive])}"
   end
 
   defp resolve_operations(service, registry, manifest_entry, opts) do

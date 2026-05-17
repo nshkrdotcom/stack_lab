@@ -116,9 +116,9 @@ defmodule StackLab.CitadelSpineHarness.MezzanineRestartRecovery do
     SubjectRecord.ingest(%{
       installation_id: installation_id,
       source_ref: source_ref,
-      subject_kind: "linear_coding_ticket",
+      subject_kind: "work_item",
       lifecycle_state: "queued",
-      schema_ref: "mezzanine.subject.linear_coding_ticket.payload.v1",
+      schema_ref: "mezzanine.subject.work_item.payload.v1",
       schema_version: 1,
       payload: %{
         "identifier" => source_ref,
