@@ -356,6 +356,9 @@ just fault net-cut
 - [examples/trinity_platform_roundtrip/README.md](./examples/trinity_platform_roundtrip/README.md)
 - [examples/adaptive_control_roundtrip/README.md](./examples/adaptive_control_roundtrip/README.md)
 - [examples/persistence_mode_roundtrip/README.md](./examples/persistence_mode_roundtrip/README.md)
+- [guides/index.md](https://github.com/nshkrdotcom/stack_lab/blob/main/guides/index.md)
+- [guides/generalized_stack.md](https://github.com/nshkrdotcom/stack_lab/blob/main/guides/generalized_stack.md)
+- [guides/qc_and_operations.md](https://github.com/nshkrdotcom/stack_lab/blob/main/guides/qc_and_operations.md)
 - `docs/persistence.md`
 
 ## License
@@ -389,3 +392,31 @@ Expected local contract: `127.0.0.1:7233`, UI `http://127.0.0.1:8233`, namespace
 ## Persistence Documentation
 
 See `docs/persistence.md` for tiers, defaults, adapters, unsupported selections, config examples, restart claims, durability claims, debug sidecar behavior, redaction guarantees, migration or preflight behavior, and no-bypass scope when applicable.
+
+## gn-ten Implementation Guides
+
+StackLab is the proof workspace. It owns cross-repo evidence, deterministic
+proof apps, scanner packages, receipt fixtures, proof matrix validation, and
+release claim boundaries.
+
+Read these repo-specific guides before changing proof claims or scanners:
+
+- [Generalized Stack Boundary](https://github.com/nshkrdotcom/stack_lab/blob/main/guides/generalized_stack.md)
+- [QC And Operations](https://github.com/nshkrdotcom/stack_lab/blob/main/guides/qc_and_operations.md)
+
+Operational rules:
+
+- Public interfaces are proof commands, `proof_matrix.yml`, receipt files,
+  scanner packages under `support/*`, proof apps under `examples/*`, and docs
+  under `docs/`.
+- StackLab may compose sibling repos for proof. It must not replace product,
+  governance, connector, execution, semantic, or primitive ownership.
+- Provider vocabulary is allowed in receipts, traces, fixtures, connector
+  proof data, product acceptance evidence, and live claim boundaries. Generic
+  proof claims must state whether live-provider behavior is proven.
+- GitHub or Linear live proofs must be guarded by prefixing the command with
+  `~/scripts/with_bash_secrets`.
+- Local development uses `mix deps.get`, `mix ci`, proof-specific Mix tasks,
+  scanner tasks, and receipt validation.
+- Evidence is emitted through StackLab tests, proof matrix validation,
+  `docs/receipts/**`, AITrace fixture exports, and phase evidence files.
