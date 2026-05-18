@@ -279,6 +279,13 @@ defmodule StackLab.StructuralGateScanner do
     "linear_api_key"
   ]
 
+  @classified_provider_public_tokens [
+    "provider_account_ref",
+    "provider_account_status",
+    "provider_pool_ref",
+    "reassign_provider"
+  ]
+
   @provider_name_parts ["linear", "github", "codex", "openai", "symphony"]
   @provider_binding_refs ["linear_primary", "github_primary", "codex_primary"]
 
@@ -571,6 +578,9 @@ defmodule StackLab.StructuralGateScanner do
       |> Kernel.++(provider_noun_findings(checked_path, content))
       |> Kernel.++(provider_module_findings(checked_path, content))
       |> Kernel.++(provider_field_findings(checked_path, content))
+      |> Kernel.++(provider_public_vocabulary_findings(checked_path, content))
+      |> Kernel.++(duplicated_provider_family_list_findings(checked_path, content))
+      |> Kernel.++(ambiguous_adapter_class_findings(checked_path, content))
       |> Kernel.++(ground_plane_name_findings(checked_path, content))
       |> Kernel.++(app_kit_binding_ref_token_findings(checked_path, content))
       |> Kernel.++(lane_branch_findings(checked_path, content))
@@ -645,6 +655,70 @@ defmodule StackLab.StructuralGateScanner do
   end
 
   defp provider_field_findings(_checked_path, _content), do: []
+
+  defp provider_public_vocabulary_findings(%CheckedPath{zone: zone} = checked_path, content)
+       when zone in [:generic, :generic_policy, :other_project_code] do
+    if provider_public_vocabulary_allowed_path?(checked_path.path) do
+      []
+    else
+      token_findings(
+        checked_path,
+        content,
+        @classified_provider_public_tokens,
+        :unclassified_provider_public_vocabulary,
+        %{
+          reason: :provider_public_vocabulary_without_classified_owner,
+          owner_phase: "Phase 4",
+          ast_role: :field_token,
+          remediation:
+            "Move provider-account/provider-pool vocabulary to a classified authority, credential, scheduling, connector, receipt, or projection owner."
+        }
+      )
+    end
+  end
+
+  defp provider_public_vocabulary_findings(_checked_path, _content), do: []
+
+  defp duplicated_provider_family_list_findings(%CheckedPath{zone: zone} = checked_path, content) do
+    if zone in [:fixtures_tests, :docs, :scanner] or
+         canonical_provider_classification_path?(checked_path.path) do
+      []
+    else
+      token_findings(
+        checked_path,
+        content,
+        ["@provider_families ["],
+        :duplicated_provider_family_list,
+        %{
+          reason: :provider_family_list_not_contract_backed,
+          owner_phase: "Phase 4",
+          ast_role: :module_attribute,
+          remediation:
+            "Read provider family and account-status vocabulary from Jido.Integration.V2.ProviderClassification."
+        }
+      )
+    end
+  end
+
+  defp ambiguous_adapter_class_findings(%CheckedPath{zone: zone} = checked_path, content) do
+    if zone in [:fixtures_tests, :docs, :scanner] do
+      []
+    else
+      token_findings(
+        checked_path,
+        content,
+        [":shimmed", "\"shimmed\"", "'shimmed'"],
+        :ambiguous_adapter_class,
+        %{
+          reason: :ambiguous_adapter_class,
+          owner_phase: "Phase 4",
+          ast_role: :classification_token,
+          remediation:
+            "Replace ambiguous shim classifications with the explicit :connector_facade adapter placement."
+        }
+      )
+    end
+  end
 
   defp ground_plane_name_findings(%CheckedPath{zone: :ground_plane} = checked_path, content) do
     attrs = %{
@@ -1532,6 +1606,50 @@ defmodule StackLab.StructuralGateScanner do
 
     contains_ordered_segments?(segments, ["mezzanine", "bridges", "integration_bridge", "lib"]) and
       not adapter_path?(segments)
+  end
+
+  defp canonical_provider_classification_path?(path) do
+    String.ends_with?(
+      path,
+      "/jido_integration/core/provider_classification/lib/jido/integration/v2/provider_classification.ex"
+    )
+  end
+
+  defp provider_public_vocabulary_allowed_path?(path) do
+    allowed_fragments = [
+      "/app_kit/core/authority_projections/",
+      "/app_kit/core/cost_surface/",
+      "/app_kit/core/coordination_surface/",
+      "/app_kit/core/headless_surface/",
+      "/app_kit/lib/app_kit/workspace/",
+      "/app_kit/web/cost_dashboard/",
+      "/citadel/core/authority_contract/",
+      "/citadel/core/connector_binding/",
+      "/citadel/core/native_auth_assertion/",
+      "/citadel/core/provider_auth_fabric/",
+      "/execution_plane/core/execution_plane/conformance/execution_plane_testkit/",
+      "/execution_plane/core/execution_plane/core/execution_plane_contracts/",
+      "/jido_integration/core/auth/",
+      "/jido_integration/core/connector_registry/",
+      "/jido_integration/core/contracts/",
+      "/jido_integration/core/model_provider_registry/",
+      "/jido_integration/core/platform/lib/jido/integration/v2/deterministic_lower_lane.ex",
+      "/jido_integration/core/provider_classification/",
+      "/jido_integration/core/provider_feature_matrix/",
+      "/jido_integration/core/tool_contracts/",
+      "/mezzanine/bridges/integration_bridge/lib/mezzanine/integration_bridge/provider_authority_admission.ex",
+      "/mezzanine/core/coordination_engine/",
+      "/mezzanine/core/cost_attribution_engine/",
+      "/mezzanine/core/headless_coding_ops/",
+      "/mezzanine/core/m1_m2_runtime/",
+      "/mezzanine/core/projection_engine/",
+      "/mezzanine/core/workflow_runtime/",
+      "/mezzanine/core/workspace_build_model/",
+      "/outer_brain/core/ai_artifact_contracts/",
+      "/stack_lab/support/citadel_spine_harness/"
+    ]
+
+    Enum.any?(allowed_fragments, &String.contains?(path, &1))
   end
 
   defp contains_ordered_segments?(segments, wanted) do

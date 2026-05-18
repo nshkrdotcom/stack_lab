@@ -28,6 +28,8 @@ defmodule StackLab.GovernedProviderRoundtrip.MixProject do
       {:stack_lab_citadel_spine_harness,
        path: "../../support/citadel_spine_harness", runtime: false},
       {:stack_lab_memsim_harness, path: "../../support/memsim_harness", runtime: false},
+      {:jido_integration_provider_classification,
+       path: "../../../jido_integration/core/provider_classification"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}

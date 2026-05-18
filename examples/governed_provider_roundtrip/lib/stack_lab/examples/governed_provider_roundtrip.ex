@@ -3,28 +3,29 @@ defmodule StackLab.Examples.GovernedProviderRoundtrip do
   Deterministic Phase 15 proof for governed provider dispatch.
   """
 
+  alias Jido.Integration.V2.ProviderClassification
   alias StackLab.GnTenControlPlane
   alias StackLab.LabCore
   alias StackLab.SpecCell
 
-  @provider_families [
-    %{id: :codex, repo: "codex_sdk", transport_family: :cli},
-    %{id: :claude, repo: "claude_agent_sdk", transport_family: :cli},
-    %{id: :gemini_cli, repo: "gemini_cli_sdk", transport_family: :cli},
-    %{id: :amp, repo: "amp_sdk", transport_family: :cli},
-    %{id: :github, repo: "github_ex", transport_family: :http},
-    %{id: :notion, repo: "notion_sdk", transport_family: :http},
-    %{id: :linear, repo: "linear_sdk", transport_family: :graphql},
-    %{id: :reqllm_next, repo: "reqllm_next", transport_family: :realtime},
-    %{id: :inference, repo: "inference", transport_family: :inference},
-    %{
+  @provider_specs %{
+    "amp" => %{id: :amp, repo: "amp_sdk", transport_family: :cli},
+    "claude" => %{id: :claude, repo: "claude_agent_sdk", transport_family: :cli},
+    "codex" => %{id: :codex, repo: "codex_sdk", transport_family: :cli},
+    "gemini" => %{id: :gemini_cli, repo: "gemini_cli_sdk", transport_family: :cli},
+    "github" => %{id: :github, repo: "github_ex", transport_family: :http},
+    "inference" => %{id: :inference, repo: "inference", transport_family: :inference},
+    "linear" => %{id: :linear, repo: "linear_sdk", transport_family: :graphql},
+    "llama_cpp_sdk" => %{id: :llama_cpp_sdk, repo: "llama_cpp_sdk", transport_family: :inference},
+    "notion" => %{id: :notion, repo: "notion_sdk", transport_family: :http},
+    "reqllm_next" => %{id: :reqllm_next, repo: "reqllm_next", transport_family: :realtime},
+    "self_hosted_inference" => %{
       id: :self_hosted_inference,
       repo: "self_hosted_inference_core",
       transport_family: :inference
     },
-    %{id: :gemini_ex, repo: "gemini_ex", transport_family: :http},
-    %{id: :llama_cpp_sdk, repo: "llama_cpp_sdk", transport_family: :inference}
-  ]
+    "gemini_ex" => %{id: :gemini_ex, repo: "gemini_ex", transport_family: :http}
+  }
 
   @target_modes [
     :local_subprocess,
@@ -80,14 +81,17 @@ defmodule StackLab.Examples.GovernedProviderRoundtrip do
   end
 
   @spec provider_families() :: [map()]
-  def provider_families, do: @provider_families
+  def provider_families do
+    ProviderClassification.provider_family_tokens()
+    |> Enum.flat_map(&provider_spec/1)
+  end
 
   @spec target_modes() :: [atom()]
   def target_modes, do: @target_modes
 
   @spec dispatch_matrix() :: [map()]
   def dispatch_matrix do
-    for provider <- @provider_families,
+    for provider <- provider_families(),
         target_mode <- @target_modes do
       dispatch_row(provider, target_mode)
     end
@@ -103,7 +107,7 @@ defmodule StackLab.Examples.GovernedProviderRoundtrip do
       {:ok,
        %{
          row_count: length(rows),
-         providers: Enum.map(@provider_families, & &1.id),
+         providers: Enum.map(provider_families(), & &1.id),
          targets: @target_modes,
          rows: rows,
          receipts: receipts("UAA-026", "passed"),
@@ -115,7 +119,7 @@ defmodule StackLab.Examples.GovernedProviderRoundtrip do
   @spec standalone_promotion_proof() :: {:ok, map()} | {:error, term()}
   def standalone_promotion_proof do
     rows =
-      Enum.map(@provider_families, fn provider ->
+      Enum.map(provider_families(), fn provider ->
         %{
           provider: provider.id,
           standalone_source: standalone_source(provider),
@@ -149,7 +153,7 @@ defmodule StackLab.Examples.GovernedProviderRoundtrip do
   def live_provider_proof(disposable_credentials_by_provider \\ %{})
       when is_map(disposable_credentials_by_provider) do
     rows =
-      Enum.map(@provider_families, fn provider ->
+      Enum.map(provider_families(), fn provider ->
         case Map.fetch(disposable_credentials_by_provider, provider.id) do
           {:ok, credential_ref} ->
             live_provider_row(provider, credential_ref)
@@ -180,7 +184,7 @@ defmodule StackLab.Examples.GovernedProviderRoundtrip do
       manifest_ref: "workspace-build://phase15/governed-provider-roundtrip",
       agent_names: ["provider-proof-agent"],
       triggers: ["phase15.provider.roundtrip"],
-      required_providers: Enum.map(@provider_families, & &1.id),
+      required_providers: Enum.map(provider_families(), & &1.id),
       connector_binding_refs: ["connector-binding://tenant-1/phase15/all"],
       target_postures: @target_modes,
       env_contract_refs: ["env-contract://phase15/no-secret-bundle"],
@@ -326,7 +330,7 @@ defmodule StackLab.Examples.GovernedProviderRoundtrip do
   end
 
   defp require_complete_matrix(rows) do
-    expected_count = length(@provider_families) * length(@target_modes)
+    expected_count = length(provider_families()) * length(@target_modes)
 
     if length(rows) == expected_count do
       :ok
@@ -350,13 +354,13 @@ defmodule StackLab.Examples.GovernedProviderRoundtrip do
 
   defp require_one_to_many(rows) do
     provider_ok? =
-      Enum.all?(@provider_families, fn provider ->
+      Enum.all?(provider_families(), fn provider ->
         Enum.count(rows, &(&1.provider == provider.id)) == length(@target_modes)
       end)
 
     target_ok? =
       Enum.all?(@target_modes, fn target_mode ->
-        Enum.count(rows, &(&1.target_mode == target_mode)) == length(@provider_families)
+        Enum.count(rows, &(&1.target_mode == target_mode)) == length(provider_families())
       end)
 
     if provider_ok? and target_ok? do
@@ -380,6 +384,13 @@ defmodule StackLab.Examples.GovernedProviderRoundtrip do
       {:error, :workspace_manifest_bundles_private_material}
     else
       :ok
+    end
+  end
+
+  defp provider_spec(provider_id) when is_binary(provider_id) do
+    case Map.fetch(@provider_specs, provider_id) do
+      {:ok, spec} -> [spec]
+      :error -> []
     end
   end
 

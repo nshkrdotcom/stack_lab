@@ -273,6 +273,89 @@ defmodule StackLab.StructuralGateScannerTest do
            )
   end
 
+  test "fails phase 4 provider classification bypasses", %{roots: roots} do
+    unclassified_path =
+      roots
+      |> Map.fetch!("app_kit")
+      |> Path.join("core/app_kit_core/lib/app_kit/unclassified_provider_dto.ex")
+
+    duplicated_family_path =
+      roots
+      |> Map.fetch!("citadel")
+      |> Path.join("core/connector_binding/lib/citadel/connector_binding.ex")
+
+    ambiguous_adapter_path =
+      roots
+      |> Map.fetch!("jido_integration")
+      |> Path.join(
+        "core/provider_feature_matrix/lib/jido/integration/v2/provider_feature_matrix.ex"
+      )
+
+    write_file(unclassified_path, """
+    defmodule AppKit.UnclassifiedProviderDto do
+      defstruct [:provider_account_ref, :provider_pool_ref, :reassign_provider]
+    end
+    """)
+
+    write_file(duplicated_family_path, """
+    defmodule Citadel.ConnectorBinding do
+      @provider_families ["codex", "github", "linear"]
+      def provider_families, do: @provider_families
+    end
+    """)
+
+    write_file(ambiguous_adapter_path, """
+    defmodule Jido.Integration.V2.ProviderFeatureMatrix do
+      def placements, do: [:common, :shimmed]
+    end
+    """)
+
+    assert {:ok, receipt} =
+             StructuralGateScanner.scan(
+               [unclassified_path, duplicated_family_path, ambiguous_adapter_path],
+               target_roots: roots
+             )
+
+    assert receipt.status == :open_defect
+    assert Enum.any?(receipt.findings, &(&1.rule == :unclassified_provider_public_vocabulary))
+    assert Enum.any?(receipt.findings, &(&1.rule == :duplicated_provider_family_list))
+    assert Enum.any?(receipt.findings, &(&1.rule == :ambiguous_adapter_class))
+  end
+
+  test "allows classified provider public vocabulary in authority and scheduling owners", %{
+    roots: roots
+  } do
+    authority_path =
+      roots
+      |> Map.fetch!("app_kit")
+      |> Path.join("core/authority_projections/lib/app_kit/authority_projections.ex")
+
+    scheduling_path =
+      roots
+      |> Map.fetch!("mezzanine")
+      |> Path.join("core/coordination_engine/lib/mezzanine/coordination_engine/run.ex")
+
+    write_file(authority_path, """
+    defmodule AppKit.AuthorityProjections do
+      defstruct [:provider_account_ref, :provider_account_status]
+    end
+    """)
+
+    write_file(scheduling_path, """
+    defmodule Mezzanine.CoordinationEngine.Run do
+      defstruct [:provider_pool_ref]
+    end
+    """)
+
+    assert {:ok, receipt} =
+             StructuralGateScanner.scan([authority_path, scheduling_path], target_roots: roots)
+
+    refute Enum.any?(
+             receipt.findings,
+             &(&1.rule == :unclassified_provider_public_vocabulary)
+           )
+  end
+
   test "fails lane branching in AppKit or Mezzanine generic code", %{roots: roots} do
     path =
       roots

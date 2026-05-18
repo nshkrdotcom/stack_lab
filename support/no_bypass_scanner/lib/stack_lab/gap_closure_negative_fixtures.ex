@@ -73,9 +73,9 @@ defmodule StackLab.GapClosureNegativeFixtures do
       owner_phase: "Phase 4",
       claim: "Provider-account vocabulary in public DTOs must be classified or renamed.",
       expected_failure: :unclassified_provider_public_vocabulary,
-      path_hint: "app_kit/core/headless_surface/lib/app_kit/headless_surface/contract.ex",
+      path_hint: "app_kit/core/app_kit_core/lib/app_kit/unclassified_provider_dto.ex",
       source: """
-      defmodule AppKit.HeadlessSurface.Contract do
+      defmodule AppKit.UnclassifiedProviderDto do
         defstruct [:provider_account_ref, :provider_pool_ref, :reassign_provider]
       end
       """
