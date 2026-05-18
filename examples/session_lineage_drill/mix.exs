@@ -31,7 +31,7 @@ defmodule StackLab.SessionLineageDrill.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"]
+      extras: ["README.md", "docs/receipts/agent_turn_runtime_patterns.md"]
     ]
   end
 end

@@ -47,7 +47,7 @@ not claim authoritative audit truth or production deployment proof.
 | 100 development process | `stack_lab`, `AITrace` | partial source-backed proof | add trace fixtures for local proof loops |
 | 200 refactoring | repo owners | partial | link each deletion campaign to a StackLab scenario or no-op proof |
 | 300 architecture | docs + `stack_lab` | manifest, artifact ledger, and product no-bypass fixtures implemented | keep product fixture proof wired into CI and expand fixtures as product shapes change |
-| 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | connector provider-free and budget scenarios implemented; agent-turn runtime is partial through session-lineage drill | add dynamic tool manifest and session proof rows |
+| 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | connector provider-free, budget, and agent-turn runtime pattern proofs implemented | add live runtime drills only when release claims require them |
 | 500 governance | `citadel`, `mezzanine`, `jido_integration` | tenant isolation, connector secret lease, prompt-injection fixtures, and governed connector compliance export fixture implemented | add incident export and production compliance-retention fixtures only when release claims require them |
 | 600 deployment | `stack_lab`, `mezzanine`, `AITrace` | local single-node deployment rehearsal implemented | convert local rehearsals into clean-host operator drills once deploy scripts are repo-owned |
 
@@ -92,6 +92,11 @@ not claim authoritative audit truth or production deployment proof.
   budget exhaustion fallback before uncontrolled model/provider spend.
 - `prompt_injection_defense`: runs the connector hardening scenario that rejects
   untrusted content attempting to expand tool permissions or alter policy.
+- `agent_turn_runtime_patterns`: runs the session-lineage assembled proof with
+  multi-turn recovery, dynamic tool manifest recovery, unauthorized tool
+  fail-closed behavior, fault-injected fallback lane selection, repo evidence
+  for OuterBrain, Citadel, Jido Integration, Execution Plane, Mezzanine, and
+  AITrace, and AITrace lineage/replay event refs.
 - `governed_connector_export_fixture`: runs the deterministic governed
   connector compliance export fixture with explicit AITrace export context,
   tenant-bound source/replay refs, connector binding refs, credential lease
@@ -132,5 +137,3 @@ not claim authoritative audit truth or production deployment proof.
 - `refactoring_deletion_backlog`: reviewed batch receipt machinery exists, but
   each 200-series deletion campaign still needs a StackLab scenario or explicit
   no-op proof.
-- `agent_turn_runtime_patterns`: session-lineage drills exist, but the named
-  assembled-offline proof still needs AITrace evidence and fault injection.

@@ -10,8 +10,9 @@ matrix supersedes this snapshot.
 
 - `refactoring_deletion_backlog`: batch receipt review exists; deletion-specific
   campaigns still need explicit receipts.
-- `agent_turn_runtime_patterns`: session-lineage drill exists; full agent-turn
-  failure injection and AITrace evidence still need promotion.
+- `agent_turn_runtime_patterns`: was partial in Phase O; the current proof
+  matrix now implements it through
+  `examples/session_lineage_drill/docs/receipts/agent_turn_runtime_patterns.md`.
 - `governed_connector_export_fixture`: was partial in Phase O; the current
   proof matrix now implements it through
   `docs/receipts/gn_ten_connector/governed_compliance_export.json`.

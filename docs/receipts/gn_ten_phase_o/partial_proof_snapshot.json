@@ -20,16 +20,16 @@
     },
     {
       "id": "agent_turn_runtime_patterns",
-      "status": "partial",
-      "evidence": "examples/session_lineage_drill",
+      "status": "implemented_after_phase_o",
+      "evidence": "examples/session_lineage_drill/docs/receipts/agent_turn_runtime_patterns.md",
       "proves": [
-        "session-lineage drill has a local harness entrypoint"
+        "current proof matrix implements named assembled agent-turn runtime proof"
       ],
       "does_not_prove": [
-        "full multi-turn recovery across Brain, Spine, and lower runtime boundaries",
-        "dynamic tool loading under fault injection"
+        "live provider behavior",
+        "production multi-node runtime behavior"
       ],
-      "next_action": "add named assembled-offline proof with AITrace evidence"
+      "next_action": "keep current proof matrix authoritative"
     },
     {
       "id": "governed_connector_export_fixture",

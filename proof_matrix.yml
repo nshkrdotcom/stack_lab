@@ -137,18 +137,29 @@ proofs:
   - id: agent_turn_runtime_patterns
     owner_repo: stack_lab
     contract_family: "400 agent patterns"
-    status: partial
+    status: implemented
     profile: assembled_offline
     command: cd examples/session_lineage_drill && mix test
-    fixture: examples/session_lineage_drill
-    receipt: receipt://stack_lab/phase_o_partial_snapshot/latest
+    fixture: examples/session_lineage_drill/docs/receipts/agent_turn_runtime_patterns.md
+    receipt: receipt://stack_lab/agent_turn_runtime_patterns/latest
     proves:
-      - session-lineage drill exists and is exercised through StackLab CI
-      - agent-turn runtime proof has a concrete local harness entrypoint
+      - named session-lineage assembled proof covers multi-turn recovery
+      - dynamic tool manifest resolution survives recovery and unauthorized tools fail closed
+      - primary-lane fault injection selects an authorized fallback lane
+      - AITrace lineage includes required agent-turn replay events
+      - proof carries repo evidence for OuterBrain, Citadel, Jido Integration, Execution Plane, Mezzanine, and AITrace
     does_not_prove:
-      - multi-turn session recovery across Brain, Spine, and lower runtime boundaries
-      - dynamic tool loading and fallback behavior under fault injection
-    next_action: promote session-lineage drills into a named assembled_offline proof with AITrace evidence and failure injection
+      - live provider behavior
+      - production multi-node runtime behavior
+      - real dynamic tool registry mutation
+      - production AITrace retention policy
+    next_action: keep session-lineage proof in StackLab CI and add live runtime drill only when release claims require it
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/agent_turn_runtime_patterns/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
 
   - id: governed_connector_export_fixture
     owner_repo: stack_lab
