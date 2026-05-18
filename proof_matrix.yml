@@ -153,18 +153,29 @@ proofs:
   - id: governed_connector_export_fixture
     owner_repo: stack_lab
     contract_family: "500 governance"
-    status: partial
+    status: implemented
     profile: assembled_offline
     command: mix gn_ten.connector.scenarios
-    fixture: docs/receipts/gn_ten_connector/connector_hardening.json
-    receipt: receipt://stack_lab/phase_o_partial_snapshot/latest
+    fixture: docs/receipts/gn_ten_connector/governed_compliance_export.json
+    receipt: receipt://stack_lab/governed_connector_export_fixture/latest
     proves:
-      - connector evidence fixtures already deny raw secrets and provider payloads
-      - credential lease handling has provider-free scenario coverage
+      - governed compliance export bundle is deterministic and codec-backed
+      - explicit governed AITrace exporter and export context refs are required
+      - source traces and replay exports carry tenant refs and fail closed on cross-tenant replay
+      - connector binding refs, credential lease refs, lower receipt refs, and redaction refs are enough for audit joins
+      - public export artifacts deny raw secrets, native auth material, prompt bodies, provider payloads, and untrusted content bodies
     does_not_prove:
-      - compliance export is redacted and deterministic
-      - a governed compliance export bundle can be regenerated deterministically
-    next_action: add an offline compliance export fixture and verify denied public payload keys
+      - live provider behavior
+      - production secret backend behavior
+      - production compliance export retention
+      - operator-facing compliance UI behavior
+    next_action: keep governed export fixture and leak-negative tests in connector scenarios; add live compliance-retention proof only when release claims it
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/governed_connector_export_fixture/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
 
   - id: connector_provider_free
     owner_repo: stack_lab

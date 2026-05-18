@@ -48,7 +48,7 @@ not claim authoritative audit truth or production deployment proof.
 | 200 refactoring | repo owners | partial | link each deletion campaign to a StackLab scenario or no-op proof |
 | 300 architecture | docs + `stack_lab` | manifest, artifact ledger, and product no-bypass fixtures implemented | keep product fixture proof wired into CI and expand fixtures as product shapes change |
 | 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | connector provider-free and budget scenarios implemented; agent-turn runtime is partial through session-lineage drill | add dynamic tool manifest and session proof rows |
-| 500 governance | `citadel`, `mezzanine`, `jido_integration` | tenant isolation, connector secret lease, and prompt-injection fixtures implemented; compliance export remains partial | add incident/compliance export fixtures |
+| 500 governance | `citadel`, `mezzanine`, `jido_integration` | tenant isolation, connector secret lease, prompt-injection fixtures, and governed connector compliance export fixture implemented | add incident export and production compliance-retention fixtures only when release claims require them |
 | 600 deployment | `stack_lab`, `mezzanine`, `AITrace` | local single-node deployment rehearsal implemented | convert local rehearsals into clean-host operator drills once deploy scripts are repo-owned |
 
 ## Release Readiness Proof Profiles
@@ -92,6 +92,12 @@ not claim authoritative audit truth or production deployment proof.
   budget exhaustion fallback before uncontrolled model/provider spend.
 - `prompt_injection_defense`: runs the connector hardening scenario that rejects
   untrusted content attempting to expand tool permissions or alter policy.
+- `governed_connector_export_fixture`: runs the deterministic governed
+  connector compliance export fixture with explicit AITrace export context,
+  tenant-bound source/replay refs, connector binding refs, credential lease
+  refs, lower receipt refs, redaction refs, shared GroundPlane boundary-codec
+  hashes, and nested leak-negative checks for raw secrets, native auth material,
+  prompt bodies, provider payloads, and untrusted content bodies.
 - `gepa_platform_roundtrip`: runs the deterministic governed GEPA proof with
   mock model profiles, model inference scanner receipts, optimization fabric
   scanner receipts, AI run lineage receipts, promotion refs, rollback refs, and
@@ -128,5 +134,3 @@ not claim authoritative audit truth or production deployment proof.
   no-op proof.
 - `agent_turn_runtime_patterns`: session-lineage drills exist, but the named
   assembled-offline proof still needs AITrace evidence and fault injection.
-- `governed_connector_export_fixture`: connector hardening denies raw secrets
-  and provider payloads, but deterministic compliance export is still unproven.

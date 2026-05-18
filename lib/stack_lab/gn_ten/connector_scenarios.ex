@@ -7,12 +7,15 @@ defmodule StackLab.GnTen.ConnectorScenarios do
   tokens, or secrets in public artifacts.
   """
 
+  alias StackLab.GnTen.GovernedConnectorExport
+
   @schema_version "gn_ten_connector_hardening_v1"
   @scenario_ids ~w(
     connector_provider_free
     connector_secret_lease
     connector_token_budget
     prompt_injection_defense
+    governed_connector_export_fixture
   )
   @forbidden_public_keys ~w(
     raw_prompt
@@ -22,6 +25,14 @@ defmodule StackLab.GnTen.ConnectorScenarios do
     access_token
     refresh_token
     provider_token
+    native_auth_material
+    private_key
+    raw_prompt
+    prompt_body
+    provider_response_body
+    raw_payload
+    raw_body
+    untrusted_content_body
   )
 
   @spec report() :: map()
@@ -35,7 +46,8 @@ defmodule StackLab.GnTen.ConnectorScenarios do
         provider_free_scenario(),
         secret_lease_scenario(),
         token_budget_scenario(),
-        prompt_injection_scenario()
+        prompt_injection_scenario(),
+        governed_connector_export_scenario()
       ]
     }
   end
@@ -129,6 +141,36 @@ defmodule StackLab.GnTen.ConnectorScenarios do
     }
   end
 
+  defp governed_connector_export_scenario do
+    bundle = GovernedConnectorExport.bundle()
+
+    %{
+      id: "governed_connector_export_fixture",
+      owner_repo: "stack_lab",
+      outcome: "passed",
+      evidence: %{
+        export_ref: bundle["export_ref"],
+        bundle_hash: bundle["bundle_hash"],
+        spill_hash: bundle["spill_hash"],
+        canonical_boundary_codec_ref: bundle["canonical_boundary_codec_ref"],
+        governed_export_context_ref: get_in(bundle, ["export_context", "export_context_ref"]),
+        aitrace_exporter_ref: get_in(bundle, ["export_context", "exporter_ref"]),
+        tenant_ref: get_in(bundle, ["export_context", "tenant_ref"]),
+        connector_binding_ref: get_in(bundle, ["audit_refs", "connector_binding_ref"]),
+        credential_lease_ref: get_in(bundle, ["audit_refs", "credential_lease_ref"]),
+        lower_receipt_refs: get_in(bundle, ["audit_refs", "lower_receipt_refs"]),
+        replay_bundle_ref: get_in(bundle, ["replay_export", "replay_bundle_ref"]),
+        forbidden_public_key_paths: GovernedConnectorExport.forbidden_public_key_paths(bundle)
+      },
+      does_not_prove: [
+        "live provider behavior",
+        "production secret backend behavior",
+        "production compliance export retention",
+        "operator-facing compliance UI behavior"
+      ]
+    }
+  end
+
   defp normalize_fixture_response(%{status: status, body_ref: body_ref}) do
     %{status: status, body_ref: body_ref}
   end
@@ -218,12 +260,30 @@ defmodule StackLab.GnTen.ConnectorScenarios do
     evidence.selected_action == "rejected" and evidence.policy_changed? == false
   end
 
+  defp scenario_passed?(%{id: "governed_connector_export_fixture", evidence: evidence}) do
+    evidence
+    |> governed_export_required_refs()
+    |> Enum.all?(&is_binary/1) and
+      evidence.lower_receipt_refs != [] and evidence.forbidden_public_key_paths == []
+  end
+
   defp scenario_passed?(_scenario), do: false
 
+  defp governed_export_required_refs(evidence) do
+    [
+      evidence.bundle_hash,
+      evidence.spill_hash,
+      evidence.governed_export_context_ref,
+      evidence.aitrace_exporter_ref,
+      evidence.tenant_ref,
+      evidence.connector_binding_ref,
+      evidence.credential_lease_ref,
+      evidence.replay_bundle_ref
+    ]
+  end
+
   defp validate_public_redaction(failures, term) do
-    term
-    |> collect_forbidden_paths([])
-    |> case do
+    case collect_forbidden_paths(term, []) do
       [] -> failures
       paths -> [failure("connector_public_artifact_leak", paths: paths) | failures]
     end

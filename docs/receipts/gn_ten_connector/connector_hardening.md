@@ -12,6 +12,7 @@ Provider-free: `true`
 - `connector_secret_lease`: public connector seam exposes only an opaque lease handle and lease expiry shape.
 - `connector_token_budget`: over-budget fixture returns `budget_exhausted_fallback` before uncontrolled spend.
 - `prompt_injection_defense`: untrusted content fixture is rejected without changing policy or expanding tools.
+- `governed_connector_export_fixture`: deterministic governed compliance export bundle uses explicit AITrace export context, tenant-bound source/replay refs, credential lease refs, lower receipt refs, redaction refs, and the shared GroundPlane boundary codec without public raw secrets, native auth material, prompt bodies, provider payloads, or untrusted content bodies.
 
 ## Proof Posture
 
@@ -25,4 +26,6 @@ Provider-free: `true`
 - live provider behavior
 - production credential handling
 - audit-grade connector evidence
+- production compliance export retention
+- operator-facing compliance UI behavior
 - provider billing correctness

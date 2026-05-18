@@ -3,7 +3,7 @@
   "date": "2026-04-28",
   "workspace_ref": "workspace://nshkrdotcom/gn-ten",
   "branch_policy": "main_only",
-  "status": "partial_only_no_completion_claim",
+  "status": "historical_phase_o_partial_snapshot",
   "proofs": [
     {
       "id": "refactoring_deletion_backlog",
@@ -33,15 +33,16 @@
     },
     {
       "id": "governed_connector_export_fixture",
-      "status": "partial",
-      "evidence": "docs/receipts/gn_ten_connector/connector_hardening.json",
+      "status": "implemented_after_phase_o",
+      "evidence": "docs/receipts/gn_ten_connector/governed_compliance_export.json",
       "proves": [
-        "connector fixtures deny raw secrets and provider payloads"
+        "current proof matrix implements deterministic governed compliance export"
       ],
       "does_not_prove": [
-        "deterministic governed compliance export"
+        "live provider behavior",
+        "production compliance export retention"
       ],
-      "next_action": "add offline compliance export fixture"
+      "next_action": "keep current proof matrix authoritative"
     }
   ],
   "posture": {

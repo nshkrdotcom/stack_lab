@@ -2,8 +2,9 @@
 
 Date: 2026-04-28
 
-This receipt records proof rows that are no longer blank `missing-proof`
-entries but remain partial. It does not claim completion for any behavior.
+This historical Phase O receipt records proof rows that were no longer blank
+`missing-proof` entries but still partial on 2026-04-28. The current proof
+matrix supersedes this snapshot.
 
 ## Partial Rows
 
@@ -11,8 +12,9 @@ entries but remain partial. It does not claim completion for any behavior.
   campaigns still need explicit receipts.
 - `agent_turn_runtime_patterns`: session-lineage drill exists; full agent-turn
   failure injection and AITrace evidence still need promotion.
-- `governed_connector_export_fixture`: connector hardening denies secrets and
-  provider payloads; deterministic compliance export is still not proven.
+- `governed_connector_export_fixture`: was partial in Phase O; the current
+  proof matrix now implements it through
+  `docs/receipts/gn_ten_connector/governed_compliance_export.json`.
 
 ## Posture
 

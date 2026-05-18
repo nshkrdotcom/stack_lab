@@ -1,0 +1,89 @@
+{
+  "schema_version": "gn_ten_governed_connector_export_v1",
+  "profile": "assembled_offline",
+  "provider_free": true,
+  "export_ref": "export://stack-lab/governed-connector-export/github/v1",
+  "release_manifest_ref": "release-manifest://stack-lab/gn-ten/governed-export/v1",
+  "evidence_anchor_ref": "evidence://stack-lab/gn-ten/governed-export/v1",
+  "canonical_boundary_codec_ref": "ground-plane.boundary.codec.v1",
+  "export_context": {
+    "kind": "governed_aitrace_export_context",
+    "export_context_ref": "export-context://stack-lab/governed-connector-export/github/v1",
+    "exporter_ref": "exporter://aitrace/governed-compliance/offline",
+    "tenant_ref": "tenant://stack-lab/governed-export",
+    "installation_ref": "installation://stack-lab/governed-export/github",
+    "authority_ref": "authority://stack-lab/governed-export/policy",
+    "trace_ref": "trace://stack-lab/governed-export/github/fixture",
+    "release_manifest_ref": "release-manifest://stack-lab/gn-ten/governed-export/v1",
+    "evidence_anchor_ref": "evidence://stack-lab/gn-ten/governed-export/v1",
+    "ambient_exporters_allowed": false
+  },
+  "source_trace": {
+    "source_trace_ref": "source-trace://stack-lab/governed-export/github/fixture",
+    "trace_ref": "trace://stack-lab/governed-export/github/fixture",
+    "tenant_ref": "tenant://stack-lab/governed-export",
+    "replay_addressable": true
+  },
+  "audit_refs": {
+    "tenant_ref": "tenant://stack-lab/governed-export",
+    "installation_ref": "installation://stack-lab/governed-export/github",
+    "authority_ref": "authority://stack-lab/governed-export/policy",
+    "connector_manifest_ref": "manifest://jido/connectors/github/governed-export",
+    "connector_binding_ref": "connector-binding://stack-lab/github/governed-export",
+    "credential_lease_ref": "credential-lease://stack-lab/github/governed-export",
+    "lower_receipt_refs": [
+      "lower-receipt://github/governed-export/succeeded"
+    ],
+    "operation_policy_ref": "operation-policy://stack-lab/github/governed-export",
+    "redaction_ref": "redaction://stack-lab/governed-connector-export/ref-only"
+  },
+  "public_payload": {
+    "operation_class": "connector.compliance_export",
+    "connector_family": "github",
+    "connector_binding_ref": "connector-binding://stack-lab/github/governed-export",
+    "credential_lease_ref": "credential-lease://stack-lab/github/governed-export",
+    "lower_receipt_ref": "lower-receipt://github/governed-export/succeeded",
+    "provider_object_refs": [
+      "provider-object-ref://github/pull-request/redacted-57"
+    ],
+    "prompt_ref": "prompt://stack-lab/governed-export/redacted",
+    "untrusted_content_ref": "content-ref://stack-lab/governed-export/untrusted/redacted",
+    "redaction_ref": "redaction://stack-lab/governed-connector-export/ref-only"
+  },
+  "replay_export": {
+    "replay_bundle_ref": "replay-bundle://stack-lab/governed-connector-export/github/v1",
+    "export_context_ref": "export-context://stack-lab/governed-connector-export/github/v1",
+    "source_trace_ref": "source-trace://stack-lab/governed-export/github/fixture",
+    "source_tenant_ref": "tenant://stack-lab/governed-export",
+    "tenant_ref": "tenant://stack-lab/governed-export",
+    "trace_ref": "trace://stack-lab/governed-export/github/fixture",
+    "release_manifest_ref": "release-manifest://stack-lab/gn-ten/governed-export/v1",
+    "evidence_anchor_ref": "evidence://stack-lab/gn-ten/governed-export/v1"
+  },
+  "redaction_summary": {
+    "raw_secrets_public": false,
+    "native_auth_public": false,
+    "prompt_bodies_public": false,
+    "provider_bodies_public": false,
+    "untrusted_content_bodies_public": false,
+    "denied_public_payload_keys": [
+      "api_key",
+      "access_token",
+      "refresh_token",
+      "client_secret",
+      "provider_token",
+      "credential_material",
+      "native_auth_material",
+      "private_key",
+      "raw_prompt",
+      "prompt_body",
+      "provider_payload",
+      "provider_response_body",
+      "raw_payload",
+      "raw_body",
+      "untrusted_content_body"
+    ]
+  },
+  "bundle_hash": "sha256:619b44136054db484bb3f61a63c4dfd92f1ac6d6bdbaf5d565428e9dc8986cf7",
+  "spill_hash": "sha256:8035ce7ffe5bb32aaa63f538dc56d82a6e50df703ec897b7a3b2ab0286e73eda"
+}

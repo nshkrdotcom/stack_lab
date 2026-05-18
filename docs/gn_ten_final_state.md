@@ -48,7 +48,7 @@ Expected final posture:
 - `gn_ten.artifacts.validate`: passes. After this closeout commit, StackLab may
   report stale warnings for self-referential bootstrap artifacts whose source is
   StackLab itself; these are not high-risk proof gaps.
-- `gn_ten.proofs.validate`: `proofs=16`, `implemented=13`, `missing_proof=0`.
+- `gn_ten.proofs.validate`: `proofs=17`, `implemented=15`, `missing_proof=0`.
 - `gn_ten.repo_agents.validate`: `repos=10`.
 - `gn_ten.status --json`: all ten repos on `main`, clean, `ahead=0`,
   `behind=0` after the closeout commit is pushed.
@@ -57,12 +57,11 @@ Expected final posture:
 
 ## Partial Proofs
 
-The final matrix has zero missing-proof entries. Three rows remain explicit
+The final matrix has zero missing-proof entries. Two rows remain explicit
 partial proofs and must not be described as implemented:
 
 - `refactoring_deletion_backlog`
 - `agent_turn_runtime_patterns`
-- `governed_connector_export_fixture`
 
 ## Receipts
 
@@ -78,4 +77,3 @@ partial proofs and must not be described as implemented:
 `jido_integration` includes valid governed inference adapter work that was
 present in the repo during Phase O and was included rather than reverted. It was
 validated with a dedicated `mix ci` rerun after the second push.
-

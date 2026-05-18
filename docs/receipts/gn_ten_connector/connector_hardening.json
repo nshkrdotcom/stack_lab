@@ -76,6 +76,33 @@
         "audit-grade connector evidence",
         "provider billing correctness"
       ]
+    },
+    {
+      "id": "governed_connector_export_fixture",
+      "owner_repo": "stack_lab",
+      "outcome": "passed",
+      "evidence": {
+        "export_ref": "export://stack-lab/governed-connector-export/github/v1",
+        "bundle_hash": "sha256:619b44136054db484bb3f61a63c4dfd92f1ac6d6bdbaf5d565428e9dc8986cf7",
+        "spill_hash": "sha256:8035ce7ffe5bb32aaa63f538dc56d82a6e50df703ec897b7a3b2ab0286e73eda",
+        "canonical_boundary_codec_ref": "ground-plane.boundary.codec.v1",
+        "governed_export_context_ref": "export-context://stack-lab/governed-connector-export/github/v1",
+        "aitrace_exporter_ref": "exporter://aitrace/governed-compliance/offline",
+        "tenant_ref": "tenant://stack-lab/governed-export",
+        "connector_binding_ref": "connector-binding://stack-lab/github/governed-export",
+        "credential_lease_ref": "credential-lease://stack-lab/github/governed-export",
+        "lower_receipt_refs": [
+          "lower-receipt://github/governed-export/succeeded"
+        ],
+        "replay_bundle_ref": "replay-bundle://stack-lab/governed-connector-export/github/v1",
+        "forbidden_public_key_paths": []
+      },
+      "does_not_prove": [
+        "live provider behavior",
+        "production secret backend behavior",
+        "production compliance export retention",
+        "operator-facing compliance UI behavior"
+      ]
     }
   ]
 }
