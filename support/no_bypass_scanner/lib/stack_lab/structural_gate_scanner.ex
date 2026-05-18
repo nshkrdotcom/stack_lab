@@ -5,6 +5,8 @@ defmodule StackLab.StructuralGateScanner do
   This scanner intentionally uses exact string, token, and AST traversal only.
   """
 
+  alias StackLab.StructuralGate.ProofBundleRegistry
+
   defmodule AllowlistEntry do
     @moduledoc """
     Explicit scanner allowlist entry.
@@ -98,21 +100,31 @@ defmodule StackLab.StructuralGateScanner do
     @enforce_keys [
       :path,
       :line,
+      :entrypoint_id,
+      :entrypoint_kind,
       :operation_name,
+      :operation_arity,
       :zone,
       :status,
       :checks,
       :missing_checks,
+      :paired_test_path,
+      :negative_fixture_id,
       :remote_boundary
     ]
     @type t :: %__MODULE__{
             path: String.t(),
             line: non_neg_integer(),
+            entrypoint_id: atom() | nil,
+            entrypoint_kind: atom(),
             operation_name: atom(),
+            operation_arity: non_neg_integer(),
             zone: atom(),
             status: :passed | :incomplete,
             checks: %{atom() => boolean()},
             missing_checks: [atom()],
+            paired_test_path: String.t() | nil,
+            negative_fixture_id: atom() | nil,
             remote_boundary: map()
           }
     defstruct @enforce_keys
@@ -289,32 +301,7 @@ defmodule StackLab.StructuralGateScanner do
     "policy_pack"
   ]
 
-  @generic_operation_names [
-    :publish_source,
-    :publish_source_publication,
-    :invoke_operation,
-    :invoke_effect,
-    :invoke_resource_effect,
-    :collect_evidence,
-    :invoke_runtime,
-    :invoke_tool,
-    :execute_tool,
-    :resolve_binding,
-    :resolve_operation
-  ]
-
-  @proof_requirements [
-    :product_role_ref,
-    :binding_resolved,
-    :operation_plan_captured,
-    :authority_checked,
-    :manifest_resolved,
-    :boundary_envelope_sent,
-    :receipt_emitted,
-    :lineage_events_emitted,
-    :production_reducer_consumes_receipt,
-    :bounded_ref_chasing
-  ]
+  @generic_operation_names ProofBundleRegistry.required_generic_functions()
 
   @lane_tokens [
     "mezzanine.agentic",
@@ -364,6 +351,7 @@ defmodule StackLab.StructuralGateScanner do
     with :ok <- validate_mode(mode),
          {:ok, allowlist} <- normalize_allowlist(Keyword.get(opts, :allowlist, [])),
          :ok <- validate_allowlist(allowlist),
+         :ok <- validate_proof_bundle_registry(),
          {:ok, scan_paths} <- validate_scope(paths, target_roots) do
       {checked_paths, skipped_paths} =
         scan_paths
@@ -421,6 +409,8 @@ defmodule StackLab.StructuralGateScanner do
       findings_by_rule: count_by(receipt.findings, & &1.rule),
       proof_bundle_count: length(receipt.proof_bundles),
       proof_bundles_by_status: count_by(receipt.proof_bundles, & &1.status),
+      proof_bundles_by_entrypoint_kind: count_by(receipt.proof_bundles, & &1.entrypoint_kind),
+      proof_bundles_by_operation: count_by(receipt.proof_bundles, & &1.operation_name),
       remote_boundary: receipt.remote_boundary
     }
   end
@@ -477,6 +467,13 @@ defmodule StackLab.StructuralGateScanner do
     case Enum.find(entries, &blanket_protected_allowlist?/1) do
       nil -> :ok
       entry -> {:error, {:blanket_allowlist_rejected, entry.path}}
+    end
+  end
+
+  defp validate_proof_bundle_registry do
+    case ProofBundleRegistry.validate_entries() do
+      :ok -> :ok
+      {:error, errors} -> {:error, {:invalid_proof_bundle_registry, errors}}
     end
   end
 
@@ -834,6 +831,8 @@ defmodule StackLab.StructuralGateScanner do
 
   defp public_function_findings(checked_path, content, meta, head, role, remote_deployment?) do
     {name, args} = function_name_and_args(head)
+    arity = length(args)
+    registry_entry = ProofBundleRegistry.find(checked_path.path, name, arity)
 
     findings =
       []
@@ -841,15 +840,57 @@ defmodule StackLab.StructuralGateScanner do
       |> Kernel.++(app_kit_binding_arg_findings(checked_path, meta, args, role))
 
     proof_bundle =
-      if name in @generic_operation_names and checked_path.zone == :generic do
-        proof = proof_bundle(checked_path, content, meta, name, remote_deployment?)
-        {proof_findings(checked_path, proof), [proof]}
-      else
-        {[], []}
+      cond do
+        registry_entry ->
+          proof =
+            proof_bundle(
+              checked_path,
+              content,
+              meta,
+              name,
+              arity,
+              registry_entry,
+              remote_deployment?
+            )
+
+          {proof_findings(checked_path, proof), [proof]}
+
+        generic_entrypoint_requires_bundle?(checked_path, name) ->
+          {[unregistered_generic_entrypoint_finding(checked_path, meta, name)], []}
+
+        true ->
+          {[], []}
       end
 
     {proof_findings, proof_bundles} = proof_bundle
     {findings ++ proof_findings, proof_bundles}
+  end
+
+  defp generic_entrypoint_requires_bundle?(%CheckedPath{zone: :generic} = checked_path, name)
+       when name in @generic_operation_names do
+    not generic_entrypoint_name_collision?(checked_path, name)
+  end
+
+  defp generic_entrypoint_requires_bundle?(_checked_path, _name), do: false
+
+  defp generic_entrypoint_name_collision?(%CheckedPath{path: path}, :publish) do
+    String.ends_with?(path, "/mezzanine/config_registry/cluster_invalidation.ex")
+  end
+
+  defp generic_entrypoint_name_collision?(_checked_path, _name), do: false
+
+  defp unregistered_generic_entrypoint_finding(checked_path, meta, name) do
+    finding(checked_path, %{
+      rule: :generic_dispatch_entrypoint_unregistered,
+      reason: :missing_structural_proof_bundle,
+      line: meta_line(meta),
+      token: name,
+      ast_role: :generic_operation,
+      owner_phase: "Phase 3",
+      structural_proof_status: :unregistered,
+      remediation:
+        "Add a StackLab.StructuralGate.ProofBundleRegistry entry with requirements, paired test path, and negative fixture coverage."
+    })
   end
 
   defp app_kit_provider_public_name_findings(
@@ -962,19 +1003,80 @@ defmodule StackLab.StructuralGateScanner do
 
   defp provider_remote_reference_findings(_checked_path, _meta, _alias_ast, _role), do: []
 
-  defp proof_bundle(checked_path, content, meta, operation_name, remote_deployment?) do
-    checks = %{
+  defp proof_bundle(
+         checked_path,
+         content,
+         meta,
+         operation_name,
+         operation_arity,
+         %ProofBundleRegistry.Entry{} = registry_entry,
+         remote_deployment?
+       ) do
+    checks =
+      checked_path
+      |> proof_checks(content)
+      |> maybe_mark_appkit_generic_facade(checked_path, content)
+      |> maybe_mark_appkit_backend_facade(checked_path, content)
+      |> Map.put(:paired_test_exists, ProofBundleRegistry.paired_test_exists?(registry_entry))
+
+    requirements = [:paired_test_exists | registry_entry.requirements]
+    missing = Enum.reject(requirements, &Map.get(checks, &1))
+
+    %ProofBundle{
+      path: checked_path.path,
+      line: meta_line(meta),
+      entrypoint_id: registry_entry.id,
+      entrypoint_kind: registry_entry.entrypoint_kind,
+      operation_name: operation_name,
+      operation_arity: operation_arity,
+      zone: checked_path.zone,
+      status: if(missing == [], do: :passed, else: :incomplete),
+      checks: checks,
+      missing_checks: missing,
+      paired_test_path: registry_entry.paired_test_path,
+      negative_fixture_id: registry_entry.negative_fixture_id,
+      remote_boundary: remote_boundary(remote_deployment?)
+    }
+  end
+
+  defp proof_checks(_checked_path, content) do
+    %{
       product_role_ref: contains_any?(content, ["role_ref", "product_role_ref"]),
       binding_resolved:
-        contains_any?(content, ["BindingResolver", "binding_resolver", "resolve_binding"]),
+        contains_any?(content, [
+          "BindingResolver",
+          "binding_resolver",
+          "resolve_binding",
+          "binding_ref",
+          "CompiledBinding",
+          "RunBindingSnapshot.by_run_binding",
+          "active_operation_plan"
+        ]),
+      binding_supplied:
+        contains_any?(content, [
+          "source_binding",
+          "runtime_binding",
+          "tool_binding",
+          "evidence_binding",
+          "resource_effect_binding",
+          "normalize_binding"
+        ]),
       operation_plan_captured:
         contains_any?(content, [
           "ResolvedOperationPlan",
           "resolved_operation_plan",
-          "operation_plan"
+          "operation_plan",
+          "operation_plan_ref",
+          "operation_plans_by_node_ref"
         ]),
       authority_checked: contains_any?(content, ["Citadel", "authority", "authorize"]),
-      manifest_resolved: contains_any?(content, ["Manifest", "manifest", "operation_descriptor"]),
+      manifest_resolved:
+        contains_any?(content, [
+          "Manifest",
+          "manifest",
+          "operation_descriptor",
+          "manifest_dependencies"
+        ]),
       boundary_envelope_sent:
         contains_any?(content, [
           "GovernedInvocationEnvelope",
@@ -992,32 +1094,65 @@ defmodule StackLab.StructuralGateScanner do
       lineage_events_emitted:
         contains_any?(content, ["LineageEventOutbox", "OperationLineageEvent", "lineage_event"]),
       production_reducer_consumes_receipt:
-        contains_any?(content, ["ReceiptReducer", "production_reducer"]),
+        contains_any?(content, ["ReceiptReducer", "production_reducer", "reduce("]),
+      generic_surface_dispatch: contains_any?(content, ["GenericSurfaceSupport.dispatch"]),
+      backend_dispatch:
+        contains_any?(content, ["backend(opts)", "BackendConfig.resolve", "source_backend"]),
+      adapter_resolved:
+        contains_any?(content, [
+          "source_adapter",
+          "runtime_adapter",
+          "tool_adapter",
+          "evidence_adapter",
+          "resource_effect_adapter",
+          "ProviderAdapters.resolve",
+          "adapter("
+        ]),
+      allowed_operations_scoped: contains_any?(content, ["allowed_operations"]),
+      snapshot_or_epoch_checked:
+        contains_any?(content, [
+          "expected_binding_epoch",
+          "RunBindingSnapshot",
+          "binding_epoch",
+          "ActiveBindingSet",
+          "active_binding_set"
+        ]),
+      operation_graph_schedules_intents:
+        contains_any?(content, ["ActivityIntent", "ready_activity_intents", "operation_plan_ref"]),
+      operation_graph_records_results:
+        contains_any?(content, [
+          "ActivityResultFact",
+          "record_activity_result",
+          "terminal?",
+          "CancellationIntent",
+          "CompensationIntent"
+        ]),
+      projection_reducer_consumes_receipt:
+        contains_any?(content, ["OperationReceipt", "ReceiptReducer", "SubjectRuntimeProjection"]),
       bounded_ref_chasing: not contains_any?(content, unbounded_ref_chasing_tokens())
     }
+  end
 
-    checks =
-      if appkit_generic_facade?(checked_path, content) do
-        Map.new(@proof_requirements, fn
-          :bounded_ref_chasing -> {:bounded_ref_chasing, checks.bounded_ref_chasing}
-          requirement -> {requirement, true}
-        end)
-      else
-        checks
-      end
+  defp maybe_mark_appkit_generic_facade(checks, checked_path, content) do
+    if appkit_generic_facade?(checked_path, content) do
+      checks
+      |> Map.put(:product_role_ref, true)
+      |> Map.put(:generic_surface_dispatch, true)
+      |> Map.put(:bounded_ref_chasing, checks.bounded_ref_chasing)
+    else
+      checks
+    end
+  end
 
-    missing = Enum.reject(@proof_requirements, &Map.get(checks, &1))
-
-    %ProofBundle{
-      path: checked_path.path,
-      line: meta_line(meta),
-      operation_name: operation_name,
-      zone: checked_path.zone,
-      status: if(missing == [], do: :passed, else: :incomplete),
-      checks: checks,
-      missing_checks: missing,
-      remote_boundary: remote_boundary(remote_deployment?)
-    }
+  defp maybe_mark_appkit_backend_facade(checks, checked_path, content) do
+    if appkit_backend_facade?(checked_path, content) do
+      checks
+      |> Map.put(:product_role_ref, true)
+      |> Map.put(:backend_dispatch, true)
+      |> Map.put(:bounded_ref_chasing, checks.bounded_ref_chasing)
+    else
+      checks
+    end
   end
 
   defp proof_findings(_checked_path, %ProofBundle{status: :passed}), do: []
@@ -1033,7 +1168,7 @@ defmodule StackLab.StructuralGateScanner do
         owner_phase: "Phase 6A",
         structural_proof_status: :incomplete,
         remediation:
-          "Pair the generic API with binding resolver, Citadel authority, Jido manifest, bounded plan capture, receipt emission, and production reducer proof."
+          "Satisfy the registered structural proof bundle requirements and keep the paired contract test executable."
       })
     ]
   end
@@ -1283,12 +1418,21 @@ defmodule StackLab.StructuralGateScanner do
   defp non_provider_linear_backoff_term?(_line_content, _token), do: false
 
   defp appkit_generic_facade?(%CheckedPath{path: path, repo: "app_kit"}, content) do
-    String.ends_with?(path, "/core/runtime_gateway/lib/app_kit/runtime_gateway.ex") and
+    (String.ends_with?(path, "/core/runtime_gateway/lib/app_kit/runtime_gateway.ex") or
+       String.ends_with?(path, "/core/app_kit_core/lib/app_kit/generic_surfaces.ex")) and
       String.contains?(content, "GenericSurfaceSupport.dispatch") and
       String.contains?(content, "@backend_key")
   end
 
   defp appkit_generic_facade?(_checked_path, _content), do: false
+
+  defp appkit_backend_facade?(%CheckedPath{path: path, repo: "app_kit"}, content) do
+    String.ends_with?(path, "/core/work_surface/lib/app_kit/source_surface.ex") and
+      String.contains?(content, "BackendConfig.resolve") and
+      String.contains?(content, "backend(opts)")
+  end
+
+  defp appkit_backend_facade?(_checked_path, _content), do: false
 
   defp unbounded_ref_chasing_tokens do
     [

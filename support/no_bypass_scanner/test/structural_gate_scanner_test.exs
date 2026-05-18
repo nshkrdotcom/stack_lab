@@ -2,6 +2,8 @@ defmodule StackLab.StructuralGateScannerTest do
   use ExUnit.Case, async: true
 
   alias StackLab.StructuralGateScanner
+  alias StackLab.GapClosureNegativeFixtures
+  alias StackLab.StructuralGate.ProofBundleRegistry
 
   setup do
     root = Path.join(System.tmp_dir!(), "stack_lab_structural_gate_scanner_test")
@@ -108,33 +110,42 @@ defmodule StackLab.StructuralGateScannerTest do
     assert Enum.any?(receipt.findings, &(&1.rule == :provider_shaped_dto_field))
   end
 
-  test "passes complete generic dispatch proof bundle", %{roots: roots} do
+  test "passes registered generic dispatch proof bundle", %{roots: roots} do
     path =
       roots
-      |> Map.fetch!("mezzanine")
-      |> Path.join("core/source_engine/lib/mezzanine/source_engine/generic_dispatch.ex")
+      |> Map.fetch!("app_kit")
+      |> Path.join("core/runtime_gateway/lib/app_kit/runtime_gateway.ex")
 
     write_file(path, """
-    defmodule Mezzanine.SourceEngine.GenericDispatch do
-      def publish_source(role_ref, attrs) do
-        BindingResolver.resolve_binding(role_ref)
-        resolved_operation_plan = %ResolvedOperationPlan{operation_plan: attrs}
-        Citadel.authorize(resolved_operation_plan)
-        operation_descriptor = Manifest.operation_descriptor(resolved_operation_plan)
-        envelope = %GovernedInvocationEnvelope{operation_descriptor: operation_descriptor}
-        receipt = %OperationReceipt{dispatch_envelope: envelope}
-        LineageEventOutbox.events_for_projection([receipt], attrs, lineage_event: true)
-        ReceiptReducer.reduce([receipt], production_reducer: true)
+    defmodule AppKit.RuntimeGateway do
+      @backend_key :generic_backend
+
+      def invoke_runtime_operation(context, runtime_role_ref, operation_role_ref, request, opts \\\\ []) do
+        GenericSurfaceSupport.dispatch(opts, @backend_key, :invoke_runtime_operation, [
+          context,
+          runtime_role_ref,
+          operation_role_ref,
+          request
+        ])
       end
     end
     """)
 
     assert {:ok, receipt} = StructuralGateScanner.scan([path], target_roots: roots)
     assert receipt.status == :pass
-    assert [%{operation_name: :publish_source, status: :passed}] = receipt.proof_bundles
+
+    assert [
+             %{
+               entrypoint_id: :appkit_runtime_gateway_invoke_runtime_operation,
+               entrypoint_kind: :runtime,
+               operation_name: :invoke_runtime_operation,
+               operation_arity: 5,
+               status: :passed
+             }
+           ] = receipt.proof_bundles
   end
 
-  test "fails incomplete generic dispatch proof bundle", %{roots: roots} do
+  test "fails generic dispatch entrypoint without registered bundle", %{roots: roots} do
     path =
       roots
       |> Map.fetch!("mezzanine")
@@ -148,8 +159,64 @@ defmodule StackLab.StructuralGateScannerTest do
 
     assert {:ok, receipt} = StructuralGateScanner.scan([path], target_roots: roots)
     assert receipt.status == :open_defect
-    assert [%{operation_name: :invoke_runtime, status: :incomplete}] = receipt.proof_bundles
+    assert receipt.proof_bundles == []
+    assert Enum.any?(receipt.findings, &(&1.rule == :generic_dispatch_entrypoint_unregistered))
+  end
+
+  test "fails registered proof bundle with missing dispatch proof", %{roots: roots} do
+    path =
+      roots
+      |> Map.fetch!("app_kit")
+      |> Path.join("core/runtime_gateway/lib/app_kit/runtime_gateway.ex")
+
+    write_file(path, """
+    defmodule AppKit.RuntimeGateway do
+      def invoke_runtime_operation(context, runtime_role_ref, operation_role_ref, request, opts \\\\ []) do
+        {context, runtime_role_ref, operation_role_ref, request, opts}
+      end
+    end
+    """)
+
+    assert {:ok, receipt} = StructuralGateScanner.scan([path], target_roots: roots)
+    assert receipt.status == :open_defect
+
+    assert [
+             %{
+               entrypoint_id: :appkit_runtime_gateway_invoke_runtime_operation,
+               operation_name: :invoke_runtime_operation,
+               status: :incomplete,
+               missing_checks: missing_checks
+             }
+           ] = receipt.proof_bundles
+
+    assert :generic_surface_dispatch in missing_checks
     assert Enum.any?(receipt.findings, &(&1.rule == :generic_dispatch_proof_incomplete))
+  end
+
+  test "proof-bundle registry rejects missing paired tests" do
+    root = Path.join(System.tmp_dir!(), "stack_lab_missing_pair_test")
+    File.rm_rf!(root)
+    File.mkdir_p!(root)
+
+    on_exit(fn -> File.rm_rf!(root) end)
+
+    assert {:error, errors} = ProofBundleRegistry.validate_entries(repo_root: root)
+    assert Enum.any?(errors, &(&1.error == :missing_paired_test))
+  end
+
+  test "phase 3 negative fixtures are registered" do
+    expected = [
+      :unbundled_generic_dispatch_entrypoint,
+      :proof_bundle_without_paired_test,
+      :provider_branch_under_generic_dispatch,
+      :generic_dispatch_missing_authority,
+      :generic_dispatch_missing_manifest_lookup,
+      :generic_dispatch_receipt_not_emitted
+    ]
+
+    registered = GapClosureNegativeFixtures.all() |> Enum.map(& &1.id)
+
+    assert Enum.all?(expected, &(&1 in registered))
   end
 
   test "fails provider module reference in Mezzanine bridge root but allows adapter zone", %{

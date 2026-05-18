@@ -120,6 +120,93 @@ defmodule StackLab.GapClosureNegativeFixtures do
       """
     },
     %{
+      id: :proof_bundle_without_paired_test,
+      owner_phase: "Phase 3",
+      claim: "A structural proof bundle is invalid without an executable paired contract test.",
+      expected_failure: :missing_paired_contract_test,
+      path_hint:
+        "stack_lab/support/no_bypass_scanner/lib/stack_lab/structural_gate/proof_bundle_registry.ex",
+      source: """
+      defmodule Fixture.ProofBundleWithoutPairedTest do
+        def entry do
+          %{
+            id: :fixture_missing_paired_test,
+            path_suffix: "app_kit/core/runtime_gateway/lib/app_kit/runtime_gateway.ex",
+            function: :invoke_runtime_operation,
+            arity: 5,
+            entrypoint_kind: :runtime,
+            requirements: [:product_role_ref],
+            paired_test_path: "missing/test/path.exs",
+            negative_fixture_id: :proof_bundle_without_paired_test
+          }
+        end
+      end
+      """
+    },
+    %{
+      id: :provider_branch_under_generic_dispatch,
+      owner_phase: "Phase 3",
+      claim: "Generic dispatch must not branch on a provider name.",
+      expected_failure: :provider_noun_in_generic_zone,
+      path_hint:
+        "mezzanine/core/workflow_runtime/lib/mezzanine/workflow_runtime/generic_runtime.ex",
+      source: """
+      defmodule Mezzanine.WorkflowRuntime.GenericRuntime do
+        def invoke_runtime(runtime_role_ref, attrs) do
+          case Map.get(attrs, :provider) do
+            "github" -> {:ok, runtime_role_ref}
+            _ -> {:error, :unsupported_provider}
+          end
+        end
+      end
+      """
+    },
+    %{
+      id: :generic_dispatch_missing_authority,
+      owner_phase: "Phase 3",
+      claim:
+        "Lower dispatch proof must include Citadel authority or an explicit pre-authorized handoff.",
+      expected_failure: :missing_authority_proof,
+      path_hint:
+        "mezzanine/bridges/integration_bridge/lib/mezzanine/integration_bridge/direct_run_dispatcher.ex",
+      source: """
+      defmodule Mezzanine.IntegrationBridge.DirectRunDispatcher do
+        def dispatch(envelope, lower_runtime) do
+          lower_runtime.run(envelope)
+        end
+      end
+      """
+    },
+    %{
+      id: :generic_dispatch_missing_manifest_lookup,
+      owner_phase: "Phase 3",
+      claim: "Binding resolution proof must include manifest or operation descriptor lookup.",
+      expected_failure: :missing_manifest_lookup,
+      path_hint:
+        "mezzanine/core/config_registry/lib/mezzanine/config_registry/binding_registry.ex",
+      source: """
+      defmodule Mezzanine.ConfigRegistry.BindingRegistry do
+        def resolve_operation_plan(attrs) do
+          {:ok, %{binding_ref: Map.fetch!(attrs, :binding_ref), operation_plan: %{}}}
+        end
+      end
+      """
+    },
+    %{
+      id: :generic_dispatch_receipt_not_emitted,
+      owner_phase: "Phase 3",
+      claim: "Lower dispatch proof must emit or reduce a compact operation receipt.",
+      expected_failure: :missing_receipt_emission,
+      path_hint: "mezzanine/core/projection_engine/lib/mezzanine/projections/receipt_reducer.ex",
+      source: """
+      defmodule Mezzanine.Projections.ReceiptReducer do
+        def reduce(attrs, _opts) do
+          {:ok, %{projection: attrs}}
+        end
+      end
+      """
+    },
+    %{
       id: :nonserializable_boundary_payload,
       owner_phase: "Phase 6",
       claim: "Cross-plane boundary payloads cannot carry local process state.",
