@@ -19,7 +19,7 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      applications: [:logger, :synapse_core, :stack_lab_no_bypass_scanner]
     ]
   end
 
@@ -27,7 +27,8 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
     [
       preferred_envs: [
         ci: :test,
-        "stack_lab.proof_app.synapse.acceptance": :test
+        "stack_lab.proof_app.synapse.acceptance": :test,
+        "stack_lab.proof_app.synapse.live_slice": :test
       ]
     ]
   end
@@ -35,6 +36,14 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
   defp deps do
     [
       {:synapse_core, path: "#{@repo_root}/synapse/apps/synapse_core"},
+      {:execution_plane,
+       path: "#{@repo_root}/execution_plane/core/execution_plane", override: true},
+      {:ground_plane_contracts,
+       path: "#{@repo_root}/ground_plane/core/ground_plane_contracts", override: true},
+      {:ground_plane_persistence_policy,
+       path: "#{@repo_root}/ground_plane/core/persistence_policy", override: true},
+      {:app_kit_mezzanine_bridge, path: "#{@repo_root}/app_kit/bridges/mezzanine_bridge"},
+      {:mezzanine_workflow_runtime, path: "#{@repo_root}/mezzanine/core/workflow_runtime"},
       {:stack_lab_no_bypass_scanner, path: "../../support/no_bypass_scanner"},
       {:jason, "~> 1.4"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
@@ -50,6 +59,7 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
         "compile --warnings-as-errors",
         "test",
         "stack_lab.proof_app.synapse.acceptance --json",
+        "stack_lab.proof_app.synapse.live_slice --json",
         "credo --strict"
       ]
     ]

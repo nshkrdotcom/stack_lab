@@ -1,11 +1,11 @@
-defmodule Mix.Tasks.StackLab.ProofApp.Synapse.Acceptance do
-  @moduledoc "Runs the Synapse product acceptance proof app."
+defmodule Mix.Tasks.StackLab.ProofApp.Synapse.LiveSlice do
+  @moduledoc "Runs the Synapse deterministic live-stack slice proof app."
 
   use Mix.Task
 
-  alias StackLab.Examples.SynapseProductAcceptance
+  alias StackLab.Examples.SynapseLiveSlice
 
-  @shortdoc "Run the Synapse product acceptance proof"
+  @shortdoc "Run the Synapse live-stack slice proof"
 
   @impl Mix.Task
   def run(args) do
@@ -21,7 +21,7 @@ defmodule Mix.Tasks.StackLab.ProofApp.Synapse.Acceptance do
       Mix.raise("invalid options: #{inspect(invalid)}")
     end
 
-    case SynapseProductAcceptance.run() do
+    case SynapseLiveSlice.run() do
       {:ok, receipt} ->
         maybe_write_receipt!(receipt, Keyword.get(opts, :receipt))
         print_success(receipt, Keyword.get(opts, :json, false))
@@ -46,9 +46,13 @@ defmodule Mix.Tasks.StackLab.ProofApp.Synapse.Acceptance do
   end
 
   defp print_success(receipt, false) do
-    Mix.shell().info("stack_lab.proof_app.synapse.acceptance passed")
+    proofs = receipt["proofs"]
+
+    Mix.shell().info("stack_lab.proof_app.synapse.live_slice passed")
     Mix.shell().info("product_repo=#{receipt["product_repo"]}")
-    Mix.shell().info("run_ref=#{receipt["proofs"]["run_start"]["run_ref"]}")
+    Mix.shell().info("run_ref=#{proofs["run_start"]["run_ref"]}")
+    Mix.shell().info("runtime_state=#{proofs["runtime_projection"]["runtime_state"]}")
+    Mix.shell().info("denial_state=#{proofs["denial_path"]["runtime_state"]}")
     Mix.shell().info("no_bypass=#{receipt["no_bypass"]["status"]}")
   end
 
@@ -61,7 +65,7 @@ defmodule Mix.Tasks.StackLab.ProofApp.Synapse.Acceptance do
   end
 
   defp print_failure(reason, false) do
-    Mix.shell().error("stack_lab.proof_app.synapse.acceptance failed")
+    Mix.shell().error("stack_lab.proof_app.synapse.live_slice failed")
     Mix.shell().error("  #{inspect(reason)}")
     exit({:shutdown, 1})
   end
