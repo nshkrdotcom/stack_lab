@@ -91,6 +91,39 @@ defmodule StackLab.FoundationGateScannerTest do
     assert Enum.any?(receipt.findings, &(&1.rule == :provider_shaped_field))
   end
 
+  test "fails provider-shaped product implementation APIs while allowing product command names",
+       %{
+         root: root
+       } do
+    roots = %{"extravaganza" => Path.join(root, "extravaganza")}
+
+    path =
+      Path.join(
+        roots["extravaganza"],
+        "apps/extravaganza_core/lib/extravaganza/headless_surface.ex"
+      )
+
+    write_file(path, """
+    defmodule Extravaganza.HeadlessSurface do
+      @operation :live_linear_source
+
+      def live_linear_source_command(attrs), do: {:ok, attrs}
+      def publish_linear_source(attrs, opts), do: {attrs, opts}
+    end
+    """)
+
+    assert {:ok, receipt} = FoundationGateScanner.scan([path], target_roots: roots)
+    assert receipt.status == :open_defect
+
+    assert [
+             %{
+               rule: :provider_named_product_implementation_api,
+               token: "publish_linear_source",
+               owner_phase: "Extravaganza Cutover Phase 2"
+             }
+           ] = receipt.findings
+  end
+
   test "fails regular-expression tokens in project code", %{roots: roots} do
     path =
       roots

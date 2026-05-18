@@ -160,6 +160,18 @@ defmodule StackLab.FoundationGateScanner do
     "defcallback cleanup_github"
   ]
 
+  @product_provider_impl_tokens [
+    "sync_linear_source",
+    "sync_linear_issue",
+    "sync_linear_issues",
+    "fetch_linear_candidates",
+    "current_linear_issue_states",
+    "publish_linear_source",
+    "execute_linear_graphql_tool",
+    "fetch_github_pr_evidence",
+    "cleanup_github_pr_branch"
+  ]
+
   @ground_plane_higher_layer_tokens [
     "AI",
     "AiRun",
@@ -321,6 +333,7 @@ defmodule StackLab.FoundationGateScanner do
     |> Kernel.++(provider_noun_findings(checked_path, content))
     |> Kernel.++(provider_shaped_field_findings(checked_path, content))
     |> Kernel.++(app_kit_public_findings(checked_path, content))
+    |> Kernel.++(product_provider_impl_findings(checked_path, content))
     |> Kernel.++(ground_plane_name_findings(checked_path, content))
     |> Kernel.++(no_regular_expression_findings(checked_path, content))
   end
@@ -371,6 +384,30 @@ defmodule StackLab.FoundationGateScanner do
   end
 
   defp app_kit_public_findings(_checked_path, _content), do: []
+
+  defp product_provider_impl_findings(
+         %CheckedPath{repo: "extravaganza", zone: :product, path: path} = checked_path,
+         content
+       ) do
+    if Path.extname(path) in @code_extensions do
+      token_findings(
+        checked_path,
+        content,
+        @product_provider_impl_tokens,
+        :provider_named_product_implementation_api,
+        %{
+          reason: :provider_named_product_implementation_api,
+          owner_phase: "Extravaganza Cutover Phase 2",
+          remediation:
+            "Keep provider words in product command names and pack data only; replace implementation functions with neutral product intent APIs."
+        }
+      )
+    else
+      []
+    end
+  end
+
+  defp product_provider_impl_findings(_checked_path, _content), do: []
 
   defp ground_plane_name_findings(
          %CheckedPath{zone: :foundation_ground_plane} = checked_path,
