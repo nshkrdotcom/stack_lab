@@ -22,6 +22,7 @@ defmodule StackLab.CitadelSpineHarness do
     MezzanineRestartRecovery,
     MultiNode,
     MultiWriterStateAudit,
+    OperationalObservabilityProof,
     OuterBrainDurability,
     PacketReconciliation,
     Phase5AiNativeMinimalSeams,
@@ -643,6 +644,28 @@ defmodule StackLab.CitadelSpineHarness do
           {:ok, map()} | {:error, term()}
   def exercise_observability_trace_join_continuity(:trace_join_continuity) do
     AppKitOperationalSurface.run_case(:observability_trace_join_continuity)
+  end
+
+  @spec operational_observability_proof_scenario() :: map()
+  def operational_observability_proof_scenario do
+    %{
+      name: :operational_observability_proof,
+      compose: LabCore.compose_file(:single),
+      runbook: LabCore.runbook(:up_single),
+      repo_roots: repo_roots(),
+      cases: %{
+        deterministic_run_health: %{
+          kind: :deterministic_run_health,
+          scenario: 43
+        }
+      }
+    }
+  end
+
+  @spec exercise_operational_observability_proof(:deterministic_run_health) ::
+          {:ok, map()} | {:error, term()}
+  def exercise_operational_observability_proof(:deterministic_run_health) do
+    OperationalObservabilityProof.run_case(:deterministic_run_health)
   end
 
   @spec app_kit_operational_surface_scenario() :: map()

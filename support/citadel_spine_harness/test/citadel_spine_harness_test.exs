@@ -302,6 +302,22 @@ defmodule StackLab.CitadelSpineHarnessTest do
     assert File.exists?(scenario.runbook)
   end
 
+  test "describes the Scenario 43 operational observability proof case" do
+    scenario = CitadelSpineHarness.operational_observability_proof_scenario()
+
+    assert scenario.name == :operational_observability_proof
+
+    assert scenario.cases == %{
+             deterministic_run_health: %{
+               kind: :deterministic_run_health,
+               scenario: 43
+             }
+           }
+
+    assert File.exists?(scenario.compose)
+    assert File.exists?(scenario.runbook)
+  end
+
   test "describes the governed-run proof case as a non-extravaganza Stage-2 scenario" do
     scenario = CitadelSpineHarness.governed_run_scenario()
 

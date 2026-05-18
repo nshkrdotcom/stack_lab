@@ -1141,6 +1141,21 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
         {:ok, review_detail_before} =
           ReviewSurface.get_review(env.context, decision_ref, env.surface_opts)
 
+        {:ok, failed_execution_ref} =
+          ExecutionRef.new(%{
+            id: failed_execution.id,
+            subject_ref: env.subject_ref,
+            recipe_ref: "expense_capture",
+            dispatch_state: failed_execution.dispatch_state
+          })
+
+        trace_opts = Keyword.put(env.surface_opts, :lower_facts, LowerFactsStub)
+
+        {:ok, unified_trace} =
+          OperatorSurface.get_unified_trace(env.context, failed_execution_ref, trace_opts)
+
+        failed_execution_step = execution_trace_step!(unified_trace, failed_execution.id)
+
         {:ok, actions} =
           OperatorSurface.available_actions(env.context, env.subject_ref, env.surface_opts)
 
@@ -1197,21 +1212,6 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
         {:ok, case_file_after_review} =
           connector_console_case_file(env.context, env.subject_ref, env.surface_opts)
-
-        {:ok, failed_execution_ref} =
-          ExecutionRef.new(%{
-            id: failed_execution.id,
-            subject_ref: env.subject_ref,
-            recipe_ref: "expense_capture",
-            dispatch_state: failed_execution.dispatch_state
-          })
-
-        trace_opts = Keyword.put(env.surface_opts, :lower_facts, LowerFactsStub)
-
-        {:ok, unified_trace} =
-          OperatorSurface.get_unified_trace(env.context, failed_execution_ref, trace_opts)
-
-        failed_execution_step = execution_trace_step!(unified_trace, failed_execution.id)
 
         {:ok,
          %{
