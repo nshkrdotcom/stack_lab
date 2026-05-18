@@ -589,7 +589,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
           connector_ref: "connector://toy-document-review/missing",
           manifest_ref: LocalHttpConnector.manifest_ref(),
           operation_ref: "toy.documents.read",
-          operation_role: :read,
+          operation_role: :source_read,
           operation_class: :source_read,
           binding_kind: :source,
           required_runtime_family: :direct,
@@ -1011,7 +1011,7 @@ defmodule StackLab.Examples.ToyDocumentReview do
       connector_ref: resolution.descriptor.connector_ref,
       manifest_ref: resolution.descriptor.manifest_ref,
       operation_ref: dependency.operation_ref,
-      operation_role: dependency.operation_role,
+      operation_role: connector_operation_role(binding.binding_kind),
       operation_class: dependency.operation_class,
       binding_kind: binding.binding_kind,
       required_runtime_family: dependency.required_runtime_family || :direct,
@@ -1022,6 +1022,13 @@ defmodule StackLab.Examples.ToyDocumentReview do
       compiled_manifest_hash: manifest_entry.manifest_digest
     })
   end
+
+  defp connector_operation_role(:source), do: :source_read
+  defp connector_operation_role(:source_publication), do: :source_publish
+  defp connector_operation_role(:runtime), do: :runtime_session
+  defp connector_operation_role(:runtime_tool), do: :runtime_tool
+  defp connector_operation_role(:evidence), do: :evidence_collection
+  defp connector_operation_role(:resource_effect), do: :resource_effect
 
   defp authorize_descriptor(descriptor, binding, installation) do
     Authority.authorize_resolved_plan(

@@ -22,6 +22,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
     :semantic_failure_carrier_after_restart,
     :duplicate_publication_suppressed_after_restart
   ]
+  @tenant_id "tenant-outer-brain-durability"
 
   @spec run_case(
           :pending_recovery_after_restart
@@ -46,6 +47,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
             "stack_lab_outer_brain",
             1,
             now,
+            tenant_id: @tenant_id,
             ttl_seconds: 30,
             lease_store: Store,
             lease_store_opts: [repo: Repo]
@@ -54,7 +56,8 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
         {:ok, journal_entry} =
           Store.append_semantic_journal_entry(
             journal_entry_record(case_name, session_id, causal_unit_id),
-            repo: Repo
+            repo: Repo,
+            tenant_id: @tenant_id
           )
 
         case_record = persist_case_record!(case_name, session_id, causal_unit_id)
@@ -68,14 +71,17 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
         try do
           persisted_lease = fetch_current_lease!(session_id)
           replay_record = replay_after_restart!(case_name, causal_unit_id)
-          persisted_entries = Store.journal_entries(session_id, repo: Repo)
-          persisted_failures = Store.semantic_failure_entries(session_id, repo: Repo)
-          persisted_publications = Store.reply_publications(causal_unit_id, repo: Repo)
+          persisted_entries = Store.journal_entries(@tenant_id, session_id, repo: Repo)
+          persisted_failures = Store.semantic_failure_entries(@tenant_id, session_id, repo: Repo)
+
+          persisted_publications =
+            Store.reply_publications(@tenant_id, causal_unit_id, repo: Repo)
 
           analysis =
             RestartScan.reconstruct(
               session_id,
               causal_unit_id,
+              tenant_id: @tenant_id,
               store: Store,
               store_opts: [repo: Repo]
             )
@@ -118,13 +124,15 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
     {:ok, recovery_task} =
       Store.record_recovery_task(
         recovery_task_record(session_id, :ambiguous_submission),
-        repo: Repo
+        repo: Repo,
+        tenant_id: @tenant_id
       )
 
     {:ok, publication} =
       Store.record_reply_publication(
         reply_publication_record(causal_unit_id, :provisional, "Working"),
-        repo: Repo
+        repo: Repo,
+        tenant_id: @tenant_id
       )
 
     %{
@@ -138,7 +146,8 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
     {:ok, publication} =
       Store.record_reply_publication(
         reply_publication_record(causal_unit_id, :final, "Done"),
-        repo: Repo
+        repo: Repo,
+        tenant_id: @tenant_id
       )
 
     %{
@@ -175,7 +184,8 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
     {:ok, publication} =
       Store.record_reply_publication(
         reply_publication_record(causal_unit_id, :final, "Done"),
-        repo: Repo
+        repo: Repo,
+        tenant_id: @tenant_id
       )
 
     %{
@@ -193,7 +203,8 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
           "Done",
           publication_id: "publication-replayed-#{causal_unit_id}-final"
         ),
-        repo: Repo
+        repo: Repo,
+        tenant_id: @tenant_id
       )
 
     %{replayed_publication_id: publication.publication_id}
@@ -260,7 +271,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
   end
 
   defp fetch_current_lease!(session_id) do
-    case Store.fetch_current_lease(session_id, repo: Repo) do
+    case Store.fetch_current_lease(@tenant_id, session_id, repo: Repo) do
       {:ok, lease} -> lease
       :error -> raise "expected durable lease for #{inspect(session_id)}"
     end
@@ -321,7 +332,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
     {:ok, failure} =
       SemanticFailure.new(%{
         kind: :semantic_insufficient_context,
-        tenant_id: "tenant-outer-brain-durability",
+        tenant_id: @tenant_id,
         semantic_session_id: session_id,
         causal_unit_id: causal_unit_id,
         request_trace_id: "trace-semantic-failure",
@@ -337,6 +348,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
       """
       CREATE TABLE IF NOT EXISTS semantic_session_leases (
         row_id text PRIMARY KEY,
+        tenant_id text NOT NULL,
         session_id text NOT NULL,
         holder text NOT NULL,
         lease_id text NOT NULL,
@@ -347,12 +359,13 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
       )
       """,
       """
-      CREATE UNIQUE INDEX IF NOT EXISTS semantic_session_leases_session_id_index
-      ON semantic_session_leases (session_id)
+      CREATE UNIQUE INDEX IF NOT EXISTS semantic_session_leases_tenant_session_id_index
+      ON semantic_session_leases (tenant_id, session_id)
       """,
       """
       CREATE TABLE IF NOT EXISTS semantic_journal_entries (
         entry_id text PRIMARY KEY,
+        tenant_id text NOT NULL,
         session_id text NOT NULL,
         causal_unit_id text NOT NULL,
         entry_type text NOT NULL,
@@ -362,16 +375,17 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
       )
       """,
       """
-      CREATE INDEX IF NOT EXISTS semantic_journal_entries_session_id_recorded_at_index
-      ON semantic_journal_entries (session_id, recorded_at)
+      CREATE INDEX IF NOT EXISTS semantic_journal_entries_tenant_session_recorded_at_index
+      ON semantic_journal_entries (tenant_id, session_id, recorded_at)
       """,
       """
-      CREATE INDEX IF NOT EXISTS semantic_journal_entries_causal_unit_id_recorded_at_index
-      ON semantic_journal_entries (causal_unit_id, recorded_at)
+      CREATE INDEX IF NOT EXISTS semantic_journal_entries_tenant_causal_recorded_at_index
+      ON semantic_journal_entries (tenant_id, causal_unit_id, recorded_at)
       """,
       """
       CREATE TABLE IF NOT EXISTS recovery_tasks (
         task_id text PRIMARY KEY,
+        tenant_id text NOT NULL,
         session_id text NOT NULL,
         reason text NOT NULL,
         status text NOT NULL,
@@ -380,12 +394,13 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
       )
       """,
       """
-      CREATE INDEX IF NOT EXISTS recovery_tasks_session_id_status_index
-      ON recovery_tasks (session_id, status)
+      CREATE INDEX IF NOT EXISTS recovery_tasks_tenant_session_status_index
+      ON recovery_tasks (tenant_id, session_id, status)
       """,
       """
       CREATE TABLE IF NOT EXISTS reply_publications (
         publication_id text PRIMARY KEY,
+        tenant_id text NOT NULL,
         causal_unit_id text NOT NULL,
         phase text NOT NULL,
         state text NOT NULL,
@@ -401,12 +416,12 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
       ADD COLUMN IF NOT EXISTS body_ref jsonb NOT NULL DEFAULT '{}'::jsonb
       """,
       """
-      CREATE UNIQUE INDEX IF NOT EXISTS reply_publications_dedupe_key_index
-      ON reply_publications (dedupe_key)
+      CREATE UNIQUE INDEX IF NOT EXISTS reply_publications_tenant_dedupe_key_index
+      ON reply_publications (tenant_id, dedupe_key)
       """,
       """
-      CREATE INDEX IF NOT EXISTS reply_publications_causal_unit_id_phase_index
-      ON reply_publications (causal_unit_id, phase)
+      CREATE INDEX IF NOT EXISTS reply_publications_tenant_causal_phase_index
+      ON reply_publications (tenant_id, causal_unit_id, phase)
       """
     ]
   end

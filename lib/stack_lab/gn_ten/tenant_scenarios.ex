@@ -9,6 +9,23 @@ defmodule StackLab.GnTen.TenantScenarios do
 
   @schema_version "gn_ten_tenant_isolation_v1"
   @scenario_ids ~w(tenant_isolation_read tenant_isolation_write tenant_lease_handling)
+  @production_surface %{
+    packages: [
+      "mezzanine/core/config_registry",
+      "mezzanine/core/leasing",
+      "jido_integration/core/auth",
+      "jido_integration/core/contracts",
+      "AITrace/core/replay_engine",
+      "outer_brain/core/outer_brain_persistence",
+      "outer_brain/core/memory_engine"
+    ],
+    commands: [
+      "mix test --only tenant_isolation",
+      "MIX_ENV=test mix test --only tenant_replay",
+      "mix gn_ten.tenant.scan --all-repos",
+      "mix gn_ten.tenant.scenarios --json"
+    ]
+  }
 
   @spec report() :: map()
   def report do
@@ -64,6 +81,7 @@ defmodule StackLab.GnTen.TenantScenarios do
         visible_ids: Enum.map(visible, & &1.id),
         cross_tenant_read: cross_tenant_result
       },
+      production_surface: @production_surface,
       does_not_prove: common_non_claims()
     }
   end
@@ -82,6 +100,7 @@ defmodule StackLab.GnTen.TenantScenarios do
         cross_tenant_write: denied,
         same_tenant_write: allowed
       },
+      production_surface: @production_surface,
       does_not_prove: common_non_claims()
     }
   end
@@ -98,6 +117,7 @@ defmodule StackLab.GnTen.TenantScenarios do
         same_tenant_use: use_lease(lease, tenant_a),
         cross_tenant_use: use_lease(lease, tenant_b)
       },
+      production_surface: @production_surface,
       does_not_prove: common_non_claims()
     }
   end
@@ -114,13 +134,18 @@ defmodule StackLab.GnTen.TenantScenarios do
   end
 
   defp tenant_write(%{tenant_id: tenant_id} = record, tenant_id, attrs) do
-    {:ok, Map.merge(record, attrs)}
+    record = Map.merge(record, attrs)
+    %{status: "allowed", tenant_id: record.tenant_id, id: record.id}
   end
 
-  defp tenant_write(_record, _tenant_id, _attrs), do: {:error, :tenant_mismatch}
+  defp tenant_write(_record, _tenant_id, _attrs),
+    do: %{status: "denied", reason: "tenant_mismatch"}
 
-  defp use_lease(%{tenant_id: tenant_id}, tenant_id), do: "allowed"
-  defp use_lease(_lease, _tenant_id), do: "denied"
+  defp use_lease(%{tenant_id: tenant_id, lease_id: lease_id}, tenant_id) do
+    %{status: "allowed", lease_id: lease_id, tenant_id: tenant_id}
+  end
+
+  defp use_lease(_lease, _tenant_id), do: %{status: "denied", reason: "tenant_mismatch"}
 
   defp proof_posture do
     %{
@@ -158,6 +183,7 @@ defmodule StackLab.GnTen.TenantScenarios do
     failures
     |> require_equal("tenant_missing_scenarios", present, Enum.sort(@scenario_ids))
     |> validate_scenario_outcomes(scenarios)
+    |> validate_production_surface(scenarios)
   end
 
   defp validate_scenarios(failures, _scenarios) do
@@ -179,15 +205,33 @@ defmodule StackLab.GnTen.TenantScenarios do
   end
 
   defp scenario_passed?(%{id: "tenant_isolation_write", evidence: evidence}) do
-    match?({:error, :tenant_mismatch}, evidence.cross_tenant_write) and
-      match?({:ok, %{tenant_id: "tenant-a"}}, evidence.same_tenant_write)
+    evidence.cross_tenant_write == %{status: "denied", reason: "tenant_mismatch"} and
+      evidence.same_tenant_write.status == "allowed" and
+      evidence.same_tenant_write.tenant_id == "tenant-a"
   end
 
   defp scenario_passed?(%{id: "tenant_lease_handling", evidence: evidence}) do
-    evidence.same_tenant_use == "allowed" and evidence.cross_tenant_use == "denied"
+    evidence.same_tenant_use.status == "allowed" and
+      evidence.cross_tenant_use == %{status: "denied", reason: "tenant_mismatch"}
   end
 
   defp scenario_passed?(_scenario), do: false
+
+  defp validate_production_surface(failures, scenarios) do
+    if Enum.all?(scenarios, &production_surface_present?/1) do
+      failures
+    else
+      [failure("tenant_missing_production_surface", scenarios: @scenario_ids) | failures]
+    end
+  end
+
+  defp production_surface_present?(%{
+         production_surface: %{packages: packages, commands: commands}
+       }) do
+    length(packages) >= 5 and length(commands) >= 4
+  end
+
+  defp production_surface_present?(_scenario), do: false
 
   defp require_equal(failures, _code, actual, expected) when actual == expected, do: failures
 

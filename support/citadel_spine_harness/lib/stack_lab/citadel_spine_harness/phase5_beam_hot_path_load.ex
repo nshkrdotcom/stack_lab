@@ -293,7 +293,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
 
   defp run_partitioned_signal_ingress_sustained do
     name = unique_name(:phase5_signal_ingress)
-    {:ok, ingress_pid} = SignalIngress.start_link(signal_ingress_opts(name, sustained_policy()))
+    {:ok, ingress_pid, partition_supervisor} = start_signal_ingress(name, sustained_policy())
     {:ok, blocking_consumer} = BlockingConsumer.start(recorder: self())
     {:ok, counting_consumer} = CountingConsumer.start([])
 
@@ -359,6 +359,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
        }}
     after
       stop_process(ingress_pid)
+      stop_process(partition_supervisor)
       stop_process(blocking_consumer)
       stop_process(counting_consumer)
     end
@@ -366,7 +367,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
 
   defp run_partition_fifo_ordering_scope do
     name = unique_name(:phase5_signal_ordering)
-    {:ok, ingress_pid} = SignalIngress.start_link(signal_ingress_opts(name, sustained_policy()))
+    {:ok, ingress_pid, partition_supervisor} = start_signal_ingress(name, sustained_policy())
     {:ok, alpha_consumer} = CountingConsumer.start([])
     {:ok, beta_consumer} = CountingConsumer.start([])
 
@@ -418,6 +419,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
        }}
     after
       stop_process(ingress_pid)
+      stop_process(partition_supervisor)
       stop_process(alpha_consumer)
       stop_process(beta_consumer)
     end
@@ -472,12 +474,40 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     }
   end
 
-  defp signal_ingress_opts(name, admission_policy) do
+  defp start_signal_ingress(name, admission_policy) do
+    partition_supervisor = runtime_support_supervisor!()
+
+    case SignalIngress.start_link(
+           signal_ingress_opts(name, admission_policy, partition_supervisor)
+         ) do
+      {:ok, ingress_pid} ->
+        {:ok, ingress_pid, partition_supervisor}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp signal_ingress_opts(name, admission_policy, partition_supervisor) do
     [
       name: name,
       signal_source: TestSignalSource,
-      admission_policy: admission_policy
+      admission_policy: admission_policy,
+      partition_worker_supervisor: partition_supervisor
     ]
+  end
+
+  defp runtime_support_supervisor! do
+    supervisor = StackLab.CitadelSpineHarness.RuntimeSupportSupervisor
+
+    case Process.whereis(supervisor) do
+      pid when is_pid(pid) ->
+        supervisor
+
+      nil ->
+        {:ok, _apps} = Application.ensure_all_started(:stack_lab_citadel_spine_harness)
+        supervisor
+    end
   end
 
   defp sustained_policy do
@@ -494,8 +524,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
   defp prove_token_bucket_exhaustion do
     name = unique_name(:phase5_signal_token)
 
-    {:ok, ingress_pid} =
-      SignalIngress.start_link(signal_ingress_opts(name, token_bucket_policy()))
+    {:ok, ingress_pid, partition_supervisor} = start_signal_ingress(name, token_bucket_policy())
 
     try do
       observation = observation("sess-token", "sig-token-1", subject_id: "subject-token")
@@ -517,14 +546,14 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
        Map.take(rejection, [:reason, :retry_after_ms, :queue_depth_before, :queue_depth_after])}
     after
       stop_process(ingress_pid)
+      stop_process(partition_supervisor)
     end
   end
 
   defp prove_tenant_scope_cap do
     name = unique_name(:phase5_signal_tenant_scope)
 
-    {:ok, ingress_pid} =
-      SignalIngress.start_link(signal_ingress_opts(name, tenant_scope_policy()))
+    {:ok, ingress_pid, partition_supervisor} = start_signal_ingress(name, tenant_scope_policy())
 
     {:ok, blocking_consumer} = BlockingConsumer.start([])
 
@@ -549,6 +578,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     after
       BlockingConsumer.release(blocking_consumer, 4)
       stop_process(ingress_pid)
+      stop_process(partition_supervisor)
       stop_process(blocking_consumer)
     end
   end
@@ -745,6 +775,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
   catch
     :exit, _reason -> :ok
   end
+
+  defp stop_process(_shared_supervisor_name), do: :ok
 
   defp monotonic_ms, do: System.monotonic_time(:millisecond)
   defp unique_name(prefix), do: BoundedNames.global_name(prefix)
