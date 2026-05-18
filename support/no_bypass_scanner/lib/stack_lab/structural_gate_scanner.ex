@@ -279,6 +279,18 @@ defmodule StackLab.StructuralGateScanner do
     "linear_api_key"
   ]
 
+  @raw_credential_boundary_tokens [
+    "credential_material",
+    "raw_credential",
+    "api_key",
+    "access_token",
+    "refresh_token",
+    "client_secret",
+    "github_token",
+    "linear_api_key",
+    "codex_api_key"
+  ]
+
   @classified_provider_public_tokens [
     "provider_account_ref",
     "provider_account_status",
@@ -1023,21 +1035,41 @@ defmodule StackLab.StructuralGateScanner do
 
   defp struct_field_findings(%CheckedPath{zone: zone} = checked_path, meta, fields, ast_role)
        when zone in [:generic, :generic_policy] do
-    fields
-    |> field_names()
-    |> Enum.filter(&(&1 in @provider_field_tokens))
-    |> Enum.map(fn field ->
-      finding(checked_path, %{
-        rule: :provider_shaped_dto_field,
-        reason: :provider_shaped_field_in_generic_contract,
-        line: meta_line(meta),
-        token: field,
-        ast_role: ast_role,
-        owner_phase: owner_phase(checked_path),
-        remediation:
-          "Replace provider-shaped fields with generic refs, role refs, envelopes, metadata, or extensions."
-      })
-    end)
+    field_names = field_names(fields)
+
+    provider_field_findings =
+      field_names
+      |> Enum.filter(&(&1 in @provider_field_tokens))
+      |> Enum.map(fn field ->
+        finding(checked_path, %{
+          rule: :provider_shaped_dto_field,
+          reason: :provider_shaped_field_in_generic_contract,
+          line: meta_line(meta),
+          token: field,
+          ast_role: ast_role,
+          owner_phase: owner_phase(checked_path),
+          remediation:
+            "Replace provider-shaped fields with generic refs, role refs, envelopes, metadata, or extensions."
+        })
+      end)
+
+    raw_credential_field_findings =
+      field_names
+      |> Enum.filter(&(&1 in @raw_credential_boundary_tokens))
+      |> Enum.map(fn field ->
+        finding(checked_path, %{
+          rule: :raw_credential_in_generic_boundary,
+          reason: :raw_credential_in_generic_boundary,
+          line: meta_line(meta),
+          token: field,
+          ast_role: ast_role,
+          owner_phase: "Phase 5",
+          remediation:
+            "Replace raw credential fields with lease refs, secret provider refs, secret scopes, or brokered call-scope materializers."
+        })
+      end)
+
+    provider_field_findings ++ raw_credential_field_findings
   end
 
   defp struct_field_findings(_checked_path, _meta, _fields, _role), do: []

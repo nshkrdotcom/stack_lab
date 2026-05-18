@@ -322,6 +322,24 @@ defmodule StackLab.StructuralGateScannerTest do
     assert Enum.any?(receipt.findings, &(&1.rule == :ambiguous_adapter_class))
   end
 
+  test "fails raw credential fields in generic boundary DTOs", %{roots: roots} do
+    path =
+      roots
+      |> Map.fetch!("app_kit")
+      |> Path.join("core/runtime_gateway/lib/app_kit/runtime_gateway/request.ex")
+
+    write_file(path, """
+    defmodule AppKit.RuntimeGateway.Request do
+      defstruct [:operation_role_ref, :credential_material, :api_key]
+    end
+    """)
+
+    assert {:ok, receipt} = StructuralGateScanner.scan([path], target_roots: roots)
+    assert receipt.status == :open_defect
+
+    assert Enum.any?(receipt.findings, &(&1.rule == :raw_credential_in_generic_boundary))
+  end
+
   test "allows classified provider public vocabulary in authority and scheduling owners", %{
     roots: roots
   } do
