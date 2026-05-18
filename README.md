@@ -143,6 +143,7 @@ owner, and the product-facing northbound surfaces:
 - `support/adaptive_control_scanner`
 - `support/ai_run_lineage_scanner`
 - `support/persistence_matrix_scanner`
+- `examples/synapse_product_acceptance`
 - `examples/gepa_platform_roundtrip`
 - `examples/trinity_platform_roundtrip`
 - `examples/adaptive_control_roundtrip`
@@ -352,6 +353,7 @@ just fault net-cut
 - [support/cost_budget_scanner/README.md](./support/cost_budget_scanner/README.md)
 - [support/ai_run_lineage_scanner/README.md](./support/ai_run_lineage_scanner/README.md)
 - [support/persistence_matrix_scanner/README.md](./support/persistence_matrix_scanner/README.md)
+- [examples/synapse_product_acceptance/README.md](./examples/synapse_product_acceptance/README.md)
 - [examples/gepa_platform_roundtrip/README.md](./examples/gepa_platform_roundtrip/README.md)
 - [examples/trinity_platform_roundtrip/README.md](./examples/trinity_platform_roundtrip/README.md)
 - [examples/adaptive_control_roundtrip/README.md](./examples/adaptive_control_roundtrip/README.md)
