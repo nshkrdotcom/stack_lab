@@ -90,8 +90,10 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
        path: "../../../mezzanine/core/operator_engine", runtime: false},
       {:mezzanine_pack_compiler, path: "../../../mezzanine/core/pack_compiler", runtime: false},
       {:mezzanine_pack_model, path: "../../../mezzanine/core/pack_model", runtime: false},
+      {:mezzanine_projection_engine, path: "../../../mezzanine/core/projection_engine"},
       {:mezzanine_runtime_scheduler,
        path: "../../../mezzanine/core/runtime_scheduler", runtime: false},
+      {:mezzanine_substrate_model, path: "../../../mezzanine/core/substrate_model"},
       {:mezzanine_workflow_runtime,
        path: "../../../mezzanine/core/workflow_runtime", runtime: false},
       {:mezzanine_citadel_bridge, path: "../../../mezzanine/bridges/citadel_bridge"},
@@ -163,7 +165,9 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
         :mezzanine_leasing,
         :mezzanine_operator_engine,
         :mezzanine_pack_model,
+        :mezzanine_projection_engine,
         :mezzanine_runtime_scheduler,
+        :mezzanine_substrate_model,
         :mezzanine_workflow_runtime
       ]
     ]

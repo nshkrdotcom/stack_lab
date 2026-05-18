@@ -9,6 +9,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaCleanupProof do
   """
 
   alias StackLab.CitadelSpineHarness
+  alias StackLab.CitadelSpineHarness.ExtravaganzaCleanupReceiptProjection
 
   @approved_write_repo "nshkrdotcom/test"
   @default_timeout_ms 60_000
@@ -75,9 +76,8 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaCleanupProof do
          {:ok, idempotent} <-
            run_product_cleanup(spec, prepared, :idempotent, command_runner, progress),
          {:ok, branch_cleanup} <-
-           delete_disposable_branch(spec, prepared, command_runner, progress) do
-      receipt = receipt(spec, prepared, cleanup, idempotent, branch_cleanup)
-
+           delete_disposable_branch(spec, prepared, command_runner, progress),
+         {:ok, receipt} <- receipt(spec, prepared, cleanup, idempotent, branch_cleanup) do
       with {:ok, _path} <- receipt_writer.(spec.receipt_file, receipt) do
         progress.(spec, :receipt_written)
         {:ok, receipt}
@@ -430,32 +430,78 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaCleanupProof do
     first_effect = provider_effect(cleanup)
     idempotent_effect = provider_effect(idempotent)
 
-    %{
-      schema_name: @schema_name,
-      proof_class: @proof_class,
-      status: :passed,
-      command: "mix stack_lab.extravaganza_cleanup_proof",
-      run_label: spec.run_label,
-      receipt_file: spec.receipt_file,
-      plan: plan(spec),
-      approved_write_repo: spec.approved_write_repo,
-      prepared_provider_object: select_prepared_fields(prepared),
-      product_cleanup: summarize_cleanup(cleanup),
-      idempotent_rerun: summarize_cleanup(idempotent),
-      cleanup_leftover_status: branch_cleanup["status"],
-      branch_cleanup: branch_cleanup,
-      assertions: %{
-        product_governed_path?: true,
-        execution_route_ref: cleanup["execution_route_ref"],
-        resource_effect_role_ref: first_effect["resource_effect_role_ref"],
-        provider_request_sent?: first_effect["provider_request_sent?"],
-        provider_response_received?: first_effect["provider_response_received?"],
-        receipt_recorded?: first_effect["receipt_recorded?"],
-        product_readback_confirmed?: first_effect["product_readback_confirmed?"],
-        closed_pull_numbers: list_or_empty(first_effect["closed_pull_numbers"]),
-        idempotent_closed_pull_numbers: list_or_empty(idempotent_effect["closed_pull_numbers"]),
-        idempotent_write_operations: list_or_empty(idempotent_effect["write_operations"])
+    with {:ok, generic_projection} <-
+           ExtravaganzaCleanupReceiptProjection.build(cleanup, idempotent) do
+      {:ok,
+       %{
+         schema_name: @schema_name,
+         proof_class: @proof_class,
+         status: :passed,
+         command: "mix stack_lab.extravaganza_cleanup_proof",
+         run_label: spec.run_label,
+         receipt_file: spec.receipt_file,
+         plan: plan(spec),
+         approved_write_repo: spec.approved_write_repo,
+         live_operation_inventory:
+           live_operation_inventory(prepared, cleanup, idempotent, branch_cleanup),
+         prepared_provider_object: select_prepared_fields(prepared),
+         product_cleanup: summarize_cleanup(cleanup),
+         idempotent_rerun: summarize_cleanup(idempotent),
+         cleanup_leftover_status: branch_cleanup["status"],
+         branch_cleanup: branch_cleanup,
+         generic_receipt_projection: generic_projection,
+         assertions:
+           Map.merge(generic_projection.assertions, %{
+             product_governed_path?: true,
+             execution_route_ref: cleanup["execution_route_ref"],
+             resource_effect_role_ref: first_effect["resource_effect_role_ref"],
+             provider_request_sent?: first_effect["provider_request_sent?"],
+             provider_response_received?: first_effect["provider_response_received?"],
+             receipt_recorded?: first_effect["receipt_recorded?"],
+             product_readback_confirmed?: first_effect["product_readback_confirmed?"],
+             closed_pull_numbers: list_or_empty(first_effect["closed_pull_numbers"]),
+             idempotent_closed_pull_numbers:
+               list_or_empty(idempotent_effect["closed_pull_numbers"]),
+             idempotent_write_operations: list_or_empty(idempotent_effect["write_operations"])
+           })
+       }}
+    end
+  end
+
+  defp live_operation_inventory(prepared, cleanup, idempotent, branch_cleanup) do
+    [
+      %{
+        operation: "jido.github.prepare_disposable_pr",
+        route: "lower_connector_support",
+        repo: prepared["repo"],
+        branch: prepared["branch"],
+        pull_number: prepared["pull_number"],
+        proof_class: prepared["proof_class"]
+      },
+      product_inventory("extravaganza.live.github_pr_cleanup.first", cleanup),
+      product_inventory("extravaganza.live.github_pr_cleanup.idempotent", idempotent),
+      %{
+        operation: "jido.github.delete_disposable_ref",
+        route: "lower_connector_support",
+        repo: branch_cleanup["repo"],
+        branch: branch_cleanup["branch"],
+        proof_class: branch_cleanup["proof_class"],
+        status: branch_cleanup["status"]
       }
+    ]
+  end
+
+  defp product_inventory(operation, envelope) do
+    effect = provider_effect(envelope)
+
+    %{
+      operation: operation,
+      route: "extravaganza_product_governed_path",
+      execution_route_ref: envelope["execution_route_ref"],
+      resource_effect_role_ref: effect["resource_effect_role_ref"],
+      lower_request_ref: effect["lower_request_ref"],
+      lower_receipt_ref: effect["lower_receipt_ref"],
+      operation_receipt_count: length(list_or_empty(effect["operation_receipts"]))
     }
   end
 
@@ -506,7 +552,8 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaCleanupProof do
           "lower_receipt_ref",
           "authority_handoff_ref",
           "connector_binding_ref",
-          "credential_lease_ref"
+          "credential_lease_ref",
+          "operation_receipts"
         ])
     }
   end
