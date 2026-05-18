@@ -43,6 +43,7 @@ defmodule StackLab.NoBypassScanner.MixProject do
         "stack_lab.no_regular_expression.scan --path lib --summary",
         "stack_lab.process_supervision.scan --path lib --summary",
         "stack_lab.dynamic_atom.scan --path lib --summary",
+        "stack_lab.runtime_boundary.scan --path lib --summary",
         "test",
         "credo --strict"
       ]

@@ -16,6 +16,13 @@ live examples, but flags provider-shaped implementation API names such as
 like `live_linear_source`; the implementation below those commands must use
 neutral product intent functions and AppKit role refs.
 
+The runtime-boundary gate tracks hidden runtime globals and raw side-effect
+boundaries while the code-smell remediation program removes them. It flags
+production uses of mutable `:persistent_term`, `Application.get_env/put_env`,
+`System.get_env/cmd`, and process dictionary context. Use `--baseline-ok` only
+to record current inherited debt; touched runtime paths should run the scanner
+as a hard gate.
+
 Passing receipts must name approved AppKit facade refs such as
 `app-kit-adaptive-control-surface://...`; product code is not allowed to reach
 adaptive control by importing GEPA, TRINITY, provider SDKs, lower runtimes,
@@ -28,6 +35,7 @@ mix test
 mix format --check-formatted
 mix compile --warnings-as-errors
 mix stack_lab.foundation_gate.scan --path /home/home/p/g/n/extravaganza/apps/extravaganza_core/lib --path /home/home/p/g/n/extravaganza/apps/extravaganza_web/lib --summary
+mix stack_lab.runtime_boundary.scan --path lib --summary
 ```
 
 ## Persistence Documentation

@@ -19,7 +19,7 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
 
   def application do
     [
-      applications: [:logger, :synapse_core, :stack_lab_no_bypass_scanner]
+      applications: applications(Mix.env())
     ]
   end
 
@@ -47,8 +47,15 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
       {:stack_lab_no_bypass_scanner, path: "../../support/no_bypass_scanner"},
       {:jason, "~> 1.4"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
+      {:ex_doc, "0.40.1", only: :dev, runtime: false}
     ]
+  end
+
+  defp applications(:dev),
+    do: applications(:test) ++ [:makeup, :makeup_elixir, :makeup_erlang, :ex_doc]
+
+  defp applications(_env) do
+    [:logger, :synapse_core, :stack_lab_no_bypass_scanner]
   end
 
   defp aliases do
@@ -58,9 +65,9 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
         "format --check-formatted",
         "compile --warnings-as-errors",
         "test",
+        "cmd env MIX_ENV=test mix credo --strict",
         "stack_lab.proof_app.synapse.acceptance --json",
-        "stack_lab.proof_app.synapse.live_slice --json",
-        "credo --strict"
+        "stack_lab.proof_app.synapse.live_slice --json"
       ]
     ]
   end

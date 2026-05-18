@@ -12,6 +12,8 @@ defmodule StackLab.Examples.SynapseLiveSlice do
   @trace_id "11111111111111111111111111111111"
   @run_token "stacklab-synapse-live-slice"
   @denied_run_token "stacklab-synapse-live-denied"
+  alias StackLab.Examples.SynapseProductAcceptance
+
   @live_stack_code_apps [
     :app_kit_mezzanine_bridge,
     :mezzanine_workflow_runtime,
@@ -33,7 +35,7 @@ defmodule StackLab.Examples.SynapseLiveSlice do
     ensure_live_stack_code_paths()
 
     with {:ok, fixture_receipt} <-
-           StackLab.Examples.SynapseProductAcceptance.run(synapse_root: synapse_root),
+           SynapseProductAcceptance.run(synapse_root: synapse_root),
          {:ok, run_start} <- prove_run_start(),
          {:ok, turn_submission} <- prove_turn_submission(run_start),
          {:ok, await} <- prove_await(run_start),
@@ -354,15 +356,25 @@ defmodule StackLab.Examples.SynapseLiveSlice do
 
   defp ensure_live_stack_code_paths do
     if Code.ensure_loaded?(Mix.Project) do
-      build_path = Mix.Project.build_path()
+      add_live_stack_code_paths(Mix.Project.build_path())
+    end
+  end
 
-      Enum.each(@live_stack_code_apps, fn app ->
-        ebin_path = Path.join([build_path, "lib", Atom.to_string(app), "ebin"])
+  defp add_live_stack_code_paths(build_path) do
+    Enum.each(@live_stack_code_apps, fn app ->
+      app
+      |> live_stack_ebin_path(build_path)
+      |> add_code_path_if_directory()
+    end)
+  end
 
-        if File.dir?(ebin_path) do
-          :code.add_patha(String.to_charlist(ebin_path))
-        end
-      end)
+  defp live_stack_ebin_path(app, build_path) do
+    Path.join([build_path, "lib", Atom.to_string(app), "ebin"])
+  end
+
+  defp add_code_path_if_directory(path) do
+    if File.dir?(path) do
+      :code.add_patha(String.to_charlist(path))
     end
   end
 end
