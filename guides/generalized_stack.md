@@ -45,6 +45,24 @@ and connector proof rows. Every proof that mentions provider behavior must
 state whether it is deterministic provider-free, live-provider proven, or
 explicitly outside the current claim.
 
+## Extravaganza Cutover Proof
+
+StackLab owns the external deterministic proof for the Extravaganza cutover. The
+current proof runs the product-owned same-run smoke command from outside the
+product repo, verifies the expected readback set, and checks generic route
+evidence instead of reimplementing product behavior inside StackLab.
+
+The supporting scanner proof covers removed provider-shaped APIs in AppKit,
+Mezzanine, Extravaganza, and StackLab fixtures. Provider names may remain in
+product examples, connector fixtures, lower adapter receipts, and scanner
+fixtures, but removed public implementation calls must not reappear in generic
+surfaces.
+
+Live provider proof is recorded by the product cutover evidence rather than by
+StackLab deterministic receipts. GitHub and Linear live commands must be run by
+prefixing the product command with `~/scripts/with_bash_secrets`; deterministic
+StackLab examples must not require live credentials.
+
 ## Migration And Cleanup Ownership
 
 StackLab cleanup work removes stale receipts, duplicated proof helpers,

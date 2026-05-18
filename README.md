@@ -58,6 +58,8 @@ The current harness covers:
 - version-skew and malformed-packet rejection
 - context-budget, cost-attribution, and semantic-failure seams
 - product-boundary no-bypass and synthetic second-product proofs
+- Extravaganza deterministic same-run acceptance through the product command
+  path, including generic route evidence and static removed-API scans
 - OuterBrain restart durability and semantic gateway behavior
 - Execution Plane process/HTTP lane behavior and fallback-ladder evidence
 - persistence-profile matrix receipts with explicit store, tier, capture, and
@@ -69,6 +71,11 @@ This makes StackLab the answer to "does the stack claim have executable proof?"
 It is not the owner of the product feature, the governance rule, the connector,
 or the lower runtime. It is the workspace that assembles those owners into
 repeatable acceptance and regression scenarios.
+
+For Extravaganza, StackLab proves deterministic product acceptance from outside
+the product repo. Live provider proof remains product-owned because it requires
+real GitHub, Linear, and Codex credentials, and those commands must be run with
+`~/scripts/with_bash_secrets` where GitHub or Linear credentials are involved.
 
 ## Proof Diagrams
 
@@ -148,6 +155,7 @@ owner, and the product-facing northbound surfaces:
 - `examples/trinity_platform_roundtrip`
 - `examples/adaptive_control_roundtrip`
 - `examples/persistence_mode_roundtrip`
+- root `mix stack_lab.extravaganza.external_acceptance`
 
 Those examples exercise real `citadel` and real `jido_integration` code
 through the harness-only `support/citadel_spine_harness` package. The typed
