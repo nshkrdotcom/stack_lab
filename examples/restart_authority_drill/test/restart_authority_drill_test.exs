@@ -53,11 +53,11 @@ defmodule StackLab.Examples.RestartAuthorityDrillTest do
     assert result.idempotency_key == "idem://tenant-1/codex/retry-1"
     assert result.credential_lease_ref == "credential-lease://tenant-1/codex/a/1"
     assert result.target_ref == "target://tenant-1/sandbox/a"
-    assert result.restart_event == :workflow_resume
+    assert result.restart_event == :lifecycle_resume
     assert result.redacted?
   end
 
-  test "target detach sandbox restart process crash stream reconnect and workflow resume revalidate" do
+  test "target detach sandbox restart process crash stream reconnect and resume events revalidate" do
     assert {:ok, result} = RestartAuthorityDrill.exercise(:restart_event_revalidation)
 
     assert result.status == :authorized
@@ -67,7 +67,8 @@ defmodule StackLab.Examples.RestartAuthorityDrillTest do
              sandbox_restart: :authorized_revalidated,
              process_crash: :authorized_revalidated,
              stream_reconnect: :authorized_revalidated,
-             workflow_resume: :authorized_revalidated
+             lifecycle_resume: :authorized_revalidated,
+             orchestration_resume: :authorized_revalidated
            }
 
     assert result.redacted?

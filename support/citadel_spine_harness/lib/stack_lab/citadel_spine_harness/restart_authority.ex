@@ -18,7 +18,8 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
     :sandbox_restart,
     :process_crash,
     :stream_reconnect,
-    :workflow_resume
+    :lifecycle_resume,
+    :orchestration_resume
   ]
 
   @spec run_case(
@@ -236,7 +237,7 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
       Fence.authorize_retry_dispatch(
         lease,
         fence,
-        retry_context(%{restart_event: :workflow_resume}),
+        retry_context(%{restart_event: :lifecycle_resume}),
         now
       )
 
@@ -428,7 +429,7 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
         retry_authority_ref: "retry-authority://tenant-1/codex/retry-1",
         materialization_epoch: 1,
         materialized_credential_lease_ref: "credential-lease://tenant-1/codex/a/1",
-        restart_event: :workflow_resume
+        restart_event: :lifecycle_resume
       },
       overrides
     )

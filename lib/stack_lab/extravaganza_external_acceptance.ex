@@ -10,13 +10,22 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
     subject_ref
     run_ref
     workflow_ref
+    product_role_ref
+    binding_ref
+    manifest_ref
     authority_ref
+    connector_binding_ref
     connector_manifest_ref
     capability_negotiation_ref
+    credential_lease_ref
     lower_request_ref
+    receipt_ref
     source_publication_ref
+    projection_ref
+    evidence_ref
     evidence_chain_ref
     event_page_ref
+    trace_ref
   )
 
   @required_readbacks ~w(
@@ -25,15 +34,40 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
     subject
     run
     evidence
+    route_evidence
     events
     reviews
     review_decision
     source_preview
+    source_publish
     source_publication
     refresh
     control
     read_lease
     stream_attach_lease
+    profile
+    profile_validate
+    profile_reload
+    status
+    logs
+    live_preflight_denial
+    command_coverage
+    route_coverage
+    error_classes
+  )
+
+  @required_route_evidence ~w(
+    product_role_ref
+    binding_ref
+    manifest_ref
+    authority_ref
+    connector_binding_ref
+    credential_lease_ref
+    lower_request_ref
+    receipt_ref
+    projection_ref
+    evidence_ref
+    trace_ref
   )
 
   @spec command_args() :: [String.t()]
@@ -119,7 +153,8 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
          :ok <- require_proof_class(receipt),
          :ok <- require_required_refs(receipt),
          :ok <- require_lower_terminal_ref(receipt),
-         :ok <- require_readbacks(receipt) do
+         :ok <- require_readbacks(receipt),
+         :ok <- require_route_evidence(receipt) do
       require_projection_proof(receipt)
     end
   end
@@ -193,6 +228,22 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
     end
   end
 
+  defp require_route_evidence(receipt) do
+    route_evidence = route_evidence(receipt)
+    missing = Enum.reject(@required_route_evidence, &safe_ref?(route_evidence[&1]))
+
+    cond do
+      missing != [] ->
+        {:error, error("extravaganza_receipt_missing_route_evidence", missing_fields: missing)}
+
+      get_in(route_evidence, ["trace_replay", "status"]) in [nil, ""] ->
+        {:error, error("extravaganza_receipt_missing_trace_replay_status")}
+
+      true ->
+        :ok
+    end
+  end
+
   defp external_receipt(product_receipt, opts) do
     root = Keyword.get(opts, :extravaganza_root, default_extravaganza_root())
     refs = refs(product_receipt)
@@ -217,6 +268,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
         "multi_node_topology_proven?" => false
       },
       "validated_refs" => validated_refs(refs),
+      "validated_route_evidence" => route_evidence(product_receipt),
       "product_receipt" => product_summary(product_receipt),
       "provider_smoke" => %{
         "classification" => "separate_provider_only_not_product_acceptance",
@@ -250,6 +302,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
       "all_readbacks_share_refs" => proof["all_readbacks_share_refs"],
       "readbacks" => Enum.map(readbacks(receipt), & &1["name"]),
       "steps" => proof_steps(receipt),
+      "route_evidence" => route_evidence(receipt),
       "refs" =>
         Map.take(
           refs(receipt),
@@ -269,6 +322,30 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
   defp refs(%{} = receipt), do: map_or_empty(receipt["refs"])
   defp proof(%{} = receipt), do: map_or_empty(get_in(receipt, ["data", "proof"]))
   defp proof_steps(receipt), do: proof(receipt)["steps"] || proof(receipt)["proof_steps"] || []
+
+  defp route_evidence(receipt) do
+    direct = map_or_empty(get_in(receipt, ["data", "route_evidence"]))
+    proof_route = map_or_empty(get_in(receipt, ["data", "proof", "route_evidence"]))
+
+    cond do
+      direct != %{} ->
+        direct
+
+      proof_route != %{} ->
+        proof_route
+
+      true ->
+        receipt
+        |> readbacks()
+        |> Enum.find_value(%{}, &route_evidence_readback/1)
+    end
+  end
+
+  defp route_evidence_readback(%{"name" => "route_evidence"} = readback) do
+    map_or_empty(readback["data"])
+  end
+
+  defp route_evidence_readback(_readback), do: nil
 
   defp readbacks(receipt) do
     case proof(receipt)["readbacks"] do
