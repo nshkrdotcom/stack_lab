@@ -1,0 +1,50 @@
+{
+  "schema_version": "gn_ten_phase13_live_neutral_claim_boundary_v1",
+  "profile": "release_claim_boundary",
+  "receipt": "receipt://stack_lab/phase13/live_neutral_claim_boundary/latest",
+  "decision": {
+    "multi_product_live_provider_claimed": false,
+    "live_provider_scope": "extravaganza_only",
+    "neutral_genericity_scope": "deterministic_provider_free",
+    "neutral_proof_app": "examples/toy_document_review"
+  },
+  "evidence": [
+    {
+      "path": "examples/toy_document_review",
+      "fact": "live_profiles_empty"
+    },
+    {
+      "path": "docs/receipts/gn_ten_phase_o/partial_proof_snapshot.md",
+      "fact": "live_provider_proven_false"
+    },
+    {
+      "path": "docs/gn_ten_proof_matrix.md",
+      "fact": "live_provider_behavior_outside_current_generic_matrix"
+    },
+    {
+      "path": "proof_matrix.yml",
+      "fact": "zero_partial_rows_no_multi_product_live_provider_row"
+    }
+  ],
+  "future_live_neutral_requirement": {
+    "proof_app_root": "stack_lab/examples/<name>",
+    "requires_deterministic_fake_provider_acceptance": true,
+    "requires_generic_stack_path": true,
+    "requires_with_bash_secrets_for_github_or_linear": true,
+    "guarded_live_command_prefix": "~/scripts/with_bash_secrets",
+    "required_scanner_posture": [
+      "provider_vocabulary",
+      "tenant_isolation",
+      "raw_secrets",
+      "dynamic_atoms",
+      "regex_usage",
+      "unsupervised_process_primitives"
+    ]
+  },
+  "does_not_prove": [
+    "live GitHub or Linear behavior from toy_document_review",
+    "multi-product live-provider parity",
+    "production credential rotation",
+    "production provider billing behavior"
+  ]
+}

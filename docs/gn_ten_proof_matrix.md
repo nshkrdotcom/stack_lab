@@ -59,6 +59,21 @@ not claim authoritative audit truth or production deployment proof.
 | `assembled_offline` | StackLab fixture-backed full graph | StackLab scenario receipts and AITrace fixture |
 | `deployment_single_node` | single-node production rehearsal | deployment receipt, backup/restore receipt, trace export |
 
+## Live Provider Claim Boundary
+
+Phase 13 does not add a multi-product live-provider claim. Current live-provider
+proof remains Extravaganza-scoped. Neutral product genericity remains
+deterministic and provider-free through `examples/toy_document_review`.
+
+The release boundary receipt is
+`docs/receipts/gn_ten_phase13/live_neutral_claim_boundary.json`.
+
+Any later neutral product live-provider claim must add a StackLab proof app under
+`examples/<name>/mix.exs`, keep deterministic fake-provider acceptance, route
+through the generic AppKit -> Mezzanine -> Citadel -> Jido -> Execution Plane
+path, and run GitHub or Linear live commands by prefixing them with
+`~/scripts/with_bash_secrets`.
+
 ## Implemented Fixture Proofs
 
 - `refactoring_deletion_backlog`: runs the deterministic refactoring deletion

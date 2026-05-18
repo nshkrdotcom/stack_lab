@@ -15,6 +15,11 @@ StackLab remains the command/proof surface. AppKit remains the product-facing
 surface. The Phase O proof posture is complete for command-surface validation
 and the current proof matrix has no partial rows.
 
+Phase 13 records the live-provider claim boundary: this release does not claim
+multi-product live-provider proof. Live-provider proof remains
+Extravaganza-scoped, while neutral genericity is proven deterministically by
+`examples/toy_document_review`.
+
 ## Repository Heads
 
 | Repo | Head SHA | Phase O state |
@@ -67,6 +72,8 @@ The final matrix has zero missing-proof entries and zero partial entries.
   `docs/receipts/gn_ten_phase_o/partial_proof_snapshot.md`
 - Final state summary:
   `docs/gn_ten_final_state.md`
+- Phase 13 live neutral claim boundary:
+  `docs/receipts/gn_ten_phase13/live_neutral_claim_boundary.json`
 
 ## Notes
 
