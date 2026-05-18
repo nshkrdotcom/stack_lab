@@ -1,0 +1,21 @@
+{
+  "schema_version": "aitrace.single_node_proof_trace.v1",
+  "trace_id": "trace://stack_lab/refactoring_deletion_backlog/latest",
+  "proof_posture": {
+    "authoritative_audit?": false,
+    "production_deployment_proven?": false,
+    "safe_action": "use_as_development_trace_fixture"
+  },
+  "spans": [
+    {
+      "span_ref": "span://stack_lab/refactoring_deletion_backlog/inventory",
+      "name": "refactoring_deletion_backlog.inventory",
+      "status": "ok"
+    },
+    {
+      "span_ref": "span://stack_lab/refactoring_deletion_backlog/retention",
+      "name": "refactoring_deletion_backlog.retention_receipts",
+      "status": "ok"
+    }
+  ]
+}

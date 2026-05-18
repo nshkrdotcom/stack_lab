@@ -53,18 +53,27 @@ proofs:
   - id: refactoring_deletion_backlog
     owner_repo: stack_lab
     contract_family: "200 refactoring"
-    status: partial
+    status: implemented
     profile: local_quick
-    command: mix gn_ten.review.summary --batch 20260428-phase-g-smoke
-    fixture: docs/receipts/gn_ten_batches/20260428_phase-g-smoke.json
-    receipt: receipt://stack_lab/phase_o_partial_snapshot/latest
+    command: mix gn_ten.refactoring_deletion.scenarios --json
+    fixture: docs/receipts/gn_ten_refactoring/deletion_backlog.json
+    receipt: receipt://stack_lab/refactoring_deletion_backlog/latest
     proves:
-      - repo-local CI batch receipts and review summary machinery exist for deletion-campaign evidence
-      - deletion work can be tied to reviewed batch receipts instead of unstructured notes
+      - current refactoring deletion inventory covers all ten target repos
+      - deletion campaigns are linked to StackLab batch receipts
+      - retained compatibility surfaces have owner, reason, review date, and scanner posture
+      - active delete candidates are empty for the current platform claim
     does_not_prove:
-      - duplicate DTOs and helpers have been removed across the ten repos
-      - shared primitives have replaced repo-local copies
-    next_action: run deletion-specific Phase H batches and attach explicit no-op receipts for consciously retained duplicates
+      - semantic duplicate detection beyond named inventory classes
+      - deletion of public product compatibility routes or flags
+      - future duplicate introductions outside scanner coverage
+    next_action: keep deletion inventory receipts in StackLab CI and open concrete deletion campaigns when active candidates appear
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/refactoring_deletion_backlog/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
 
   - id: workspace_manifest_control_plane
     owner_repo: stack_lab

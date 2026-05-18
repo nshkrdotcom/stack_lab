@@ -3,8 +3,7 @@
 Date: 2026-04-28
 
 This matrix maps the `gn-ten` contract docset to executable StackLab proof
-ownership. Entries marked `partial` are intentionally bounded evidence rows, not
-claims of completed behavior.
+ownership. The current ledger has no partial rows.
 
 Machine-readable ledger:
 
@@ -44,8 +43,8 @@ not claim authoritative audit truth or production deployment proof.
 | Contract Family | Owner | Proof Status | Next Action |
 | --- | --- | --- | --- |
 | 000 repo contracts | docs + repo owners | documentation complete | copy reviewed repo-agent instructions into repo roots |
-| 100 development process | `stack_lab`, `AITrace` | partial source-backed proof | add trace fixtures for local proof loops |
-| 200 refactoring | repo owners | partial | link each deletion campaign to a StackLab scenario or no-op proof |
+| 100 development process | `stack_lab`, `AITrace` | StackLab development loop and local trace fixtures implemented | keep trace fixtures current with proof loop changes |
+| 200 refactoring | repo owners | refactoring deletion backlog proof implemented with inventory, deletion campaign links, and retention/no-op receipts | keep inventory current and open concrete deletion campaigns when active candidates appear |
 | 300 architecture | docs + `stack_lab` | manifest, artifact ledger, and product no-bypass fixtures implemented | keep product fixture proof wired into CI and expand fixtures as product shapes change |
 | 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | connector provider-free, budget, and agent-turn runtime pattern proofs implemented | add live runtime drills only when release claims require them |
 | 500 governance | `citadel`, `mezzanine`, `jido_integration` | tenant isolation, connector secret lease, prompt-injection fixtures, and governed connector compliance export fixture implemented | add incident export and production compliance-retention fixtures only when release claims require them |
@@ -62,6 +61,10 @@ not claim authoritative audit truth or production deployment proof.
 
 ## Implemented Fixture Proofs
 
+- `refactoring_deletion_backlog`: runs the deterministic refactoring deletion
+  backlog proof covering all ten target repos, named deletion campaigns,
+  StackLab batch receipt links, and retention/no-op receipts with owner,
+  reason, review date, and scanner posture.
 - `product_no_bypass`: runs the AppKit-owned scanner against StackLab-owned
   fixtures in `fixtures/products/`. The minimal fixture imports only product-safe AppKit
   surfaces. The hostile fixture imports direct bridge/lower-layer modules and
@@ -134,6 +137,4 @@ not claim authoritative audit truth or production deployment proof.
 
 ## Partial Proof Backlog
 
-- `refactoring_deletion_backlog`: reviewed batch receipt machinery exists, but
-  each 200-series deletion campaign still needs a StackLab scenario or explicit
-  no-op proof.
+No proof matrix rows are currently partial.

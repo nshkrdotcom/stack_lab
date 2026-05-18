@@ -7,16 +7,16 @@
   "proofs": [
     {
       "id": "refactoring_deletion_backlog",
-      "status": "partial",
-      "evidence": "docs/receipts/gn_ten_batches/20260428_phase-g-smoke.json",
+      "status": "implemented_after_phase_o",
+      "evidence": "docs/receipts/gn_ten_refactoring/deletion_backlog.json",
       "proves": [
-        "reviewed batch receipt machinery exists for deletion-campaign evidence"
+        "current proof matrix implements refactoring deletion inventory and retention receipts"
       ],
       "does_not_prove": [
-        "duplicates have been deleted across all repos",
-        "shared primitives have replaced repo-local copies"
+        "semantic duplicate detection beyond named inventory classes",
+        "deletion of public product compatibility routes or flags"
       ],
-      "next_action": "run deletion-specific Phase H batches"
+      "next_action": "keep current proof matrix authoritative"
     },
     {
       "id": "agent_turn_runtime_patterns",

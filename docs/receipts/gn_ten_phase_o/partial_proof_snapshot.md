@@ -8,8 +8,9 @@ matrix supersedes this snapshot.
 
 ## Partial Rows
 
-- `refactoring_deletion_backlog`: batch receipt review exists; deletion-specific
-  campaigns still need explicit receipts.
+- `refactoring_deletion_backlog`: was partial in Phase O; the current proof
+  matrix now implements it through
+  `docs/receipts/gn_ten_refactoring/deletion_backlog.json`.
 - `agent_turn_runtime_patterns`: was partial in Phase O; the current proof
   matrix now implements it through
   `examples/session_lineage_drill/docs/receipts/agent_turn_runtime_patterns.md`.

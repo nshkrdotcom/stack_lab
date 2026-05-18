@@ -1,0 +1,170 @@
+{
+  "schema_version": "gn_ten_refactoring_deletion_backlog_v1",
+  "proof_id": "refactoring_deletion_backlog",
+  "profile": "local_quick",
+  "receipt_ref": "receipt://stack_lab/refactoring_deletion_backlog/latest",
+  "batch_id": "20260518-refactoring-deletion-backlog",
+  "batch_receipts": [
+    "docs/receipts/gn_ten_batches/20260518_refactoring-deletion-backlog.json"
+  ],
+  "target_repos": [
+    "app_kit",
+    "extravaganza",
+    "mezzanine",
+    "outer_brain",
+    "citadel",
+    "jido_integration",
+    "execution_plane",
+    "ground_plane",
+    "stack_lab",
+    "AITrace"
+  ],
+  "inventory": {
+    "inventory_ref": "inventory://stack-lab/refactoring-deletion-backlog/20260518",
+    "method": "targeted_marker_inventory",
+    "searched_marker_classes": [
+      "deprecated package references",
+      "legacy provider dispatch",
+      "compatibility shims",
+      "duplicate owner declarations",
+      "retained product compatibility routes"
+    ],
+    "repo_file_counts": [
+      {
+        "repo": "app_kit",
+        "elixir_files": 172
+      },
+      {
+        "repo": "extravaganza",
+        "elixir_files": 64
+      },
+      {
+        "repo": "mezzanine",
+        "elixir_files": 729
+      },
+      {
+        "repo": "outer_brain",
+        "elixir_files": 139
+      },
+      {
+        "repo": "citadel",
+        "elixir_files": 409
+      },
+      {
+        "repo": "jido_integration",
+        "elixir_files": 743
+      },
+      {
+        "repo": "execution_plane",
+        "elixir_files": 96
+      },
+      {
+        "repo": "ground_plane",
+        "elixir_files": 68
+      },
+      {
+        "repo": "stack_lab",
+        "elixir_files": 174
+      },
+      {
+        "repo": "AITrace",
+        "elixir_files": 21
+      }
+    ],
+    "active_delete_candidates": [],
+    "no_active_candidate_reason": "Current marker inventory found policy-retained compatibility surfaces and guard tests, not an unowned duplicate DTO/helper that can be deleted safely in this phase."
+  },
+  "deletion_campaigns": [
+    {
+      "id": "deprecated_mezzanine_bridge_package_refs",
+      "owner_repo": "app_kit",
+      "status": "deleted_before_current_phase",
+      "replacement_ref": "app-kit://bridges/mezzanine_bridge/service-layer",
+      "batch_receipt": "docs/receipts/gn_ten_batches/20260518_refactoring-deletion-backlog.json",
+      "evidence_refs": [
+        "app_kit/bridges/mezzanine_bridge/test/app_kit/bridges/mezzanine_bridge_test.exs"
+      ]
+    },
+    {
+      "id": "extravaganza_runtime_direct_legacy_refs",
+      "owner_repo": "extravaganza",
+      "status": "deleted_before_current_phase",
+      "replacement_ref": "app-kit://runtime-gateway/generic-operation-receipts",
+      "batch_receipt": "docs/receipts/gn_ten_batches/20260518_refactoring-deletion-backlog.json",
+      "evidence_refs": [
+        "extravaganza/apps/extravaganza_core/test/extravaganza_runtime_decoupling_test.exs"
+      ]
+    },
+    {
+      "id": "provider_family_dispatch_in_generic_scanners",
+      "owner_repo": "stack_lab",
+      "status": "deleted_before_current_phase",
+      "replacement_ref": "stack-lab://structural-gate/proof-bundle-registry",
+      "batch_receipt": "docs/receipts/gn_ten_batches/20260518_refactoring-deletion-backlog.json",
+      "evidence_refs": [
+        "stack_lab/support/no_bypass_scanner/lib/stack_lab/structural_gate_scanner.ex",
+        "stack_lab/proof_matrix.yml"
+      ]
+    },
+    {
+      "id": "current_inventory_active_delete_candidates",
+      "owner_repo": "stack_lab",
+      "status": "no_active_candidate",
+      "replacement_ref": "inventory://stack-lab/refactoring-deletion-backlog/20260518",
+      "batch_receipt": "docs/receipts/gn_ten_batches/20260518_refactoring-deletion-backlog.json",
+      "evidence_refs": [
+        "stack_lab/docs/receipts/gn_ten_refactoring/deletion_backlog.md"
+      ]
+    }
+  ],
+  "retention_receipts": [
+    {
+      "id": "repo_agent_claude_compatibility_shims",
+      "owner_repo": "stack_lab",
+      "retained_surface": "CLAUDE.md -> AGENTS.md repo-agent compatibility shim",
+      "reason": "Required by repo agent instruction contract; not generic-stack runtime code.",
+      "review_date": "2026-06-18",
+      "scanner_posture": "repo_agents_validate_enforced"
+    },
+    {
+      "id": "extravaganza_public_product_compatibility",
+      "owner_repo": "extravaganza",
+      "retained_surface": "legacy headless flags, Symphony compatibility route, and legacy presenter assign keys",
+      "reason": "Public Extravaganza behavior that must remain untouched while lower calls use generic substrate paths.",
+      "review_date": "2026-06-18",
+      "scanner_posture": "product_surface_allowed_generic_no_bypass_required"
+    },
+    {
+      "id": "execution_plane_contract_rejection_fixtures",
+      "owner_repo": "execution_plane",
+      "retained_surface": "legacy attach-grant and compatibility-shim rejection docs/tests",
+      "reason": "Negative fixtures prove old shapes are rejected; they are not production compatibility paths.",
+      "review_date": "2026-06-18",
+      "scanner_posture": "test_and_docs_only_retention"
+    },
+    {
+      "id": "stack_lab_deprecated_artifact_history",
+      "owner_repo": "stack_lab",
+      "retained_surface": "deprecated artifact ledger history without active consumers",
+      "reason": "Release-history evidence retained so artifact drift is reviewable.",
+      "review_date": "2026-06-18",
+      "scanner_posture": "contract_artifacts_validate_enforced"
+    }
+  ],
+  "scanner_posture": {
+    "proof_ref": "scanner-posture://stack-lab/refactoring-deletion-backlog/20260518",
+    "required_commands": [
+      "mix gn_ten.repo_agents.validate",
+      "mix gn_ten.connector.scan --all-repos",
+      "mix gn_ten.tenant.scan --all-repos",
+      "mix gn_ten.proofs.validate --json"
+    ],
+    "retained_product_surfaces_are_allowed?": true,
+    "retained_generic_duplicate_dispatch_allowed?": false
+  },
+  "does_not_prove": [
+    "semantic duplicate detection beyond the named inventory classes",
+    "deletion of product compatibility routes or flags that are still public behavior",
+    "future duplicate introductions outside scanner coverage"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "schema_version": "gn_ten_batch_receipt_v1",
+  "batch_id": "20260518-refactoring-deletion-backlog",
+  "branch_policy": "main_only",
+  "primary_owner_repo": "stack_lab",
+  "contract_producer_repo": null,
+  "consumer_repos": [
+    "app_kit",
+    "extravaganza",
+    "mezzanine",
+    "outer_brain",
+    "citadel",
+    "jido_integration",
+    "execution_plane",
+    "ground_plane",
+    "AITrace"
+  ],
+  "commands": [
+    {
+      "repo": "stack_lab",
+      "repo_ref": "repo://nshkrdotcom/stack_lab",
+      "command": "mix gn_ten.refactoring_deletion.scenarios --json",
+      "status": "ok",
+      "exit_status": 0,
+      "evidence_ref": "docs/receipts/gn_ten_refactoring/deletion_backlog.json"
+    },
+    {
+      "repo": "stack_lab",
+      "repo_ref": "repo://nshkrdotcom/stack_lab",
+      "command": "mix gn_ten.repo_agents.validate",
+      "status": "ok",
+      "exit_status": 0,
+      "evidence_ref": "repo-agent-shim-retention-scan"
+    },
+    {
+      "repo": "stack_lab",
+      "repo_ref": "repo://nshkrdotcom/stack_lab",
+      "command": "mix gn_ten.connector.scan --all-repos",
+      "status": "ok",
+      "exit_status": 0,
+      "evidence_ref": "generic-connector-boundary-scan"
+    },
+    {
+      "repo": "stack_lab",
+      "repo_ref": "repo://nshkrdotcom/stack_lab",
+      "command": "mix gn_ten.tenant.scan --all-repos",
+      "status": "ok",
+      "exit_status": 0,
+      "evidence_ref": "tenant-boundary-scan"
+    }
+  ],
+  "proof": {
+    "scenario": "refactoring deletion backlog closure",
+    "evidence": [
+      "docs/receipts/gn_ten_refactoring/deletion_backlog.json",
+      "docs/receipts/gn_ten_refactoring/deletion_backlog.md"
+    ],
+    "does_not_prove": [
+      "semantic duplicate detection beyond named inventory classes",
+      "deletion of public product compatibility routes or flags",
+      "production_deployment",
+      "authoritative_audit_truth"
+    ]
+  },
+  "trace_evidence": [
+    "docs/receipts/gn_ten_refactoring/deletion_backlog_trace.json"
+  ],
+  "git_closeout": [
+    {
+      "repo": "stack_lab",
+      "branch": "main",
+      "sha": "67ca896591cb1f93c091f9eaab7dea19fa4253da",
+      "pushed": true,
+      "clean": true
+    }
+  ],
+  "notes": [
+    "The current inventory produced no safe active delete candidates. Retained compatibility surfaces are explicitly classified with owners, reasons, review dates, and scanner posture."
+  ]
+}
