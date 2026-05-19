@@ -62,6 +62,24 @@ defmodule StackLab.RuntimeBoundaryScannerTest do
     assert %ClassifiedCall{classification: :scanner} = scanner_call
   end
 
+  test "Execution Plane OS boundary owns raw command execution" do
+    [os_call] =
+      RuntimeBoundaryScanner.scan_source(
+        """
+        defmodule ExecutionPlane.Process.OS do
+          def uid, do: System.cmd("id", ["-u"])
+        end
+        """,
+        "/home/home/p/g/n/execution_plane/runtimes/execution_plane_process/lib/execution_plane/process/os.ex"
+      )
+
+    assert %ClassifiedCall{
+             classification: :os_boundary,
+             rule: :raw_command_execution,
+             call: "System.cmd"
+           } = os_call
+  end
+
   test "scanner receipts separate production findings from classified calls" do
     root =
       Path.join(

@@ -346,9 +346,17 @@ defmodule StackLab.RuntimeBoundaryScanner do
       path_has_segment?(normalized, "build_support") -> :build_support_static_manifest
       proof_harness_path?(normalized) -> :proof_harness_owned
       proof_app_path?(normalized) -> :proof_app_owned
+      execution_plane_os_boundary_path?(normalized) -> :os_boundary
       path_has_segment?(normalized, "dev") -> :dev_support
       true -> :production
     end
+  end
+
+  defp execution_plane_os_boundary_path?(path) do
+    String.ends_with?(
+      path,
+      "/execution_plane/runtimes/execution_plane_process/lib/execution_plane/process/os.ex"
+    )
   end
 
   defp scanner_path?(path), do: String.contains?(path, "/stack_lab/support/no_bypass_scanner/")
