@@ -42,6 +42,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
   alias Mezzanine.AppKitBridge.SemanticFailureRecoveryService
 
   alias Mezzanine.Archival.Scheduler
+  alias Mezzanine.Audit.ExecutionLineageStore
   alias Mezzanine.Audit.Repo, as: AuditRepo
   alias Mezzanine.Citadel.SubstrateIngress
   alias Mezzanine.ConfigRegistry.Installation
@@ -1156,6 +1157,8 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
 
         failed_execution_step = execution_trace_step!(unified_trace, failed_execution.id)
 
+        {:ok, failed_lineage} = ExecutionLineageStore.fetch(failed_execution.id)
+
         {:ok, actions} =
           OperatorSurface.available_actions(env.context, env.subject_ref, env.surface_opts)
 
@@ -1274,6 +1277,13 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface do
            trace: %{
              trace_id: unified_trace.trace_id,
              step_sources: Enum.map(unified_trace.steps, & &1.source),
+             lower_lineage: %{
+               execution_id: failed_lineage.execution_id,
+               ji_submission_key: failed_lineage.ji_submission_key,
+               lower_run_id: failed_lineage.lower_run_id,
+               lower_attempt_id: failed_lineage.lower_attempt_id,
+               artifact_refs: failed_lineage.artifact_refs
+             },
              failed_execution: failed_execution_step
            }
          }}

@@ -299,6 +299,16 @@ defmodule StackLab.StructuralGateScanner do
   ]
 
   @provider_name_parts ["linear", "github", "codex", "openai", "symphony"]
+  @closed_provider_dispatch_names [
+    "amp",
+    "claude",
+    "codex",
+    "gemini",
+    "github",
+    "linear",
+    "notion",
+    "openai"
+  ]
   @provider_binding_refs ["linear_primary", "github_primary", "codex_primary"]
 
   @ground_plane_higher_layer_tokens [
@@ -913,6 +923,19 @@ defmodule StackLab.StructuralGateScanner do
     {provider_remote_reference_findings(checked_path, meta, alias_ast, :remote_call), []}
   end
 
+  defp ast_node_findings(checked_path, _content, {:%{}, meta, fields}, _remote?) do
+    {closed_provider_dispatch_map_findings(checked_path, meta, fields), []}
+  end
+
+  defp ast_node_findings(
+         checked_path,
+         _content,
+         {:case, meta, [subject, [do: clauses]]},
+         _remote?
+       ) do
+    {closed_provider_dispatch_case_findings(checked_path, meta, subject, clauses), []}
+  end
+
   defp ast_node_findings(_checked_path, _content, _node, _remote?), do: {[], []}
 
   defp public_function_findings(checked_path, content, meta, head, role, remote_deployment?) do
@@ -1108,6 +1131,65 @@ defmodule StackLab.StructuralGateScanner do
   end
 
   defp provider_remote_reference_findings(_checked_path, _meta, _alias_ast, _role), do: []
+
+  defp closed_provider_dispatch_map_findings(checked_path, meta, fields) do
+    if closed_provider_dispatch_scan_path?(checked_path) do
+      provider_keys =
+        fields
+        |> Enum.flat_map(&map_provider_key/1)
+        |> Enum.uniq()
+
+      if length(provider_keys) >= 2 do
+        [
+          finding(checked_path, %{
+            rule: :closed_provider_dispatch_map_in_core,
+            reason: :provider_keyed_dispatch_map_in_jido_core,
+            line: meta_line(meta),
+            token: Enum.join(provider_keys, ","),
+            ast_role: :map_literal,
+            owner_phase: "Phase 37",
+            remediation:
+              "Move provider-specific dispatch to connector packages or canonical vocabulary data; core dispatch must resolve from manifest and capability data."
+          })
+        ]
+      else
+        []
+      end
+    else
+      []
+    end
+  end
+
+  defp closed_provider_dispatch_case_findings(checked_path, meta, subject, clauses) do
+    if closed_provider_dispatch_scan_path?(checked_path) do
+      provider_clauses =
+        clauses
+        |> Enum.flat_map(&provider_case_clause_tokens/1)
+        |> Enum.uniq()
+
+      subject_text = subject |> Macro.to_string() |> String.downcase()
+
+      if length(provider_clauses) >= 2 or
+           (provider_clauses != [] and String.contains?(subject_text, "provider")) do
+        [
+          finding(checked_path, %{
+            rule: :closed_provider_dispatch_branch_in_core,
+            reason: :provider_branch_dispatch_in_jido_core,
+            line: meta_line(meta),
+            token: Enum.join(provider_clauses, ","),
+            ast_role: :case_branch,
+            owner_phase: "Phase 37",
+            remediation:
+              "Replace provider-name branching with manifest, capability, connector registry, or provider classification data."
+          })
+        ]
+      else
+        []
+      end
+    else
+      []
+    end
+  end
 
   defp proof_bundle(
          checked_path,
@@ -1315,6 +1397,41 @@ defmodule StackLab.StructuralGateScanner do
   defp field_name(key) when is_atom(key), do: [Atom.to_string(key)]
   defp field_name(key) when is_binary(key), do: [key]
   defp field_name(_other), do: []
+
+  defp map_provider_key({:"=>", _meta, [key, _value]}), do: provider_literal_tokens(key)
+  defp map_provider_key({key, _value}) when is_atom(key), do: provider_literal_tokens(key)
+  defp map_provider_key(_field), do: []
+
+  defp provider_case_clause_tokens({:->, _meta, [patterns, _body]}) when is_list(patterns) do
+    Enum.flat_map(patterns, &provider_literal_tokens/1)
+  end
+
+  defp provider_case_clause_tokens(_clause), do: []
+
+  defp provider_literal_tokens(value) when is_atom(value) do
+    value
+    |> Atom.to_string()
+    |> provider_name_tokens()
+  end
+
+  defp provider_literal_tokens(value) when is_binary(value), do: provider_name_tokens(value)
+
+  defp provider_literal_tokens(tuple) when is_tuple(tuple) do
+    tuple
+    |> Tuple.to_list()
+    |> Enum.flat_map(&provider_literal_tokens/1)
+  end
+
+  defp provider_literal_tokens(list) when is_list(list) do
+    Enum.flat_map(list, &provider_literal_tokens/1)
+  end
+
+  defp provider_literal_tokens(_value), do: []
+
+  defp provider_name_tokens(value) when is_binary(value) do
+    value = String.downcase(value)
+    Enum.filter(@closed_provider_dispatch_names, &(&1 == value))
+  end
 
   defp alias_to_string({:__aliases__, _meta, parts}) do
     Enum.map_join(parts, ".", &alias_part_to_string/1)
@@ -1645,6 +1762,26 @@ defmodule StackLab.StructuralGateScanner do
       path,
       "/jido_integration/core/provider_classification/lib/jido/integration/v2/provider_classification.ex"
     )
+  end
+
+  defp closed_provider_dispatch_scan_path?(%CheckedPath{
+         repo: "jido_integration",
+         zone: :other_project_code,
+         path: path
+       }) do
+    not jido_provider_vocabulary_data_owner?(path)
+  end
+
+  defp closed_provider_dispatch_scan_path?(_checked_path), do: false
+
+  defp jido_provider_vocabulary_data_owner?(path) do
+    allowed_fragments = [
+      "/jido_integration/core/provider_classification/",
+      "/jido_integration/core/provider_feature_matrix/",
+      "/jido_integration/core/tool_contracts/"
+    ]
+
+    Enum.any?(allowed_fragments, &String.contains?(path, &1))
   end
 
   defp provider_public_vocabulary_allowed_path?(path) do

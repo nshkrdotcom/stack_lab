@@ -496,7 +496,7 @@ defmodule StackLab.CitadelSpineHarness.TreLaneAcceptance do
   end
 
   defp direct_run_module do
-    Module.concat(Mezzanine.IntegrationBridge, "DirectRun" <> "Dispatch" <> "er")
+    Mezzanine.IntegrationBridge
   end
 
   defp direct_run_entrypoint do

@@ -10,6 +10,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
     CompatibilityResult,
     ConsumerManifest,
     ControlPlane,
+    ControlPlane.Persistence,
     InferenceExecutionContext,
     InferenceRequest,
     InferenceResult
@@ -567,6 +568,8 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
       ClaimCheckStoreProbe
     )
 
+    :ok = configure_claim_check_probe_store!()
+
     Application.put_env(
       :jido_integration_v2_store_postgres,
       Repo,
@@ -574,6 +577,16 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
     )
 
     Application.put_env(:jido_integration_v2_store_postgres, :claim_check_root, claim_check_root)
+  end
+
+  defp configure_claim_check_probe_store! do
+    resolution = Persistence.current()
+
+    Persistence.configure!(
+      profile: resolution.profile.id,
+      capabilities: resolution.capabilities,
+      store_modules: Map.put(resolution.store_modules, :claim_check_store, ClaimCheckStoreProbe)
+    )
   end
 
   defp start_store_postgres! do

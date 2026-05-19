@@ -55,6 +55,7 @@ defmodule StackLab.CitadelSpineHarness.ReviewableConnectorAutomationConsoleTest 
     assert result.lower_access.post_pause_stream.reason == "subject_paused"
 
     assert result.trace.trace_id
+    assert result.trace.lower_lineage.lower_run_id
     assert "audit_fact" in result.trace.step_sources
     assert "execution_record" in result.trace.step_sources
     assert "decision_record" in result.trace.step_sources

@@ -396,6 +396,101 @@ defmodule StackLab.StructuralGateScannerTest do
     assert Enum.any?(receipt.findings, &(&1.rule == :lane_branch_in_generic_code))
   end
 
+  test "allows provider vocabulary in Jido connector zones", %{roots: roots} do
+    connector_path =
+      roots
+      |> Map.fetch!("jido_integration")
+      |> Path.join("connectors/github/lib/jido/integration/v2/connectors/git_hub.ex")
+
+    write_file(connector_path, """
+    defmodule Jido.Integration.V2.Connectors.GitHub do
+      @provider_dispatch %{github: GitHubRuntime, linear: LinearRuntime}
+      def provider, do: :github
+      def dispatch(provider), do: Map.fetch!(@provider_dispatch, provider)
+    end
+    """)
+
+    assert {:ok, receipt} = StructuralGateScanner.scan([connector_path], target_roots: roots)
+
+    refute Enum.any?(
+             receipt.findings,
+             &(&1.rule == :closed_provider_dispatch_map_in_core)
+           )
+
+    refute Enum.any?(
+             receipt.findings,
+             &(&1.rule == :provider_noun_in_generic_code)
+           )
+  end
+
+  test "fails provider-keyed dispatch maps in Jido core", %{roots: roots} do
+    path =
+      roots
+      |> Map.fetch!("jido_integration")
+      |> Path.join(
+        "core/runtime_router/lib/jido/integration/v2/runtime_router/provider_dispatch.ex"
+      )
+
+    write_file(path, """
+    defmodule Jido.Integration.V2.RuntimeRouter.ProviderDispatch do
+      @provider_dispatch %{github: GitHubRuntime, linear: LinearRuntime}
+      def dispatch(provider), do: Map.fetch!(@provider_dispatch, provider)
+    end
+    """)
+
+    assert {:ok, receipt} = StructuralGateScanner.scan([path], target_roots: roots)
+    assert receipt.status == :open_defect
+    assert Enum.any?(receipt.findings, &(&1.rule == :closed_provider_dispatch_map_in_core))
+  end
+
+  test "fails provider branch dispatch in Jido core", %{roots: roots} do
+    path =
+      roots
+      |> Map.fetch!("jido_integration")
+      |> Path.join(
+        "core/runtime_router/lib/jido/integration/v2/runtime_router/provider_branch.ex"
+      )
+
+    write_file(path, """
+    defmodule Jido.Integration.V2.RuntimeRouter.ProviderBranch do
+      def dispatch(provider) do
+        case provider do
+          :github -> GitHubRuntime
+          :linear -> LinearRuntime
+          _ -> GenericRuntime
+        end
+      end
+    end
+    """)
+
+    assert {:ok, receipt} = StructuralGateScanner.scan([path], target_roots: roots)
+    assert receipt.status == :open_defect
+    assert Enum.any?(receipt.findings, &(&1.rule == :closed_provider_dispatch_branch_in_core))
+  end
+
+  test "allows canonical Jido provider vocabulary data owners", %{roots: roots} do
+    path =
+      roots
+      |> Map.fetch!("jido_integration")
+      |> Path.join(
+        "core/provider_feature_matrix/lib/jido/integration/v2/provider_feature_matrix.ex"
+      )
+
+    write_file(path, """
+    defmodule Jido.Integration.V2.ProviderFeatureMatrix do
+      @provider_rows %{github: %{family: "http"}, linear: %{family: "graphql"}}
+      def rows, do: @provider_rows
+    end
+    """)
+
+    assert {:ok, receipt} = StructuralGateScanner.scan([path], target_roots: roots)
+
+    refute Enum.any?(
+             receipt.findings,
+             &(&1.rule == :closed_provider_dispatch_map_in_core)
+           )
+  end
+
   test "rejects blanket allowlists for protected generic paths", %{roots: roots} do
     protected_path =
       roots
