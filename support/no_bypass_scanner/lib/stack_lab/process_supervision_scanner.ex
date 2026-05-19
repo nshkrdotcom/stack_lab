@@ -76,6 +76,14 @@ defmodule StackLab.ProcessSupervisionScanner do
   @target_roots StackLab.StructuralGateScanner.target_roots()
   @excluded_segments [".git", "_build", "deps", "dist", "doc", "docs", "node_modules"]
   @source_extensions [".ex", ".exs"]
+  @supervised_transport_start_link_modules MapSet.new([
+                                             ExecutionPlane.Process.Transport.GuestBridge,
+                                             ExecutionPlane.Process.Transport.SSHExec,
+                                             ExecutionPlane.Process.Transport.Subprocess,
+                                             GuestBridge,
+                                             SSHExec,
+                                             Subprocess
+                                           ])
 
   @spec target_roots() :: %{String.t() => String.t()}
   def target_roots, do: @target_roots
@@ -194,9 +202,15 @@ defmodule StackLab.ProcessSupervisionScanner do
     |> Enum.reverse()
   end
 
-  defp collect_node({def_kind, _meta, [head, [do: body]]}, path, _function, acc)
-       when def_kind in [:def, :defp, :defmacro, :defmacrop] do
-    collect_node(body, path, function_name(head), acc)
+  defp collect_node({def_kind, _meta, [head, clauses]}, path, _function, acc)
+       when def_kind in [:def, :defp, :defmacro, :defmacrop] and is_list(clauses) do
+    function = function_name(head)
+
+    clauses
+    |> Keyword.values()
+    |> Enum.reduce(acc, fn clause_body, clause_acc ->
+      collect_node(clause_body, path, function, clause_acc)
+    end)
   end
 
   defp collect_node(node, path, function, acc) do
@@ -244,14 +258,37 @@ defmodule StackLab.ProcessSupervisionScanner do
   defp primitive(Task, :async, _context), do: "Task.async"
   defp primitive(Task, :async_stream, _context), do: "Task.async_stream"
   defp primitive(Task, :start, _context), do: "Task.start"
-  defp primitive(Task, :start_link, _context), do: "Task.start_link"
   defp primitive(Agent, :start, _context), do: "Agent.start"
-  defp primitive(Agent, :start_link, :start_link), do: nil
-  defp primitive(Agent, :start_link, _context), do: "Agent.start_link"
   defp primitive(GenServer, :start, _context), do: "GenServer.start"
+  defp primitive(module, :start_link, context), do: start_link_primitive(module, context)
   defp primitive(Kernel, :spawn, _context), do: "spawn"
   defp primitive(Kernel, :spawn_monitor, _context), do: "spawn_monitor"
   defp primitive(_module, _function, _context), do: nil
+
+  defp start_link_primitive(module, context) do
+    if supervised_transport_start_link_module?(module) and context != :start_link do
+      "#{module_name(module)}.start_link"
+    else
+      built_in_start_link_primitive(module, context)
+    end
+  end
+
+  defp built_in_start_link_primitive(Task, _context), do: "Task.start_link"
+  defp built_in_start_link_primitive(Agent, :start_link), do: nil
+  defp built_in_start_link_primitive(Agent, _context), do: "Agent.start_link"
+  defp built_in_start_link_primitive(GenServer, :start_link), do: nil
+  defp built_in_start_link_primitive(GenServer, _context), do: "GenServer.start_link"
+  defp built_in_start_link_primitive(_module, _context), do: nil
+
+  defp supervised_transport_start_link_module?(module) do
+    MapSet.member?(@supervised_transport_start_link_modules, module)
+  end
+
+  defp module_name(module) when is_atom(module) do
+    module
+    |> Module.split()
+    |> Enum.join(".")
+  end
 
   defp local_primitive(:spawn), do: "spawn"
   defp local_primitive(:spawn_monitor), do: "spawn_monitor"

@@ -43,10 +43,50 @@ defmodule StackLab.ProcessSupervisionScannerTest do
         use Agent
         def start_link(opts), do: Agent.start_link(fn -> opts end, name: __MODULE__)
       end
+
+      defmodule OwnedGenServer do
+        def start_link(opts) do
+          GenServer.start_link(__MODULE__, opts)
+        catch
+          :exit, reason -> {:error, reason}
+        end
+      end
       """)
 
     assert {:ok, receipt} = ProcessSupervisionScanner.scan([path], target_roots: %{"tmp" => root})
     assert receipt.status == :pass
+  end
+
+  test "flags GenServer start_link outside child callback ownership" do
+    root = tmp_root()
+
+    path =
+      write!(root, "lib/direct_link.ex", """
+      defmodule DirectLink do
+        def boot(opts), do: GenServer.start_link(__MODULE__, opts)
+      end
+      """)
+
+    assert {:ok, receipt} = ProcessSupervisionScanner.scan([path], target_roots: %{"tmp" => root})
+    assert receipt.status == :open_defect
+    assert [%{primitive: "GenServer.start_link"}] = receipt.findings
+  end
+
+  test "flags direct transport start_link calls outside child callback ownership" do
+    root = tmp_root()
+
+    path =
+      write!(root, "lib/direct_transport.ex", """
+      defmodule DirectTransport do
+        def boot(opts), do: ExecutionPlane.Process.Transport.Subprocess.start_link(opts)
+      end
+      """)
+
+    assert {:ok, receipt} = ProcessSupervisionScanner.scan([path], target_roots: %{"tmp" => root})
+    assert receipt.status == :open_defect
+
+    assert [%{primitive: "ExecutionPlane.Process.Transport.Subprocess.start_link"}] =
+             receipt.findings
   end
 
   test "classifies test-owned caller processes without failing the gate" do
