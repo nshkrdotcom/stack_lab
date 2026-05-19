@@ -225,16 +225,19 @@ defmodule StackLab.FoundationGateScannerTest do
     repo_root = Map.fetch!(roots, "app_kit")
     deps_file = Path.join(repo_root, "deps/provider_dep/lib/github_client.ex")
     build_file = Path.join(repo_root, "_build/test/lib/generated.ex")
+    dist_file = Path.join(repo_root, "dist/hex/app_kit/components/core/generated.ex")
     good_file = Path.join(repo_root, "core/app_kit_core/lib/app_kit/sources.ex")
 
     write_file(deps_file, "defmodule GithubClient, do: nil\n")
     write_file(build_file, "defmodule Generated, do: nil\n")
+    write_file(dist_file, "defmodule GeneratedDist, do: nil\n")
     write_file(good_file, "defmodule AppKit.Sources, do: nil\n")
 
     assert {:ok, receipt} = FoundationGateScanner.scan([repo_root], target_roots: roots)
     assert receipt.status == :pass
     assert Enum.any?(receipt.skipped_paths, &(&1.path == Path.join(repo_root, "deps")))
     assert Enum.any?(receipt.skipped_paths, &(&1.path == Path.join(repo_root, "_build")))
+    assert Enum.any?(receipt.skipped_paths, &(&1.path == Path.join(repo_root, "dist")))
     assert Enum.map(receipt.checked_paths, & &1.path) == [good_file]
   end
 

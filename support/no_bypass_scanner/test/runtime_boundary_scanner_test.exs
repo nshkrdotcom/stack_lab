@@ -117,4 +117,33 @@ defmodule StackLab.RuntimeBoundaryScannerTest do
     assert receipt.status == :baseline_findings
     assert [%Finding{rule: :application_env_read}] = receipt.findings
   end
+
+  test "skips retained generated distribution trees" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "stack_lab_runtime_boundary_dist_#{System.unique_integer([:positive])}"
+      )
+
+    dist_path = Path.join(root, "dist/hex/citadel/components/core/generated.ex")
+    File.mkdir_p!(Path.dirname(dist_path))
+
+    File.write!(dist_path, """
+    defmodule GeneratedDistribution do
+      def run, do: System.cmd("git", ["status"])
+    end
+    """)
+
+    {:ok, receipt} =
+      RuntimeBoundaryScanner.scan(
+        [root],
+        target_roots: %{"tmp" => root},
+        mode: :hard_gate
+      )
+
+    assert receipt.status == :pass
+    assert receipt.checked_paths == []
+    assert [%{path: skipped_path, reason: :excluded_path}] = receipt.skipped_paths
+    assert skipped_path == Path.join(root, "dist")
+  end
 end

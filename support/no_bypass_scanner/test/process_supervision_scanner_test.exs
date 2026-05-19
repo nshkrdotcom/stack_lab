@@ -66,6 +66,26 @@ defmodule StackLab.ProcessSupervisionScannerTest do
              receipt.classified_primitives
   end
 
+  test "skips retained generated distribution trees" do
+    root = tmp_root()
+
+    write!(
+      root,
+      "dist/hex/citadel/components/core/generated.ex",
+      """
+      defmodule GeneratedDistribution do
+        def boot(opts), do: GenServer.start(__MODULE__, opts)
+      end
+      """
+    )
+
+    assert {:ok, receipt} = ProcessSupervisionScanner.scan([root], target_roots: %{"tmp" => root})
+    assert receipt.status == :pass
+    assert receipt.checked_paths == []
+    assert [%{path: skipped_path, reason: :excluded_path}] = receipt.skipped_paths
+    assert skipped_path == Path.join(root, "dist")
+  end
+
   defp tmp_root do
     root =
       Path.join(

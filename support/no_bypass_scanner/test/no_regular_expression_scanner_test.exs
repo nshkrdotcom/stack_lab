@@ -64,16 +64,25 @@ defmodule StackLab.NoRegularExpressionScannerTest do
     repo_root = Map.fetch!(roots, "stack_lab")
     deps_path = Path.join(repo_root, "deps/example/lib/example.ex")
     doc_path = Path.join(repo_root, "docs/example.md")
+    dist_path = Path.join(repo_root, "dist/hex/stack_lab/components/core/example.ex")
     clean_path = Path.join(repo_root, "lib/stack_lab/example.ex")
+    literal_token = "~" <> "r"
 
     write_file(deps_path, "defmodule DependencyExample, do: nil\n")
     write_file(doc_path, "Documentation may mention regular expression APIs.\n")
+
+    write_file(
+      dist_path,
+      "defmodule GeneratedDistributionExample, do: #{literal_token}/generated/\n"
+    )
+
     write_file(clean_path, "defmodule StackLab.Example, do: nil\n")
 
     assert {:ok, receipt} = NoRegularExpressionScanner.scan([repo_root], target_roots: roots)
     assert receipt.status == :pass
     assert receipt.checked_paths == [clean_path]
     assert Enum.any?(receipt.skipped_paths, &(&1.path == Path.join(repo_root, "deps")))
+    assert Enum.any?(receipt.skipped_paths, &(&1.path == Path.join(repo_root, "dist")))
     assert Enum.any?(receipt.skipped_paths, &(&1.path == Path.join(repo_root, "docs")))
   end
 
