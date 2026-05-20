@@ -27,6 +27,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   alias Mezzanine.Audit.ExecutionLineage
   alias Mezzanine.IntegrationBridge
   alias Mezzanine.Intent.ReadIntent
+  alias StackLab.AppEnvSandbox
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
   alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
 
@@ -382,15 +383,12 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   end
 
   defp snapshot_keys(app, keys) do
-    Map.new(keys, fn key -> {key, Application.get_env(app, key, :__missing__)} end)
+    keys
+    |> Enum.map(&{app, &1})
+    |> AppEnvSandbox.snapshot()
   end
 
-  defp restore_keys(app, snapshot) do
-    Enum.each(snapshot, fn
-      {key, :__missing__} -> Application.delete_env(app, key)
-      {key, value} -> Application.put_env(app, key, value)
-    end)
-  end
+  defp restore_keys(_app, snapshot), do: AppEnvSandbox.restore(snapshot)
 
   defp brain_invocation_fixture(token) do
     identity =

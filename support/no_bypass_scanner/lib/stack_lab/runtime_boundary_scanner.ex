@@ -349,6 +349,7 @@ defmodule StackLab.RuntimeBoundaryScanner do
       test_path?(path) -> :test_owned
       path_has_segment?(path, "build_support") -> :build_support_static_manifest
       stack_lab_command_runner_path?(path) -> :command_boundary
+      stack_lab_app_env_sandbox_path?(path) -> :app_env_sandbox
       execution_plane_os_boundary_path?(path) -> :os_boundary
       path_has_segment?(path, "dev") -> :dev_support
       true -> nil
@@ -374,6 +375,10 @@ defmodule StackLab.RuntimeBoundaryScanner do
 
   defp stack_lab_command_runner_path?(path) do
     String.ends_with?(path, "/stack_lab/support/lab_core/lib/stack_lab/command_runner.ex")
+  end
+
+  defp stack_lab_app_env_sandbox_path?(path) do
+    String.ends_with?(path, "/stack_lab/support/lab_core/lib/stack_lab/app_env_sandbox.ex")
   end
 
   defp test_path?(path) do

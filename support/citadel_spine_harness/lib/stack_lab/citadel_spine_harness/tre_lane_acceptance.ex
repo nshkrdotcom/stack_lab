@@ -19,6 +19,7 @@ defmodule StackLab.CitadelSpineHarness.TreLaneAcceptance do
   alias Jido.Integration.V2.StoreLocal.Server, as: StoreLocalServer
   alias Jido.Integration.V2.StoreLocal.TestSupport, as: StoreLocalTestSupport
   alias Mezzanine.IntegrationBridge.AuthorizedInvocation
+  alias StackLab.AppEnvSandbox
   alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
 
   @scenario_id "tre.neutral_execution_plane.v1"
@@ -663,15 +664,12 @@ defmodule StackLab.CitadelSpineHarness.TreLaneAcceptance do
   end
 
   defp snapshot_keys(app, keys) do
-    Map.new(keys, fn key -> {key, Application.get_env(app, key, :__missing__)} end)
+    keys
+    |> Enum.map(&{app, &1})
+    |> AppEnvSandbox.snapshot()
   end
 
-  defp restore_keys(app, snapshot) do
-    Enum.each(snapshot, fn
-      {key, :__missing__} -> Application.delete_env(app, key)
-      {key, value} -> Application.put_env(app, key, value)
-    end)
-  end
+  defp restore_keys(_app, snapshot), do: AppEnvSandbox.restore(snapshot)
 
   defp repo_shas do
     StackLab.CitadelSpineHarness.repo_roots()

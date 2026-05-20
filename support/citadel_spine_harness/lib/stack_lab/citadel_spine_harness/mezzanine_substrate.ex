@@ -11,6 +11,7 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
   alias Mezzanine.Objects.Repo, as: ObjectsRepo
   alias Mezzanine.Pack.Registry, as: PackRegistry
   alias Mezzanine.RuntimeScheduler.Repo, as: RuntimeSchedulerRepo
+  alias StackLab.AppEnvSandbox
   alias StackLab.CitadelSpineHarness.CompiledMigrations
   alias StackLab.CitadelSpineHarness.PostgresContainer
   alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
@@ -149,7 +150,7 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
   end
 
   defp put_repo_config!(repo_module, repo_config) do
-    Application.put_env(repo_otp_app(repo_module), repo_module, repo_config)
+    AppEnvSandbox.put(repo_otp_app(repo_module), repo_module, repo_config)
   end
 
   defp repo_otp_app(repo_module) do
@@ -160,7 +161,7 @@ defmodule StackLab.CitadelSpineHarness.MezzanineSubstrate do
   defp start_oban! do
     stop_oban()
 
-    oban_config = Application.fetch_env!(:mezzanine_execution_engine, Oban)
+    oban_config = AppEnvSandbox.fetch!(:mezzanine_execution_engine, Oban)
     start_oban_instance!(oban_config)
   end
 

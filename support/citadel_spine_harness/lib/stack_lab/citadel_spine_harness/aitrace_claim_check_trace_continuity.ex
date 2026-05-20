@@ -35,6 +35,8 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
     RuntimeResourceOwner
   }
 
+  alias StackLab.AppEnvSandbox
+
   @control_plane_keys [
     :run_store,
     :attempt_store,
@@ -77,7 +79,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
       maybe_send_probe({:claim_check_stage_in_transaction?, Repo.in_transaction?()})
       maybe_sleep_before_stage()
 
-      case Application.get_env(:jido_integration_v2_store_postgres, :claim_check_probe_failure) do
+      case AppEnvSandbox.get(:jido_integration_v2_store_postgres, :claim_check_probe_failure) do
         nil ->
           ClaimCheckStore.stage_blob(payload_ref, encoded, metadata)
 
@@ -99,7 +101,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
 
     defp maybe_sleep_before_stage do
       delay_ms =
-        Application.get_env(:jido_integration_v2_store_postgres, :claim_check_probe_delay_ms, 0)
+        AppEnvSandbox.get(:jido_integration_v2_store_postgres, :claim_check_probe_delay_ms, 0)
 
       if is_integer(delay_ms) and delay_ms > 0 do
         maybe_send_probe({:claim_check_stage_delay_started, System.monotonic_time(:millisecond)})
@@ -110,7 +112,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
     end
 
     defp maybe_send_probe(message) do
-      case Application.get_env(:jido_integration_v2_store_postgres, :claim_check_probe_pid) do
+      case AppEnvSandbox.get(:jido_integration_v2_store_postgres, :claim_check_probe_pid) do
         pid when is_pid(pid) ->
           send(pid, message)
 
@@ -182,28 +184,28 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
       flush_claim_check_telemetry_messages()
       attach_claim_check_telemetry!(handler_id, self())
 
-      Application.put_env(:jido_integration_v2_store_postgres, :claim_check_probe_pid, self())
+      AppEnvSandbox.put(:jido_integration_v2_store_postgres, :claim_check_probe_pid, self())
 
-      Application.put_env(
+      AppEnvSandbox.put(
         :jido_integration_v2_store_postgres,
         :claim_check_probe_delay_ms,
         @claim_check_probe_delay_ms
       )
 
-      Application.delete_env(:jido_integration_v2_store_postgres, :claim_check_probe_failure)
+      AppEnvSandbox.delete(:jido_integration_v2_store_postgres, :claim_check_probe_failure)
 
       try do
         delayed = record_large_inference(trace_id)
         delayed_telemetry = collect_claim_check_telemetry!() |> summarize_claim_check_telemetry!()
         runs_before_failure = length(ControlPlane.runs())
 
-        Application.put_env(
+        AppEnvSandbox.put(
           :jido_integration_v2_store_postgres,
           :claim_check_probe_delay_ms,
           0
         )
 
-        Application.put_env(
+        AppEnvSandbox.put(
           :jido_integration_v2_store_postgres,
           :claim_check_probe_failure,
           :claim_check_unavailable
@@ -216,7 +218,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
         runs_after_failure = length(ControlPlane.runs())
         failure_telemetry = collect_claim_check_telemetry!() |> summarize_claim_check_telemetry!()
 
-        Application.delete_env(:jido_integration_v2_store_postgres, :claim_check_probe_failure)
+        AppEnvSandbox.delete(:jido_integration_v2_store_postgres, :claim_check_probe_failure)
 
         orphan_cleanup = stage_duplicate_orphan(trace_id)
         cleanup_telemetry = collect_claim_check_telemetry!() |> summarize_claim_check_telemetry!()
@@ -248,9 +250,9 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
            }
          }}
       after
-        Application.delete_env(:jido_integration_v2_store_postgres, :claim_check_probe_pid)
-        Application.delete_env(:jido_integration_v2_store_postgres, :claim_check_probe_delay_ms)
-        Application.delete_env(:jido_integration_v2_store_postgres, :claim_check_probe_failure)
+        AppEnvSandbox.delete(:jido_integration_v2_store_postgres, :claim_check_probe_pid)
+        AppEnvSandbox.delete(:jido_integration_v2_store_postgres, :claim_check_probe_delay_ms)
+        AppEnvSandbox.delete(:jido_integration_v2_store_postgres, :claim_check_probe_failure)
         flush_claim_check_probe_messages()
         flush_claim_check_telemetry_messages()
         :telemetry.detach(handler_id)
@@ -562,7 +564,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
   defp configure_claim_check_env!(port, claim_check_root) do
     TestSupport.configure_defaults!()
 
-    Application.put_env(
+    AppEnvSandbox.put(
       :jido_integration_v2_control_plane,
       :claim_check_store,
       ClaimCheckStoreProbe
@@ -570,13 +572,13 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
 
     :ok = configure_claim_check_probe_store!()
 
-    Application.put_env(
+    AppEnvSandbox.put(
       :jido_integration_v2_store_postgres,
       Repo,
       PostgresContainer.repo_config(port)
     )
 
-    Application.put_env(:jido_integration_v2_store_postgres, :claim_check_root, claim_check_root)
+    AppEnvSandbox.put(:jido_integration_v2_store_postgres, :claim_check_root, claim_check_root)
   end
 
   defp configure_claim_check_probe_store! do
@@ -654,15 +656,12 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
   end
 
   defp snapshot_keys(app, keys) do
-    Map.new(keys, fn key -> {key, Application.get_env(app, key, :__missing__)} end)
+    keys
+    |> Enum.map(&{app, &1})
+    |> AppEnvSandbox.snapshot()
   end
 
-  defp restore_keys(app, snapshot) do
-    Enum.each(snapshot, fn
-      {key, :__missing__} -> Application.delete_env(app, key)
-      {key, value} -> Application.put_env(app, key, value)
-    end)
-  end
+  defp restore_keys(_app, snapshot), do: AppEnvSandbox.restore(snapshot)
 
   def handle_claim_check_telemetry(event, measurements, metadata, test_pid) do
     send(test_pid, {:claim_check_telemetry, event, measurements, metadata})

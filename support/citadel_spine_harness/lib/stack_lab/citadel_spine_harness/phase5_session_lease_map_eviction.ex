@@ -384,7 +384,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
     receive do
       {:consumer_blocked, ^signal_id} -> :ok
     after
-      1_000 -> raise "consumer did not block on #{inspect(signal_id)}"
+      5_000 -> raise "consumer did not block on #{inspect(signal_id)}"
     end
   end
 

@@ -98,6 +98,24 @@ defmodule StackLab.RuntimeBoundaryScannerTest do
            } = runner_call
   end
 
+  test "StackLab app env sandbox owns StackLab harness app env mutation" do
+    [sandbox_call] =
+      RuntimeBoundaryScanner.scan_source(
+        """
+        defmodule StackLab.AppEnvSandbox do
+          def put(app, key, value), do: Application.put_env(app, key, value)
+        end
+        """,
+        "/home/home/p/g/n/stack_lab/support/lab_core/lib/stack_lab/app_env_sandbox.ex"
+      )
+
+    assert %ClassifiedCall{
+             classification: :app_env_sandbox,
+             rule: :application_env_mutation,
+             call: "Application.put_env"
+           } = sandbox_call
+  end
+
   test "scanner receipts separate production findings from classified calls" do
     root =
       Path.join(

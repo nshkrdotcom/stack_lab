@@ -13,6 +13,8 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadiness do
     Stage9OrchestrationRecovery
   }
 
+  alias StackLab.AppEnvSandbox
+
   @pool_query_concurrency 20
   @pool_query_sql "SELECT pg_sleep(0.05)"
 
@@ -57,7 +59,7 @@ defmodule StackLab.CitadelSpineHarness.Stage12LoadReadiness do
     {:ok, streams} =
       AppKitOperationalSurface.run_case(:leased_direct_read_and_stream_invalidation)
 
-    oban_config = Application.fetch_env!(:mezzanine_execution_engine, Oban)
+    oban_config = AppEnvSandbox.fetch!(:mezzanine_execution_engine, Oban)
     queue_limits = normalize_queue_limits(oban_config[:queues] || [])
 
     {:ok,

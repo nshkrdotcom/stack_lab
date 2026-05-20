@@ -23,6 +23,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
   alias Mezzanine.Execution.Repo, as: ExecutionRepo
   alias Mezzanine.LifecycleEvaluator
   alias Mezzanine.Objects.Repo, as: ObjectsRepo
+  alias StackLab.AppEnvSandbox
 
   alias Mezzanine.Pack.{
     Compiler,
@@ -913,15 +914,12 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
   end
 
   defp snapshot_keys(app, keys) do
-    Map.new(keys, fn key -> {key, Application.get_env(app, key, :__missing__)} end)
+    keys
+    |> Enum.map(&{app, &1})
+    |> AppEnvSandbox.snapshot()
   end
 
-  defp restore_keys(app, snapshot) do
-    Enum.each(snapshot, fn
-      {key, :__missing__} -> Application.delete_env(app, key)
-      {key, value} -> Application.put_env(app, key, value)
-    end)
-  end
+  defp restore_keys(_app, snapshot), do: AppEnvSandbox.restore(snapshot)
 
   defp insert_subject!(
          installation_id,

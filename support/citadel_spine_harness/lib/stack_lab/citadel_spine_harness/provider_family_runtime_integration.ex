@@ -6,6 +6,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
   alias Prismatic.Transport.LowerSimulation, as: PrismaticLowerSimulation
   alias Pristine.Adapters.Transport.LowerSimulation, as: PristineLowerSimulation
   alias SelfHostedInferenceCore.{ConsumerManifest, Simulation}
+  alias StackLab.AppEnvSandbox
 
   @stack_lab_root Path.expand("../../../../..", __DIR__)
   @repo_parent Path.expand("..", @stack_lab_root)
@@ -90,7 +91,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
         {:agent_session_manager, ProviderRegistry}
       ],
       fn ->
-        Application.put_env(@cli_config_app, @cli_config_key, profiles: cli_profiles())
+        AppEnvSandbox.put(@cli_config_app, @cli_config_key, profiles: cli_profiles())
 
         with {:ok, providers} <- cli_provider_evidence(),
              {:ok, negative_failures} <- cli_negative_failures() do
@@ -163,7 +164,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
   end
 
   defp required_profile_negative do
-    Application.put_env(@cli_config_app, @cli_config_key, required?: true, profiles: %{})
+    AppEnvSandbox.put(@cli_config_app, @cli_config_key, required?: true, profiles: %{})
 
     case ASM.query(:claude, "must fail before provider CLI resolution", lane: :auto) do
       {:error, %{kind: :config_invalid, provider: :claude, message: message}}
@@ -180,11 +181,11 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
   end
 
   defp explicit_sdk_lane_negative do
-    Application.put_env(:agent_session_manager, ProviderRegistry,
+    AppEnvSandbox.put(:agent_session_manager, ProviderRegistry,
       runtime_loader: fn _runtime -> true end
     )
 
-    Application.put_env(@cli_config_app, @cli_config_key,
+    AppEnvSandbox.put(@cli_config_app, @cli_config_key,
       profiles: %{
         codex: [
           scenario_ref: "phase6://scenario-606/cli/codex-no-sdk",
@@ -207,7 +208,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
   end
 
   defp backend_override_negative do
-    Application.put_env(@cli_config_app, @cli_config_key,
+    AppEnvSandbox.put(@cli_config_app, @cli_config_key,
       profiles: %{
         claude: [
           scenario_ref: "phase6://scenario-606/cli/claude-no-backend-override",
@@ -238,8 +239,8 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
         {:prismatic, :graphql_simulation_profiles}
       ],
       fn ->
-        Application.delete_env(:pristine, :transport_simulation_profiles)
-        Application.delete_env(:prismatic, :graphql_simulation_profiles)
+        AppEnvSandbox.delete(:pristine, :transport_simulation_profiles)
+        AppEnvSandbox.delete(:prismatic, :graphql_simulation_profiles)
 
         with {:ok, rest} <- rest_evidence(),
              {:ok, graphql} <- graphql_evidence() do
@@ -382,7 +383,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
   end
 
   defp put_simulation_manifest do
-    Application.put_env(:self_hosted_inference_core, :simulation_backend,
+    AppEnvSandbox.put(:self_hosted_inference_core, :simulation_backend,
       active_manifest_ref: "phase6-scenario-606-self-hosted",
       manifests: %{
         "phase6-scenario-606-self-hosted" => %{
@@ -730,19 +731,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
   end
 
   defp with_restored_env(app_keys, fun) when is_list(app_keys) and is_function(fun, 0) do
-    previous_values =
-      Map.new(app_keys, fn {app, key} ->
-        {{app, key}, Application.get_env(app, key)}
-      end)
-
-    try do
-      fun.()
-    after
-      Enum.each(previous_values, fn
-        {{app, key}, nil} -> Application.delete_env(app, key)
-        {{app, key}, value} -> Application.put_env(app, key, value)
-      end)
-    end
+    AppEnvSandbox.with_env(app_keys, fun)
   end
 
   defp read_repo_file!(repo, relative_path) do
