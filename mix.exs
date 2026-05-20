@@ -151,6 +151,7 @@ defmodule StackLab.Workspace.MixProject do
         "docs/development.md",
         "docs/layout.md",
         "docs/gn_ten_main_only.md",
+        "guides/code_smell_remediation.md",
         "docs/gn_ten_proof_matrix.md",
         "docs/review/gn_ten_batch_review.md",
         "docs/review/shared_library_governed_adapter_review.md",
@@ -167,6 +168,7 @@ defmodule StackLab.Workspace.MixProject do
           "docs/development.md",
           "docs/layout.md",
           "docs/gn_ten_main_only.md",
+          "guides/code_smell_remediation.md",
           "docs/gn_ten_proof_matrix.md",
           "docs/review/gn_ten_batch_review.md",
           "docs/review/shared_library_governed_adapter_review.md"

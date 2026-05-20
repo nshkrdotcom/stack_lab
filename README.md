@@ -77,6 +77,11 @@ the product repo. Live provider proof remains product-owned because it requires
 real GitHub, Linear, and Codex credentials, and those commands must be run with
 `~/scripts/with_bash_secrets` where GitHub or Linear credentials are involved.
 
+Maintainers should read
+[Code Smell Remediation](guides/code_smell_remediation.md) before changing
+command execution, app-env sandboxing, structural scanners, proof apps,
+Citadel spine scenarios, or harness timing.
+
 ## Proof Diagrams
 
 ```mermaid
