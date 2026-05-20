@@ -4,6 +4,7 @@ defmodule Mix.Tasks.StackLab.StructuralGate.Scan do
   """
   use Mix.Task
 
+  alias StackLab.StructuralGate.TargetRoots
   alias StackLab.StructuralGateScanner
 
   @shortdoc "Runs the Phase 6A structural scanner gate"
@@ -18,7 +19,8 @@ defmodule Mix.Tasks.StackLab.StructuralGate.Scan do
           help: :boolean,
           path: :keep,
           remote_deployment: :boolean,
-          summary: :boolean
+          summary: :boolean,
+          target_root: :keep
         ]
       )
 
@@ -38,7 +40,8 @@ defmodule Mix.Tasks.StackLab.StructuralGate.Scan do
     |> requested_paths(paths)
     |> StructuralGateScanner.scan(
       mode: scan_mode(opts),
-      remote_deployment?: opts[:remote_deployment] == true
+      remote_deployment?: opts[:remote_deployment] == true,
+      target_roots: target_roots(opts)
     )
     |> handle_scan_result(opts)
   end
@@ -68,9 +71,34 @@ defmodule Mix.Tasks.StackLab.StructuralGate.Scan do
     paths = option_paths ++ positional_paths
 
     cond do
-      opts[:all_target_repos] -> StructuralGateScanner.all_target_paths()
-      paths != [] -> paths
-      true -> Mix.raise("Provide --all-target-repos or at least one --path/path argument")
+      opts[:all_target_repos] ->
+        opts |> target_roots() |> TargetRoots.all_paths()
+
+      paths != [] ->
+        paths
+
+      true ->
+        Mix.raise("Provide --all-target-repos or at least one --path/path argument")
+    end
+  end
+
+  defp target_roots(opts) do
+    case Keyword.get_values(opts, :target_root) do
+      [] -> StructuralGateScanner.target_roots()
+      roots -> parse_target_roots!(roots)
+    end
+  end
+
+  defp parse_target_roots!(roots) do
+    roots
+    |> Enum.map(&parse_target_root!/1)
+    |> Map.new()
+  end
+
+  defp parse_target_root!(value) do
+    case String.split(value, "=", parts: 2) do
+      [repo, path] when repo != "" and path != "" -> {repo, path}
+      _ -> Mix.raise("Invalid --target-root #{inspect(value)}; expected repo=/absolute/path")
     end
   end
 
@@ -78,6 +106,7 @@ defmodule Mix.Tasks.StackLab.StructuralGate.Scan do
     Mix.shell().info("""
     mix stack_lab.structural_gate.scan --all-target-repos [--baseline-ok] [--summary]
     mix stack_lab.structural_gate.scan --path /home/home/p/g/n/app_kit/core/app_kit_core
+    mix stack_lab.structural_gate.scan --target-root app_kit=/tmp/app_kit --path /tmp/app_kit/core
 
     Use --baseline-ok for current legacy inventory only. Phase work must run this scanner
     without --baseline-ok against touched generic paths.

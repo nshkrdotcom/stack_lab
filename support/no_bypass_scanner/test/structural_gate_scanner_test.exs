@@ -4,6 +4,7 @@ defmodule StackLab.StructuralGateScannerTest do
   alias StackLab.StructuralGateScanner
   alias StackLab.GapClosureNegativeFixtures
   alias StackLab.StructuralGate.ProofBundleRegistry
+  alias StackLab.StructuralGate.TargetRoots
 
   setup do
     root = Path.join(System.tmp_dir!(), "stack_lab_structural_gate_scanner_test")
@@ -64,6 +65,36 @@ defmodule StackLab.StructuralGateScannerTest do
     assert receipt.zones.generic == 1
     assert receipt.zones.product == 1
     assert receipt.zones.connector == 1
+  end
+
+  test "loads target roots from manifest data", %{root: root} do
+    manifest_path = Path.join(root, "gn-ten.yml")
+
+    File.write!(manifest_path, """
+    repos:
+      - name: app_kit
+        path: #{Path.join(root, "app_kit")}
+      - name: mezzanine
+        path: #{Path.join(root, "mezzanine")}
+    """)
+
+    assert {:ok, roots} = TargetRoots.from_manifest(manifest_path)
+    assert roots["app_kit"] == Path.join(root, "app_kit")
+    assert roots["mezzanine"] == Path.join(root, "mezzanine")
+  end
+
+  test "reports custom target root scope and missing path diagnostics", %{root: root} do
+    repo_root = Path.join(root, "custom_app")
+    File.mkdir_p!(repo_root)
+    missing_path = Path.join(repo_root, "missing.ex")
+
+    assert {:ok, receipt} =
+             StructuralGateScanner.scan([missing_path],
+               target_roots: %{"custom_app" => repo_root}
+             )
+
+    assert receipt.target_scope_status == :custom_target_roots
+    assert [%{path: ^missing_path, reason: :missing_path}] = receipt.skipped_paths
   end
 
   test "fails provider noun leakage in generic source", %{roots: roots} do
