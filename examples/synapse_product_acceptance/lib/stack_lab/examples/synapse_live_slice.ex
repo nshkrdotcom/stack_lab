@@ -358,6 +358,27 @@ defmodule StackLab.Examples.SynapseLiveSlice do
     if Code.ensure_loaded?(Mix.Project) do
       add_live_stack_code_paths(Mix.Project.build_path())
     end
+
+    ensure_runtime_projection_store_started()
+  end
+
+  defp ensure_runtime_projection_store_started do
+    store = AppKit.Bridges.MezzanineBridge.RuntimeProjectionStore
+
+    case Process.whereis(store) do
+      nil -> start_runtime_projection_store_supervisor(store)
+      _pid -> :ok
+    end
+  end
+
+  defp start_runtime_projection_store_supervisor(store) do
+    case Supervisor.start_link([store],
+           strategy: :one_for_one,
+           name: StackLab.Examples.SynapseLiveSlice.RuntimeProjectionSupervisor
+         ) do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+    end
   end
 
   defp add_live_stack_code_paths(build_path) do
