@@ -482,11 +482,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderSmokeCheck do
 
   defp default_command_runner(command, args, opts) do
     opts = Keyword.put_new(opts, :stderr_to_stdout, true)
-
-    case System.cmd(command, args, opts) do
-      {output, 0} -> {:ok, output}
-      {output, status} -> {:error, %{exit_status: status, output: output}}
-    end
+    StackLab.CommandRunner.run_ok(command, args, opts)
   end
 
   defp write_receipt(path, receipt) do

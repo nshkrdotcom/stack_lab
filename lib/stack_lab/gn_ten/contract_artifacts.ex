@@ -8,6 +8,7 @@ defmodule StackLab.GnTen.ContractArtifacts do
   """
 
   alias GroundPlane.Contracts.{ArtifactRef, WorkspaceRef}
+  alias StackLab.CommandRunner
   alias StackLab.GnTen.{Manifest, TextRules}
 
   @schema_version "gn_ten_contract_artifacts_v1"
@@ -316,7 +317,7 @@ defmodule StackLab.GnTen.ContractArtifacts do
   defp local_head(artifact, manifest) do
     with repo when not is_nil(repo) <-
            Enum.find(manifest.repo_entries, &(&1.name == artifact.producer_repo)),
-         {sha, 0} <- System.cmd("git", ["rev-parse", "HEAD"], cd: repo.path) do
+         {sha, 0} <- CommandRunner.system_cmd("git", ["rev-parse", "HEAD"], cd: repo.path) do
       {:ok, String.trim(sha)}
     else
       _ -> :skip

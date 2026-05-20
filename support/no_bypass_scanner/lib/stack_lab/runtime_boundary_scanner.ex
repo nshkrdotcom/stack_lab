@@ -340,14 +340,25 @@ defmodule StackLab.RuntimeBoundaryScanner do
   defp path_classification(path) do
     normalized = Path.expand(path)
 
+    special_path_classification(normalized) || ownership_path_classification(normalized)
+  end
+
+  defp special_path_classification(path) do
     cond do
-      scanner_path?(normalized) -> :scanner
-      test_path?(normalized) -> :test_owned
-      path_has_segment?(normalized, "build_support") -> :build_support_static_manifest
-      proof_harness_path?(normalized) -> :proof_harness_owned
-      proof_app_path?(normalized) -> :proof_app_owned
-      execution_plane_os_boundary_path?(normalized) -> :os_boundary
-      path_has_segment?(normalized, "dev") -> :dev_support
+      scanner_path?(path) -> :scanner
+      test_path?(path) -> :test_owned
+      path_has_segment?(path, "build_support") -> :build_support_static_manifest
+      stack_lab_command_runner_path?(path) -> :command_boundary
+      execution_plane_os_boundary_path?(path) -> :os_boundary
+      path_has_segment?(path, "dev") -> :dev_support
+      true -> nil
+    end
+  end
+
+  defp ownership_path_classification(path) do
+    cond do
+      proof_harness_path?(path) -> :proof_harness_owned
+      proof_app_path?(path) -> :proof_app_owned
       true -> :production
     end
   end
@@ -360,6 +371,10 @@ defmodule StackLab.RuntimeBoundaryScanner do
   end
 
   defp scanner_path?(path), do: String.contains?(path, "/stack_lab/support/no_bypass_scanner/")
+
+  defp stack_lab_command_runner_path?(path) do
+    String.ends_with?(path, "/stack_lab/support/lab_core/lib/stack_lab/command_runner.ex")
+  end
 
   defp test_path?(path) do
     path_has_segment?(path, "test") or String.ends_with?(path, "_test.exs") or

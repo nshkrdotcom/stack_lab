@@ -8,6 +8,8 @@ defmodule Mix.Tasks.StackLab.ProviderSmokeCheck do
 
   use Mix.Task
 
+  alias StackLab.CommandRunner
+
   @shortdoc "Run the provider smoke check"
 
   @stdin_flag "--linear-api-key-stdin"
@@ -95,7 +97,7 @@ defmodule Mix.Tasks.StackLab.ProviderSmokeCheck do
 
   defp run_child_mix(args) do
     {_stream, status} =
-      System.cmd(
+      CommandRunner.system_cmd(
         mix_executable(),
         ["stack_lab.provider_smoke_check" | args],
         cd: delegate_project_dir(),

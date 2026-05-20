@@ -18,7 +18,7 @@ defmodule StackLab.SynapseLiveSlice do
   def run(opts \\ []) do
     example_root = Keyword.get(opts, :example_root, default_example_root())
     receipt_path = Keyword.get(opts, :example_receipt_path, default_example_receipt_path())
-    runner = Keyword.get(opts, :runner, &System.cmd/3)
+    runner = Keyword.get(opts, :runner, &StackLab.CommandRunner.system_cmd/3)
     command = Keyword.get(opts, :mix_executable, mix_executable())
     args = @example_command ++ ["--receipt", receipt_path]
 
@@ -55,6 +55,7 @@ defmodule StackLab.SynapseLiveSlice do
     [
       cd: root,
       env: [{"MIX_ENV", "test"}],
+      env_allowlist: ["MIX_ENV"],
       stderr_to_stdout: true
     ]
   end

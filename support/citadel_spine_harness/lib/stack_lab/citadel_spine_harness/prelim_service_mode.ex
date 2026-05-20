@@ -231,7 +231,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   end
 
   defp temporal_substrate(opts) do
-    runner = Keyword.get(opts, :temporal_runner, &System.cmd/3)
+    runner = Keyword.get(opts, :temporal_runner, &StackLab.CommandRunner.system_cmd/3)
     mezzanine_root = Keyword.get(opts, :mezzanine_root, @mezzanine_root)
 
     case runner.("just", ["dev-status"], cd: mezzanine_root, stderr_to_stdout: true) do

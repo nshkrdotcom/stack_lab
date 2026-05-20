@@ -655,10 +655,7 @@ defmodule StackLab.CitadelSpineHarness.ExtravaganzaCleanupProof do
   defp default_progress(_step, _event), do: :ok
 
   defp default_command_runner(command, args, opts) do
-    case System.cmd(command, args, opts) do
-      {output, 0} -> {:ok, output}
-      {output, status} -> {:error, %{exit_status: status, output: output}}
-    end
+    StackLab.CommandRunner.run_ok(command, args, opts)
   end
 
   defp write_receipt(path, receipt) do

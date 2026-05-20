@@ -168,7 +168,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteSupport do
         {:error, :epmd_not_found}
 
       epmd ->
-        case System.cmd(epmd, ["-daemon"]) do
+        case StackLab.CommandRunner.system_cmd(epmd, ["-daemon"]) do
           {_output, 0} -> :ok
           {output, status} -> {:error, {:epmd_start_failed, status, output}}
         end

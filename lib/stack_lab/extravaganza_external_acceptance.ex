@@ -101,7 +101,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
 
   defp run_product_command(opts) do
     root = Keyword.get(opts, :extravaganza_root, default_extravaganza_root())
-    runner = Keyword.get(opts, :runner, &System.cmd/3)
+    runner = Keyword.get(opts, :runner, &StackLab.CommandRunner.system_cmd/3)
     command = Keyword.get(opts, :mix_executable, mix_executable())
 
     case runner.(command, @product_args, command_opts(root)) do
@@ -124,6 +124,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
     [
       cd: root,
       env: [{"MIX_ENV", "test"}],
+      env_allowlist: ["MIX_ENV"],
       stderr_to_stdout: true
     ]
   end

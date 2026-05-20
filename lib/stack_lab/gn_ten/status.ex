@@ -7,6 +7,7 @@ defmodule StackLab.GnTen.Status do
   branch contract and whether there are uncommitted changes.
   """
 
+  alias StackLab.CommandRunner
   alias StackLab.GnTen.Manifest
 
   @schema_version "gn_ten_status_v1"
@@ -159,7 +160,7 @@ defmodule StackLab.GnTen.Status do
 
   defp git(path, args) do
     if File.dir?(path) do
-      case System.cmd("git", args, cd: path, stderr_to_stdout: true) do
+      case CommandRunner.system_cmd("git", args, cd: path, stderr_to_stdout: true) do
         {output, 0} -> String.trim(output)
         {_output, _status} -> nil
       end

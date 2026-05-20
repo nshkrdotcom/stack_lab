@@ -8,6 +8,8 @@ defmodule Mix.Tasks.StackLab.TreLaneCheck do
 
   use Mix.Task
 
+  alias StackLab.CommandRunner
+
   @shortdoc "Run the neutral TRE lower-lane acceptance check"
 
   @impl true
@@ -27,7 +29,7 @@ defmodule Mix.Tasks.StackLab.TreLaneCheck do
 
   defp run_child_mix(args) do
     {_stream, status} =
-      System.cmd(
+      CommandRunner.system_cmd(
         mix_executable(),
         ["stack_lab.tre_lane_check" | args],
         cd: delegate_project_dir(),

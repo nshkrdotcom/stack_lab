@@ -26,6 +26,8 @@ defmodule StackLab.ReplayRoundtrip.MixProject do
   defp deps do
     [
       {:aitrace, path: "../../../AITrace"},
+      {:ai_trace_replay_contracts,
+       path: "../../../AITrace/core/replay_contracts", override: true},
       {:ai_trace_replay_engine, path: "../../../AITrace/core/replay_engine"},
       {:app_kit_replay_surface, path: "../../../app_kit/core/replay_surface"},
       {:stack_lab_drift_detector, path: "../../support/drift_detector"},

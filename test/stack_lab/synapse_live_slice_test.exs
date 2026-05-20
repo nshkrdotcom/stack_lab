@@ -6,8 +6,10 @@ defmodule StackLab.SynapseLiveSliceTest do
   test "root live-slice wrapper validates the proof app receipt" do
     temp_dir = Path.join(System.tmp_dir!(), "stack_lab_synapse_live_slice_test")
     receipt_path = Path.join(temp_dir, "receipt.json")
+    parent = self()
 
-    runner = fn _command, _args, _opts ->
+    runner = fn command, args, opts ->
+      send(parent, {:command, command, args, opts})
       File.mkdir_p!(Path.dirname(receipt_path))
       File.write!(receipt_path, Jason.encode!(valid_receipt()))
       {"stack_lab.proof_app.synapse.live_slice passed\n", 0}
@@ -23,6 +25,9 @@ defmodule StackLab.SynapseLiveSliceTest do
     assert receipt["status"] == "pass"
     assert receipt["classification"] == "live_stack_deterministic"
     assert receipt["no_bypass"]["status"] == "pass"
+    assert_received {:command, _command, _args, opts}
+    assert opts[:env] == [{"MIX_ENV", "test"}]
+    assert opts[:env_allowlist] == ["MIX_ENV"]
   after
     File.rm_rf(Path.join(System.tmp_dir!(), "stack_lab_synapse_live_slice_test"))
   end

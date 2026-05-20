@@ -25,7 +25,8 @@ defmodule StackLab.SkillRoundtrip.MixProject do
 
   defp deps do
     [
-      {:jido_hive_skill_contracts, path: "../../../jido_hive/core/skill_contracts"},
+      {:jido_hive_skill_contracts,
+       path: "../../../jido_hive/core/skill_contracts", override: true},
       {:jido_hive_skill_engine, path: "../../../jido_hive/core/skill_engine"},
       {:jido_hive_skill_conformance_contracts,
        path: "../../../jido_hive/conformance_contracts/skill_conformance_contracts",

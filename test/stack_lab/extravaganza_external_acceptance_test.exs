@@ -53,6 +53,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptanceTest do
 
     assert command_opts[:cd] == root
     assert command_opts[:env] == [{"MIX_ENV", "test"}]
+    assert command_opts[:env_allowlist] == ["MIX_ENV"]
     assert command_opts[:stderr_to_stdout] == true
 
     assert receipt["schema_version"] == "stack_lab.extravaganza_external_acceptance.v1"

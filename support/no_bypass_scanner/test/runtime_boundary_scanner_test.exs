@@ -80,6 +80,24 @@ defmodule StackLab.RuntimeBoundaryScannerTest do
            } = os_call
   end
 
+  test "StackLab command runner owns StackLab harness command execution" do
+    [runner_call] =
+      RuntimeBoundaryScanner.scan_source(
+        """
+        defmodule StackLab.CommandRunner do
+          def run(command, args, opts), do: System.cmd(command, args, opts)
+        end
+        """,
+        "/home/home/p/g/n/stack_lab/support/lab_core/lib/stack_lab/command_runner.ex"
+      )
+
+    assert %ClassifiedCall{
+             classification: :command_boundary,
+             rule: :raw_command_execution,
+             call: "System.cmd"
+           } = runner_call
+  end
+
   test "scanner receipts separate production findings from classified calls" do
     root =
       Path.join(

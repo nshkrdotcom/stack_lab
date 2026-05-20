@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.PostgresContainer do
   @moduledoc false
 
+  alias StackLab.CommandRunner
+
   @image "postgres:16-alpine"
   @database "stack_lab_test"
   @password "postgres"
@@ -9,7 +11,7 @@ defmodule StackLab.CitadelSpineHarness.PostgresContainer do
   @spec start!(String.t()) :: %{container_id: String.t(), port: pos_integer()}
   def start!(label) when is_binary(label) do
     {output, 0} =
-      System.cmd(
+      CommandRunner.system_cmd(
         "docker",
         [
           "run",
@@ -40,7 +42,9 @@ defmodule StackLab.CitadelSpineHarness.PostgresContainer do
 
   @spec stop!(map()) :: :ok
   def stop!(%{container_id: container_id}) do
-    _ = System.cmd("docker", ["rm", "--force", container_id], stderr_to_stdout: true)
+    _ =
+      CommandRunner.system_cmd("docker", ["rm", "--force", container_id], stderr_to_stdout: true)
+
     :ok
   end
 
@@ -65,7 +69,9 @@ defmodule StackLab.CitadelSpineHarness.PostgresContainer do
 
   defp host_port!(container_id) do
     {output, 0} =
-      System.cmd("docker", ["port", container_id, "5432/tcp"], stderr_to_stdout: true)
+      CommandRunner.system_cmd("docker", ["port", container_id, "5432/tcp"],
+        stderr_to_stdout: true
+      )
 
     output
     |> String.trim()
@@ -81,7 +87,7 @@ defmodule StackLab.CitadelSpineHarness.PostgresContainer do
   end
 
   defp wait_until_ready!(port, attempts) do
-    case System.cmd(
+    case CommandRunner.system_cmd(
            "psql",
            [
              "postgresql://#{@username}:#{@password}@127.0.0.1:#{port}/#{@database}",

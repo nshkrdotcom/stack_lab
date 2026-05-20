@@ -1,6 +1,7 @@
 defmodule StackLab.GnTen.BatchRunner do
   @moduledoc false
 
+  alias StackLab.CommandRunner
   alias StackLab.GnTen.{BatchReceipt, Manifest, Status, TextRules}
 
   @receipt_schema "gn_ten_batch_receipt_v1"
@@ -276,7 +277,9 @@ defmodule StackLab.GnTen.BatchRunner do
   end
 
   defp repo_mutations(repo) do
-    case System.cmd("git", ["status", "--porcelain", "--untracked-files=all"], cd: repo.path) do
+    case CommandRunner.system_cmd("git", ["status", "--porcelain", "--untracked-files=all"],
+           cd: repo.path
+         ) do
       {"", 0} ->
         []
 
@@ -447,7 +450,11 @@ defmodule StackLab.GnTen.BatchRunner do
   end
 
   defp default_command_runner(repo, command) do
-    case System.cmd("sh", ["-lc", command], cd: repo.path, stderr_to_stdout: true) do
+    case CommandRunner.system_cmd("sh", ["-lc", command],
+           cd: repo.path,
+           stderr_to_stdout: true,
+           allow_shell: true
+         ) do
       {output, 0} -> {:ok, 0, output}
       {output, status} -> {:error, status, output}
     end

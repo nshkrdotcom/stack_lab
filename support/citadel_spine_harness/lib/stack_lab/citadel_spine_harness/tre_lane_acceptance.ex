@@ -680,7 +680,10 @@ defmodule StackLab.CitadelSpineHarness.TreLaneAcceptance do
   end
 
   defp git_sha(path) do
-    case System.cmd("git", ["rev-parse", "HEAD"], cd: path, stderr_to_stdout: true) do
+    case StackLab.CommandRunner.system_cmd("git", ["rev-parse", "HEAD"],
+           cd: path,
+           stderr_to_stdout: true
+         ) do
       {sha, 0} -> String.trim(sha)
       {_output, _status} -> "unknown"
     end

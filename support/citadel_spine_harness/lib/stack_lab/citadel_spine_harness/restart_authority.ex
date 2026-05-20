@@ -388,6 +388,9 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
       expires_at: DateTime.add(now, 30, :second),
       tenant_id: "tenant-1",
       subject_ref: "subject://tenant-1/codex/user-a",
+      resource_family: "codex",
+      resource_account_ref: "resource-account://tenant-1/codex/account-a",
+      resource_instance_ref: "resource-instance://tenant-1/codex/a",
       provider_family: "codex",
       provider_account_ref: "provider-account://tenant-1/codex/account-a",
       connector_instance_ref: "connector-instance://tenant-1/codex/a",
@@ -409,6 +412,9 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
     Map.merge(
       %{
         tenant_id: "tenant-1",
+        resource_family: "codex",
+        resource_account_ref: "resource-account://tenant-1/codex/account-a",
+        resource_instance_ref: "resource-instance://tenant-1/codex/a",
         provider_family: "codex",
         provider_account_ref: "provider-account://tenant-1/codex/account-a",
         connector_instance_ref: "connector-instance://tenant-1/codex/a",
