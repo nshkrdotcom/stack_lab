@@ -12,6 +12,7 @@ defmodule StackLab.CitadelSpineHarness.ReviewableConnectorAutomationConsoleTest 
              )
 
     assert result.case == :reviewable_connector_automation_console
+    assert_scenario_receipt(result, :reviewable_connector_automation_console)
     assert result.scenario == 42
     assert result.tenant_id == "tenant-reviewable-connector-automation"
     assert result.whitepaper_use_case == :"18.2_reviewable_connector_automation"
@@ -62,5 +63,24 @@ defmodule StackLab.CitadelSpineHarness.ReviewableConnectorAutomationConsoleTest 
     assert "lower_run_status" in result.trace.step_sources
     assert result.trace.failed_execution.dispatch_state == :failed
     assert result.trace.failed_execution.failure_kind == :semantic_failure
+  end
+
+  defp assert_scenario_receipt(result, expected_case) do
+    assert %{
+             receipt_ref: receipt_ref,
+             case: ^expected_case,
+             status: :succeeded,
+             tenant_id: tenant_id,
+             evidence_groups: evidence_groups
+           } = result.receipt
+
+    assert String.starts_with?(
+             receipt_ref,
+             "receipt://stack-lab/app-kit-operational-surface/"
+           )
+
+    assert tenant_id == result.tenant_id
+    assert :case in evidence_groups
+    assert :tenant_id in evidence_groups
   end
 end

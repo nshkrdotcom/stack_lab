@@ -14,6 +14,7 @@ defmodule StackLab.CitadelSpineHarness.ObservabilityTraceJoinContinuityTest do
              )
 
     assert result.case == :observability_trace_join_continuity
+    assert_scenario_receipt(result, :observability_trace_join_continuity)
     assert result.scenario == 19
     assert result.tenant_id == "tenant-observability-trace-join"
     assert is_binary(result.trace_id)
@@ -155,5 +156,24 @@ defmodule StackLab.CitadelSpineHarness.ObservabilityTraceJoinContinuityTest do
     assert result.telemetry.archival_rows_removed.metadata.event_name == "archival.rows_removed"
     assert result.telemetry.archival_rows_removed.metadata.trace_id == result.trace_id
     assert result.telemetry.archival_rows_removed.measurements.count >= 4
+  end
+
+  defp assert_scenario_receipt(result, expected_case) do
+    assert %{
+             receipt_ref: receipt_ref,
+             case: ^expected_case,
+             status: :succeeded,
+             tenant_id: tenant_id,
+             evidence_groups: evidence_groups
+           } = result.receipt
+
+    assert String.starts_with?(
+             receipt_ref,
+             "receipt://stack-lab/app-kit-operational-surface/"
+           )
+
+    assert tenant_id == result.tenant_id
+    assert :case in evidence_groups
+    assert :tenant_id in evidence_groups
   end
 end

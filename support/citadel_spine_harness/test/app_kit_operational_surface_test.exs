@@ -13,6 +13,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
              )
 
     assert result.case == :install_ingest_review_trace
+    assert_scenario_receipt(result, :install_ingest_review_trace)
     assert result.tenant_id == "tenant-app-kit-operational"
 
     assert result.installation.created_status == :created
@@ -68,6 +69,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
              )
 
     assert result.case == :governed_agent_workload_contract
+    assert_scenario_receipt(result, :governed_agent_workload_contract)
     assert result.tenant_id == "tenant-app-kit-governed-workload"
 
     assert result.governed_workload.contract_name == "GovernedAgentWorkloadContract.v1"
@@ -118,6 +120,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
              CitadelSpineHarness.exercise_app_kit_operational_surface(:lower_backed_command_trace)
 
     assert result.case == :lower_backed_command_trace
+    assert_scenario_receipt(result, :lower_backed_command_trace)
     assert result.tenant_id == "tenant-app-kit-lower-backed"
 
     assert result.installation.created_status == :created
@@ -150,6 +153,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
              )
 
     assert result.case == :lower_backed_command_terminal_rejection
+    assert_scenario_receipt(result, :lower_backed_command_terminal_rejection)
     assert result.tenant_id == "tenant-app-kit-lower-backed-reject"
 
     assert result.work.state == :scheduled
@@ -172,6 +176,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
              )
 
     assert result.case == :lower_backed_command_semantic_failure
+    assert_scenario_receipt(result, :lower_backed_command_semantic_failure)
     assert result.tenant_id == "tenant-app-kit-lower-backed-semantic-failure"
 
     assert result.dispatch.classification == :semantic_failure
@@ -206,6 +211,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
              )
 
     assert result.case == :leased_direct_read_and_stream_invalidation
+    assert_scenario_receipt(result, :leased_direct_read_and_stream_invalidation)
     assert result.scenario == 24
     assert result.tenant_id == "tenant-app-kit-leased-read-stream"
     assert result.disconnect_window_ms == 10_000
@@ -247,6 +253,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
              )
 
     assert result.case == :unauthorized_lower_trace_read
+    assert_scenario_receipt(result, :unauthorized_lower_trace_read)
     assert result.tenant_id == "tenant-app-kit-lower-backed-authz"
     assert result.error.code == "unauthorized_lower_read"
     assert result.error.kind == :authorization
@@ -261,5 +268,24 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurfaceTest do
              {:mezzanine_app_kit_bridge, _requirement, _opts} -> true
              _other -> false
            end)
+  end
+
+  defp assert_scenario_receipt(result, expected_case) do
+    assert %{
+             receipt_ref: receipt_ref,
+             case: ^expected_case,
+             status: :succeeded,
+             tenant_id: tenant_id,
+             evidence_groups: evidence_groups
+           } = result.receipt
+
+    assert String.starts_with?(
+             receipt_ref,
+             "receipt://stack-lab/app-kit-operational-surface/"
+           )
+
+    assert tenant_id == result.tenant_id
+    assert :case in evidence_groups
+    assert :tenant_id in evidence_groups
   end
 end
