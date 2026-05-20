@@ -3,6 +3,7 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
 
   alias StackLab.Examples.ToyDocumentReview
   alias StackLab.Examples.ToyDocumentReview.LocalHttpService
+  alias StackLab.Examples.ToyDocumentReview.ProductHost
 
   setup do
     service = start_supervised!({LocalHttpService, []})
@@ -47,6 +48,36 @@ defmodule StackLab.Examples.ToyDocumentReviewTest do
              source_state: :terminal,
              workflow_state: :reviewed
            }
+  end
+
+  test "product host defines components bindings and output field groups" do
+    assert ProductHost.required_components() == ToyDocumentReview.required_components()
+
+    assert ProductHost.full_acceptance_components() ==
+             ToyDocumentReview.full_acceptance_components()
+
+    binding_refs =
+      ProductHost.operation_bindings()
+      |> Enum.map(fn {_key, binding} -> binding.binding_ref end)
+
+    assert length(binding_refs) == 6
+    assert Enum.uniq(binding_refs) == binding_refs
+    assert "document_source" in binding_refs
+    assert "archive_effect" in binding_refs
+
+    assert ProductHost.extravaganza_required_field_groups().standard_envelope == [
+             :ok,
+             :schema,
+             :operation,
+             :trace_id,
+             :execution_route_ref,
+             :idempotency_key,
+             :runtime_profile_ref,
+             :data,
+             :refs,
+             :warnings,
+             :generated_at
+           ]
   end
 
   test "content shape gate measures payloads results and keeps content storage hypotheses blocked" do
