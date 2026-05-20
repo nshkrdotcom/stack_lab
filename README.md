@@ -78,7 +78,7 @@ real GitHub, Linear, and Codex credentials, and those commands must be run with
 `~/scripts/with_bash_secrets` where GitHub or Linear credentials are involved.
 
 Maintainers should read
-[Code Smell Remediation](guides/code_smell_remediation.md) before changing
+[Code Smell Remediation](https://github.com/nshkrdotcom/stack_lab/blob/main/guides/code_smell_remediation.md) before changing
 command execution, app-env sandboxing, structural scanners, proof apps,
 Citadel spine scenarios, or harness timing.
 
