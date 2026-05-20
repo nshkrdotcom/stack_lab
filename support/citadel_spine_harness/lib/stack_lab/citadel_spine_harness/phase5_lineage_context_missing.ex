@@ -11,6 +11,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5LineageContextMissing do
   alias Mezzanine.Idempotency
   alias OuterBrain.Contracts.SemanticFailure
   alias StackLab.CitadelSpineHarness.BoundedNames
+  alias StackLab.CitadelSpineHarness.Timing
 
   @scenario 208
   @tenant_id "tenant-scenario-208"
@@ -563,7 +564,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5LineageContextMissing do
     if fun.() do
       :ok
     else
-      Process.sleep(10)
+      Timing.retry_delay(:phase5_lineage_wait_until, 10)
       wait_until(fun, attempts - 1)
     end
   end

@@ -30,6 +30,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   alias StackLab.AppEnvSandbox
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
   alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
+  alias StackLab.CitadelSpineHarness.Timing
 
   @control_plane_keys [
     :run_store,
@@ -323,7 +324,7 @@ defmodule StackLab.CitadelSpineHarness.LowerFacts do
   defp wait_for_store_local_server!(attempts) do
     case Process.whereis(StoreLocalServer) do
       nil ->
-        Process.sleep(50)
+        Timing.retry_delay(:store_local_server_ready, 50)
         wait_for_store_local_server!(attempts - 1)
 
       _pid ->

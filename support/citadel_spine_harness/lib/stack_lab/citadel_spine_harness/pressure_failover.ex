@@ -8,6 +8,7 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
   alias StackLab.CitadelSpineHarness.RemoteSpine
   alias StackLab.CitadelSpineHarness.RemoteSupport
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
+  alias StackLab.CitadelSpineHarness.Timing
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
   @logical_workspace_ref "workspace://stack_lab/root"
@@ -46,7 +47,11 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
           )
 
         :ok = TransportRuntime.put!(env.transport_configs.recovered)
-        Process.sleep(25)
+
+        Timing.await_until(:pressure_failover_transport_recovered, fn ->
+          TransportRuntime.fetch!().remote_node == env.remote_node
+        end)
+
         :ok = SessionServer.replay_pending(env.session_server)
 
         transport = await_transport_result!(@pressure_recovery_timeout_ms)

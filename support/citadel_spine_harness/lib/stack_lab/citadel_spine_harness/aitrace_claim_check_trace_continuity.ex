@@ -32,7 +32,8 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
   alias StackLab.CitadelSpineHarness.{
     AppKitOperationalSurface,
     PostgresContainer,
-    RuntimeResourceOwner
+    RuntimeResourceOwner,
+    Timing
   }
 
   alias StackLab.AppEnvSandbox
@@ -105,7 +106,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
 
       if is_integer(delay_ms) and delay_ms > 0 do
         maybe_send_probe({:claim_check_stage_delay_started, System.monotonic_time(:millisecond)})
-        Process.sleep(delay_ms)
+        Timing.delay(:claim_check_probe_stage_delay, delay_ms)
       end
 
       :ok

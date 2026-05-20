@@ -9,6 +9,7 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
   alias StackLab.CitadelSpineHarness.RemoteSpine
   alias StackLab.CitadelSpineHarness.RemoteSupport
   alias StackLab.CitadelSpineHarness.RoundtripRuntime
+  alias StackLab.CitadelSpineHarness.Timing
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
   @logical_workspace_ref "workspace://stack_lab/root"
@@ -122,7 +123,10 @@ defmodule StackLab.CitadelSpineHarness.RestartAuthority do
               )
             )
 
-          Process.sleep(100)
+          Timing.await_until(:restart_recovery_transport_configured, fn ->
+            TransportRuntime.fetch!().remote_node == replacement_remote.remote_node
+          end)
+
           :ok = SessionServer.replay_pending(env.session_server)
 
           transport = await_transport_result!(@restart_recovery_timeout_ms)

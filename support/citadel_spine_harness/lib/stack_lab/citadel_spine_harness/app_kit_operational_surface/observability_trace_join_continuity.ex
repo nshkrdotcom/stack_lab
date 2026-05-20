@@ -13,6 +13,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface.Scenarios.Observ
     RepoSandbox
   }
 
+  alias StackLab.CitadelSpineHarness.Timing
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
   @scenario_19_archive_now ~U[2026-04-16 12:00:00Z]
@@ -122,7 +123,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface.Scenarios.Observ
             )
 
           archived_lower_fetches = collect_lower_fetch_messages!()
-          Process.sleep(50)
+          Timing.delay(:observability_telemetry_flush, 50)
           telemetry_events = collect_observability_telemetry!()
           telemetry = summarize_observability_telemetry!(telemetry_events)
 

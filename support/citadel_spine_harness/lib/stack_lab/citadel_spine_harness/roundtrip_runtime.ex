@@ -21,6 +21,7 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
   alias Citadel.TopologyIntent
   alias StackLab.CitadelSpineHarness.BoundedNames
   alias StackLab.CitadelSpineHarness.InProcessInvocationDownstream
+  alias StackLab.CitadelSpineHarness.Timing
 
   defmodule TestSignalSource do
     @moduledoc false
@@ -254,12 +255,12 @@ defmodule StackLab.CitadelSpineHarness.RoundtripRuntime do
         if predicate.(entry) do
           resolved
         else
-          Process.sleep(25)
+          Timing.retry_delay(:session_directory_entry_ready, 25)
           wait_for_entry!(session_directory, entry_id, predicate, attempts - 1)
         end
 
       _other ->
-        Process.sleep(25)
+        Timing.retry_delay(:session_directory_entry_visible, 25)
         wait_for_entry!(session_directory, entry_id, predicate, attempts - 1)
     end
   end

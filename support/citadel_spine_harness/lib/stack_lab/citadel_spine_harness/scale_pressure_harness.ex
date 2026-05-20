@@ -2,6 +2,7 @@ defmodule StackLab.CitadelSpineHarness.ScalePressureHarness do
   @moduledoc false
 
   alias StackLab.CitadelSpineHarness.RuntimeProcesses
+  alias StackLab.CitadelSpineHarness.Timing
 
   @contract_name "ScalePressureProfile.v1"
   @scenario 610
@@ -303,7 +304,7 @@ defmodule StackLab.CitadelSpineHarness.ScalePressureHarness do
       {current, updated}
     end)
 
-    Process.sleep(5)
+    Timing.delay(:scale_pressure_in_flight_window, 5)
 
     Agent.update(counter, fn state -> %{state | current: state.current - 1} end)
 

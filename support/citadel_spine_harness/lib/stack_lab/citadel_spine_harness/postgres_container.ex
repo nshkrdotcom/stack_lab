@@ -1,6 +1,7 @@
 defmodule StackLab.CitadelSpineHarness.PostgresContainer do
   @moduledoc false
 
+  alias StackLab.CitadelSpineHarness.Timing
   alias StackLab.CommandRunner
 
   @image "postgres:16-alpine"
@@ -100,7 +101,7 @@ defmodule StackLab.CitadelSpineHarness.PostgresContainer do
         :ok
 
       _other ->
-        Process.sleep(250)
+        Timing.retry_delay(:postgres_container_ready, 250)
         wait_until_ready!(port, attempts - 1)
     end
   end

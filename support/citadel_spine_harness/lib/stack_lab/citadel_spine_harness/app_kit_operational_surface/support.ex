@@ -69,6 +69,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface.Support do
     MezzanineOperationalStack,
     ProfileSlots,
     RoundtripRuntime,
+    Timing,
     TransportRuntime
   }
 
@@ -1554,7 +1555,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface.Support do
       })
 
     :ok = TracePublisher.publish_trace(publisher, envelope)
-    Process.sleep(50)
+    Timing.delay(:trace_publisher_flush, 50)
     GenServer.stop(publisher)
     :ok
   end
@@ -1686,7 +1687,7 @@ defmodule StackLab.CitadelSpineHarness.AppKitOperationalSurface.Support do
     remaining_ms = max(required_ms - elapsed_ms, 0)
 
     if remaining_ms > 0 do
-      Process.sleep(remaining_ms)
+      Timing.soak(:stream_disconnect_window, remaining_ms)
     end
 
     :ok

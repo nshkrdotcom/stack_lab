@@ -7,6 +7,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteTransport do
   alias Jido.Integration.V2.BrainInvocation
   alias Jido.Integration.V2.SubmissionAcceptance
   alias Jido.Integration.V2.SubmissionRejection
+  alias StackLab.CitadelSpineHarness.Timing
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
   @impl true
@@ -67,7 +68,7 @@ defmodule StackLab.CitadelSpineHarness.RemoteTransport do
   end
 
   defp maybe_delay(%{delay_ms: delay_ms}) when is_integer(delay_ms) and delay_ms > 0 do
-    Process.sleep(delay_ms)
+    Timing.delay(:remote_transport_probe_delay, delay_ms)
   end
 
   defp maybe_delay(_config), do: :ok

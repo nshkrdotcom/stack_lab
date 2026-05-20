@@ -24,6 +24,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
   alias Mezzanine.LifecycleEvaluator
   alias Mezzanine.Objects.Repo, as: ObjectsRepo
   alias StackLab.AppEnvSandbox
+  alias StackLab.CitadelSpineHarness.Timing
 
   alias Mezzanine.Pack.{
     Compiler,
@@ -89,7 +90,7 @@ defmodule StackLab.CitadelSpineHarness.MemoryBindingsThroughExistingSeams do
 
     @impl true
     def fetch_fragments(_request, _runtime_binding) do
-      Process.sleep(25)
+      Timing.delay(:slow_context_adapter_latency, 25)
       {:ok, []}
     end
   end
