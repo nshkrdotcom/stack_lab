@@ -85,6 +85,15 @@ defmodule StackLab.StructuralGate.ProofBundleRegistry do
     :bounded_ref_chasing
   ]
 
+  @governed_effect_lifecycle_requirements [
+    :authority_checked,
+    :boundary_envelope_sent,
+    :receipt_emitted,
+    :lineage_events_emitted,
+    :production_reducer_consumes_receipt,
+    :bounded_ref_chasing
+  ]
+
   def entries do
     [
       entry(
@@ -392,6 +401,15 @@ defmodule StackLab.StructuralGate.ProofBundleRegistry do
         :receipt_projection,
         @receipt_projection_requirements,
         "mezzanine/core/projection_engine/test/mezzanine/projections/receipt_reducer_test.exs"
+      ),
+      entry(
+        :mezzanine_governed_effects_coordinator_reduce,
+        "mezzanine/core/governed_effects/lib/mezzanine/core/governed_effects/coordinator.ex",
+        :reduce,
+        1,
+        :governed_effect_lifecycle,
+        @governed_effect_lifecycle_requirements,
+        "mezzanine/core/governed_effects/test/mezzanine/core/governed_effects/coordinator_projection_diagnostic_test.exs"
       )
     ]
   end

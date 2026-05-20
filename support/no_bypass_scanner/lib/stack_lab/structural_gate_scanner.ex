@@ -919,15 +919,20 @@ defmodule StackLab.StructuralGateScanner do
         ]),
       receipt_emitted:
         RuleText.contains_any?(content, [
+          "EffectReceipt",
           "OperationReceipt",
           "OperationGroupReceipt",
+          "effect_receipt",
           "operation_receipt",
           "operation_group_receipt"
         ]),
       lineage_events_emitted:
         RuleText.contains_any?(content, [
+          "EffectLog",
           "LineageEventOutbox",
           "OperationLineageEvent",
+          "effect_transition",
+          "lineage_events",
           "lineage_event"
         ]),
       production_reducer_consumes_receipt:
