@@ -3,6 +3,7 @@ defmodule StackLab.ReplayRoundtrip do
   Replay roundtrip proof.
   """
 
+  alias AITrace.Integrations.AgentTurn
   alias AITrace.{ReplayEngine, Span, Trace}
   alias AppKit.ReplaySurface
   alias StackLab.Support.DriftDetector
@@ -19,17 +20,49 @@ defmodule StackLab.ReplayRoundtrip do
            ),
          {:ok, bundle_projection} <-
            ReplaySurface.bundle_projection(Map.from_struct(replay.bundle)),
-         {:ok, drift_signals} <- drift_signals(replay) do
+         {:ok, drift_signals} <- drift_signals(replay),
+         {:ok, evidence_export} <- agent_evidence_export(replay, attrs) do
       {:ok,
        %{
          receipt_ref: "replay-roundtrip://#{hash(replay.bundle.replay_trace_ref)}",
          fixture_refs: ["EVAL-001", "EVAL-002", "EVAL-003", "EVAL-004", "EVAL-008", "EVAL-011"],
          side_effects_invoked?: replay.side_effects_invoked?,
          bundle_projection: bundle_projection,
+         agent_evidence_export: Map.from_struct(evidence_export),
          divergence_count: length(replay.divergences),
          drift_signals: Enum.map(drift_signals, &DriftDetector.project/1)
        }}
     end
+  end
+
+  defp agent_evidence_export(replay, attrs) do
+    ledger_ref = "agent-ledger://stack-lab/replay/#{hash(replay.bundle.trace_ref)}"
+
+    runtime_receipt_ref =
+      "agent-runtime-receipt://stack-lab/replay/#{hash(replay.bundle.replay_trace_ref)}"
+
+    AgentTurn.export_receipt(%{
+      ledger_ref: ledger_ref,
+      authority_ref: replay.bundle.authority_ref,
+      trace_ref: replay.bundle.replay_trace_ref,
+      runtime_receipt_refs: [runtime_receipt_ref],
+      redaction_manifest_ref: "redaction://stack-lab/replay-roundtrip/default",
+      events: Map.get(attrs, :agent_events, agent_events(runtime_receipt_ref)),
+      exported_at: Map.get(attrs, :exported_at, ~U[2026-05-21 00:00:00Z])
+    })
+  end
+
+  defp agent_events(runtime_receipt_ref) do
+    [
+      %{event_ref: "agent-event://stack-lab/replay/10", event_kind: :conversation, seq: 10},
+      %{
+        event_ref: "agent-event://stack-lab/replay/11",
+        event_kind: :execution,
+        seq: 11,
+        runtime_receipt_ref: runtime_receipt_ref
+      },
+      %{event_ref: "agent-event://stack-lab/replay/12", event_kind: :projection, seq: 12}
+    ]
   end
 
   defp drift_signals(replay) do
@@ -53,21 +86,10 @@ defmodule StackLab.ReplayRoundtrip do
 
   defp source_trace(attrs) do
     span =
-      %Span{
-        span_id: "source-span-1",
-        span_id_source: %{kind: "fixture"},
-        parent_span_id: nil,
-        parent_span_id_source: nil,
-        name: "provider.response",
-        start_time: 1,
-        start_wall_time: ~U[2026-05-05 00:00:00Z],
-        end_time: 2,
-        end_wall_time: ~U[2026-05-05 00:00:01Z],
-        clock_domain: %{kind: "fixture"},
-        attributes: %{decision_ref: "guard://source"},
-        events: [],
-        status: :ok
-      }
+      "provider.response"
+      |> Span.new()
+      |> Span.with_attributes(%{decision_ref: "guard://source"})
+      |> Span.finish()
 
     attrs
     |> Map.get(:source_trace_id, "trace-source-roundtrip")
