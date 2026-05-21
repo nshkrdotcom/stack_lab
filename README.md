@@ -58,6 +58,8 @@ The current harness covers:
 - version-skew and malformed-packet rejection
 - context-budget, cost-attribution, and semantic-failure seams
 - product-boundary no-bypass and synthetic second-product proofs
+- Synapse staged-live governed-effect diagnostic proof through the platform
+  stack
 - Extravaganza deterministic same-run acceptance through the product command
   path, including generic route evidence and static removed-API scans
 - OuterBrain restart durability and semantic gateway behavior
@@ -76,6 +78,20 @@ For Extravaganza, StackLab proves deterministic product acceptance from outside
 the product repo. Live provider proof remains product-owned because it requires
 real GitHub, Linear, and Codex credentials, and those commands must be run with
 `~/scripts/with_bash_secrets` where GitHub or Linear credentials are involved.
+
+For Synapse, StackLab proves three separate claims:
+
+```bash
+MIX_ENV=test mix stack_lab.synapse.acceptance --json
+MIX_ENV=test mix stack_lab.synapse.live_slice --json
+MIX_ENV=test mix stack_lab.synapse.staged_live.v1 --json
+```
+
+The staged-live proof exercises the governed diagnostic path from Synapse
+through AppKit EffectSurface, Mezzanine GovernedEffects, Citadel authority,
+Jido Integration diagnostic lane, Execution Plane diagnostic lane, Mezzanine
+readback, and AITrace/AppKit evidence refs. It is deterministic and does not
+claim live GitHub, Linear, Codex, or other provider behavior.
 
 Maintainers should read
 [Code Smell Remediation](https://github.com/nshkrdotcom/stack_lab/blob/main/guides/code_smell_remediation.md) before changing
