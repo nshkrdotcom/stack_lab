@@ -44,7 +44,8 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/adaptive_control_roundtrip",
     "examples/persistence_mode_roundtrip",
     "examples/skill_roundtrip",
-    "examples/hive_roundtrip"
+    "examples/hive_roundtrip",
+    "examples/agent_foundation_roundtrip"
   ]
 
   @active_project_globs [".", "support/*", "examples/*"]

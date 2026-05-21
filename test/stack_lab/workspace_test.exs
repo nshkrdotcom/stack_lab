@@ -42,6 +42,7 @@ defmodule StackLab.WorkspaceTest do
     assert "examples/persistence_mode_roundtrip" in package_paths
     assert "examples/skill_roundtrip" in package_paths
     assert "examples/hive_roundtrip" in package_paths
+    assert "examples/agent_foundation_roundtrip" in package_paths
   end
 
   test "uses the released Weld 0.8.2 line directly" do
