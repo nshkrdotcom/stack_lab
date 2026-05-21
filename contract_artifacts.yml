@@ -9,12 +9,12 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 5508485e37dda8cbc114ffcd8367f93f2c9cb2ee
+    source_sha: aab153c1b48b06281d5f13487cdcb3dac39e5cb8
     build_command: mix ci
     status: deprecated
     successor: ground_plane_contracts
     consumers:
-    notes: Phase A narrow repo-ref artifact retained as deprecated history. Source SHA refreshed after the Synapse live-lift Phase 1 governed command envelope update.
+    notes: Phase A narrow repo-ref artifact retained as deprecated history. Source SHA refreshed after AX Phase 6 ground-plane ledger validation.
 
   - name: stack_lab_gn_ten_manifest
     artifact_ref: artifact://nshkrdotcom/stack_lab/stack_lab_gn_ten_manifest
@@ -37,7 +37,7 @@ artifacts:
     producer_repo_ref: repo://nshkrdotcom/ground_plane
     producer_path: /home/home/p/g/n/ground_plane
     source_ref: main
-    source_sha: 5508485e37dda8cbc114ffcd8367f93f2c9cb2ee
+    source_sha: aab153c1b48b06281d5f13487cdcb3dac39e5cb8
     build_command: mix ci
     status: stable
     consumers:
@@ -48,7 +48,7 @@ artifacts:
       - mezzanine
       - app_kit
       - stack_lab
-    notes: Universal primitive, repo/artifact reference, and persistence policy contracts. Promoted stable in Phase K after Phase F primitive promotion and refreshed after the Synapse live-lift Phase 1 governed command envelope update.
+    notes: Universal primitive, repo/artifact reference, and persistence policy contracts. Promoted stable in Phase K after Phase F primitive promotion and refreshed after AX Phase 6 ground-plane ledger validation.
 
   - name: execution_plane
     artifact_ref: artifact://nshkrdotcom/execution_plane/execution_plane

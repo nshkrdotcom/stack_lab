@@ -25,13 +25,11 @@ defmodule StackLab.SkillRoundtrip.MixProject do
 
   defp deps do
     [
-      {:jido_hive_skill_contracts,
-       path: "../../../jido_hive/core/skill_contracts", override: true},
-      {:jido_hive_skill_engine, path: "../../../jido_hive/core/skill_engine"},
-      {:jido_hive_skill_conformance_contracts,
-       path: "../../../jido_hive/conformance_contracts/skill_conformance_contracts",
-       only: [:dev, :test],
-       runtime: false},
+      {:jido_integration_v2_tool_contracts,
+       path: "../../../jido_integration/core/tool_contracts", override: true},
+      {:jido_integration_connector_admission_engine,
+       path: "../../../jido_integration/core/connector_admission_engine"},
+      {:citadel_governance, path: "../../../citadel/core/citadel_governance"},
       {:app_kit_skill_surface, path: "../../../app_kit/core/skill_surface"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

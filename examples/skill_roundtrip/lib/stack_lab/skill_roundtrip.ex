@@ -1,11 +1,13 @@
 defmodule StackLab.SkillRoundtrip do
   @moduledoc """
-  End-to-end skill admission and invocation proof for Phase G.
+  End-to-end governed skill package proof.
   """
 
   alias AppKit.SkillSurface
-  alias JidoHive.SkillContracts
-  alias JidoHive.SkillEngine
+  alias Citadel.AgentRuntimePolicyProjectionCompiler
+  alias Citadel.PolicyPacks
+  alias Jido.Integration.ConnectorAdmissionEngine
+  alias Jido.Integration.V2.SkillContracts
 
   @fixture_refs [
     "SKILL-001",
@@ -22,46 +24,42 @@ defmodule StackLab.SkillRoundtrip do
 
   @spec run() :: {:ok, map()} | {:error, term()}
   def run do
-    with {:ok, store} <- SkillEngine.new_store(),
-         {:ok, durable_store} <- durable_store(),
-         {:ok, admission_request} <- admission_request("research", 1),
-         {:ok, store, admission_record} <-
-           SkillEngine.admit(
-             store,
-             admission_request.manifest,
-             SkillEngine.verification_refs_for(admission_request.manifest)
+    with {:ok, admission_request} <- admission_request("research"),
+         {:ok, admission_record} <-
+           ConnectorAdmissionEngine.admit_skill_package(admission_request.manifest,
+             tenant_ref: "tenant://phase-g",
+             trace_ref: "trace://phase-g/skill-admission"
            ),
-         {:ok, duplicate_result} <- duplicate_binding_result(),
-         {:ok, missing_ref_result} <- missing_ref_result(),
-         {:ok, store, _revision_two} <- admit_revision(store, "research", 2),
-         {:ok, store, rollback_record} <-
-           SkillEngine.rollback(store, "skill://phase-g/research", 1,
-             release_manifest_ref: "release://phase-g/rollback",
-             trace_ref: "trace://phase-g/rollback"
-           ),
-         {:ok, store, _child_record} <- admit_revision(store, "child", 1),
-         {:ok, composition_records} <- compose(store),
+         {:ok, policy_projection} <- compile_policy(admission_request.manifest),
          {:ok, invocation_request} <- invocation_request("research"),
-         gates = SkillEngine.invocation_gate_refs_for(invocation_request.intent),
-         {:ok, _store, invocation_record} <-
-           SkillEngine.invoke(store, invocation_request.intent, gates),
-         {:ok, budget_denial} <- budget_denial(store, invocation_request.intent, gates),
+         {:ok, invocation_envelope} <-
+           SkillContracts.invocation_envelope(
+             admission_request.manifest,
+             invocation_request.intent,
+             policy_projection_ref: policy_projection.projection_ref,
+             receipt_ledger_ref: "agent-turn-ledger://phase-g/research"
+           ),
          {:ok, projection} <- SkillSurface.projection(admission_request.manifest),
-         {:ok, trace_projection} <- SkillSurface.trace_projection(admission_request.manifest) do
+         {:ok, trace_projection} <- SkillSurface.trace_projection(admission_request.manifest),
+         {:ok, disallowed_skill_result} <- disallowed_skill_result(),
+         {:ok, forbidden_path_result} <- forbidden_path_result(),
+         {:ok, credential_posture_result} <- credential_posture_result() do
       {:ok,
        %{
          receipt_ref: "skill-roundtrip://phase-g",
          fixture_refs: @fixture_refs,
          admission_ref: admission_record.admission_ref,
-         durable_store_mode: durable_store.persistence_mode,
-         duplicate_binding_result: duplicate_result,
-         missing_ref_result: missing_ref_result,
-         rollback_revision: rollback_record.version_ref.revision,
-         composition_count: length(composition_records),
-         invocation_effect_status: invocation_record.effect_status,
-         provider_effect_started?: invocation_record.provider_effect_started?,
-         budget_denial: budget_denial,
+         admission_status: admission_record.admission_status,
+         policy_projection_ref: policy_projection.projection_ref,
+         invocation_ref: invocation_envelope.invocation_ref,
+         invocation_entrypoint: invocation_envelope.entrypoint.name,
+         raw_material_present?: invocation_envelope.raw_material_present?,
+         provider_effect_started?: false,
+         disallowed_skill_result: disallowed_skill_result,
+         forbidden_path_result: forbidden_path_result,
+         credential_posture_result: credential_posture_result,
          projection_redaction: projection.redaction_posture,
+         projection_admission_status: projection.admission_status,
          trace_redaction: trace_projection.redaction_posture
        }}
     end
@@ -69,32 +67,33 @@ defmodule StackLab.SkillRoundtrip do
 
   @spec manifest(String.t(), pos_integer()) :: map()
   def manifest(name, revision) when is_binary(name) and is_integer(revision) do
-    skill_ref = "skill://phase-g/#{name}"
-
-    %{
-      skill_ref: skill_ref,
-      version_ref: %{
-        skill_ref: skill_ref,
-        version_ref: "skill-version://phase-g/#{name}/#{revision}",
-        revision: revision,
-        release_manifest_ref: "release://phase-g"
-      },
+    attrs = %{
+      skill_ref: "skill://phase-g/#{name}",
+      package_name: name,
+      version: "1.0.#{revision - 1}",
+      description: "Governed #{name} skill fixture.",
+      entrypoints: [
+        %{
+          name: "invoke",
+          kind: :jido_action,
+          schema_ref: "schema://phase-g/#{name}/input",
+          capability_ref: "capability://phase-g/#{name}/invoke"
+        }
+      ],
+      allowed_artifact_posture: :claim_checked,
+      credential_posture: :lease_required,
+      allowed_runtime_families: [:direct, :process],
+      policy_refs: ["policy://phase-g/#{name}"],
+      docs_ref: "doc://phase-g/#{name}",
       tenant_ref: "tenant://phase-g",
-      authority_ref: "authority://phase-g",
-      installation_ref: "installation://phase-g",
-      idempotency_key: "idem-phase-g-#{name}-#{revision}",
+      installation_ref: "installation://phase-g/skills",
+      capability_refs: ["capability://phase-g/#{name}/invoke"],
       trace_ref: "trace://phase-g/#{name}",
-      persistence_profile_ref: "persistence://memory/default",
       release_manifest_ref: "release://phase-g",
-      prompt_ref: "prompt://phase-g/#{name}",
-      tool_refs: ["tool://phase-g/#{name}"],
-      memory_profile_ref: "memory://phase-g/default",
-      guard_policy_ref: "guard://phase-g/default",
-      eval_suite_ref: "eval://phase-g/default",
-      budget_profile_ref: "budget://phase-g/default",
-      conformance_ref: "conformance://phase-g/#{name}",
-      capability_bindings: [capability_binding(name)]
+      redaction_posture: :refs_only
     }
+
+    Map.put(attrs, :manifest_hash, SkillContracts.canonical_manifest_hash(attrs))
   end
 
   @spec intent(String.t()) :: map()
@@ -104,34 +103,20 @@ defmodule StackLab.SkillRoundtrip do
       skill_ref: "skill://phase-g/#{name}",
       tenant_ref: "tenant://phase-g",
       authority_ref: "authority://phase-g",
-      installation_ref: "installation://phase-g",
-      lease_ref: "lease://phase-g",
-      target_ref: "target://phase-g",
-      prompt_ref: "prompt://phase-g/#{name}",
-      memory_profile_ref: "memory://phase-g/default",
-      guard_policy_ref: "guard://phase-g/default",
-      eval_suite_ref: "eval://phase-g/default",
-      budget_profile_ref: "budget://phase-g/default",
-      connector_capability_refs: ["capability://phase-g/#{name}"],
-      trace_ref: "trace://phase-g/#{name}/invoke",
       idempotency_key: "idem-phase-g-#{name}-invoke",
-      release_manifest_ref: "release://phase-g"
+      entrypoint_name: "invoke",
+      credential_lease_ref: "credential-lease://phase-g/#{name}",
+      target_ref: "target://phase-g/#{name}",
+      trace_ref: "trace://phase-g/#{name}/invoke",
+      input_ref: "payload://phase-g/#{name}/input"
     }
   end
 
-  defp durable_store do
-    SkillEngine.new_store(%{
-      persistence: :durable,
-      durable_adapter_ref: "adapter://skill-store",
-      durable_preflight_ref: "preflight://skill-store"
-    })
-  end
-
-  defp admission_request(name, revision) do
+  defp admission_request(name) do
     SkillSurface.admission_request(%{
-      request_ref: "request://phase-g/admit/#{name}/#{revision}",
+      request_ref: "request://phase-g/admit/#{name}",
       operator_ref: "operator://phase-g",
-      manifest: manifest(name, revision)
+      manifest: manifest(name, 1)
     })
   end
 
@@ -143,86 +128,99 @@ defmodule StackLab.SkillRoundtrip do
     })
   end
 
-  defp admit_revision(store, name, revision) do
-    with {:ok, request} <- admission_request(name, revision) do
-      SkillEngine.admit(
-        store,
-        request.manifest,
-        SkillEngine.verification_refs_for(request.manifest)
+  defp compile_policy(package) do
+    package
+    |> policy_selection()
+    |> AgentRuntimePolicyProjectionCompiler.compile(%{
+      projection_ref: "agent-policy-projection://phase-g/research",
+      authority_ref: "authority://phase-g",
+      tenant_ref: "tenant://phase-g",
+      requested_runtime_family: :process,
+      requested_capability_class: :skill_invocation,
+      skill_ref: package.skill_ref,
+      credential_posture: :lease_only,
+      budget: %{wall_clock_ms: 60_000, output_bytes: 1_000_000, tool_calls: 20}
+    })
+  end
+
+  defp policy_selection(package) do
+    pack =
+      PolicyPacks.generic_substrate_pack!(
+        agent_runtime_allowed_runtime_families: ["direct", "process"],
+        agent_runtime_allowed_capability_classes: ["skill_invocation"],
+        agent_runtime_skill_allowlist_refs: [package.skill_ref],
+        agent_runtime_approval_requirements: ["skill_invocation"],
+        agent_runtime_budget: %{wall_clock_ms: 60_000, output_bytes: 1_000_000, tool_calls: 20}
       )
-    end
+
+    PolicyPacks.select_profile!([pack], %{
+      tenant_id: "phase-g",
+      scope_kind: "project",
+      environment: "prod"
+    })
   end
 
-  defp duplicate_binding_result do
-    duplicate =
-      manifest("duplicate", 1)
-      |> Map.update!(:capability_bindings, fn [binding] ->
-        [binding, Map.put(binding, :binding_ref, "binding://phase-g/duplicate/two")]
-      end)
+  defp disallowed_skill_result do
+    package = SkillContracts.package!(manifest("research", 1))
+    selection = policy_selection(package)
 
-    case SkillContracts.manifest(duplicate) do
-      {:error, :duplicate_skill_capability_binding} -> {:ok, :rejected}
+    case AgentRuntimePolicyProjectionCompiler.compile(selection, %{
+           projection_ref: "agent-policy-projection://phase-g/blocked",
+           authority_ref: "authority://phase-g",
+           tenant_ref: "tenant://phase-g",
+           requested_runtime_family: :process,
+           requested_capability_class: :skill_invocation,
+           skill_ref: "skill://phase-g/not-admitted",
+           credential_posture: :lease_only,
+           budget: %{wall_clock_ms: 60_000, output_bytes: 1_000_000, tool_calls: 20}
+         }) do
+      {:error, {:denied, :unknown_skill_package, _facts}} -> {:ok, :rejected}
       {:error, reason} -> {:error, reason}
-      {:ok, _manifest} -> {:error, :duplicate_skill_capability_binding_accepted}
+      {:ok, _projection} -> {:error, :disallowed_skill_accepted}
     end
   end
 
-  defp missing_ref_result do
-    manifest = SkillContracts.manifest!(manifest("missing-ref", 1))
+  defp forbidden_path_result do
+    attrs =
+      "script"
+      |> manifest(1)
+      |> put_in([:entrypoints], [
+        %{
+          name: "invoke",
+          kind: :jido_action,
+          schema_ref: "schema://phase-g/script/input",
+          script_path: "/tmp/run.sh"
+        }
+      ])
+      |> rehash()
 
-    refs =
-      manifest
-      |> SkillEngine.verification_refs_for()
-      |> Map.put(:guard_policy_refs, [])
-
-    with {:ok, store} <- SkillEngine.new_store() do
-      case SkillEngine.admit(store, manifest, refs) do
-        {:error, {:skill_gate_ref_missing, :guard_policy_refs}} -> {:ok, :rejected}
-        {:error, reason} -> {:error, reason}
-        {:ok, _store, _record} -> {:error, :missing_guard_ref_accepted}
-      end
-    end
-  end
-
-  defp budget_denial(store, intent, gates) do
-    gates = Map.put(gates, :budget_decision, :deny_hard_exhausted)
-
-    case SkillEngine.invoke(store, intent, gates) do
-      {:error, {:skill_invocation_gate_failed, :budget_profile_ref}} -> {:ok, :rejected}
+    case SkillContracts.package(attrs) do
+      {:error, {:forbidden_skill_package_fields, _fields}} -> {:ok, :rejected}
       {:error, reason} -> {:error, reason}
-      {:ok, _store, _record} -> {:error, :budget_denial_accepted}
+      {:ok, _package} -> {:error, :forbidden_path_accepted}
     end
   end
 
-  defp compose(store) do
-    composition = %{
-      composition_ref: "composition://phase-g/research/child",
-      parent_skill_ref: "skill://phase-g/research",
-      child_skill_ref: "skill://phase-g/child",
-      tenant_ref: "tenant://phase-g",
-      memory_share_ref: "memory-share://phase-g/research-child",
-      budget_profile_ref: "budget://phase-g/default",
-      max_depth: 2
-    }
+  defp credential_posture_result do
+    package =
+      "public"
+      |> manifest(1)
+      |> Map.put(:credential_posture, :no_credentials)
+      |> rehash()
+      |> SkillContracts.package!()
 
-    with {:ok, _store, records} <-
-           SkillEngine.compose(store, [composition],
-             shared_memory_refs: ["memory-share://phase-g/research-child"],
-             max_depth: 2
-           ) do
-      {:ok, records}
+    intent = SkillContracts.invocation_intent!(intent("public"))
+
+    case SkillContracts.invocation_envelope(package, intent,
+           policy_projection_ref: "agent-policy-projection://phase-g/public",
+           receipt_ledger_ref: "agent-turn-ledger://phase-g/public"
+         ) do
+      {:error, :credential_lease_not_allowed} -> {:ok, :rejected}
+      {:error, reason} -> {:error, reason}
+      {:ok, _envelope} -> {:error, :credential_posture_accepted}
     end
   end
 
-  defp capability_binding(name) do
-    %{
-      binding_ref: "binding://phase-g/#{name}",
-      capability_ref: "capability://phase-g/#{name}",
-      connector_ref: "connector://phase-g/#{name}",
-      capability_id: "#{name}.invoke",
-      tenant_ref: "tenant://phase-g",
-      scope_ref: "scope://phase-g/#{name}",
-      contract_version: "connector-sdk.v1"
-    }
-  end
+  defp rehash(attrs),
+    do: Map.put(attrs, :manifest_hash, SkillContracts.canonical_manifest_hash(attrs))
 end
