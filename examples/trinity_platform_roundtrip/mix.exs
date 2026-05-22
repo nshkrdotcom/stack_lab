@@ -8,6 +8,7 @@ defmodule StackLab.TRINITYPlatformRoundtrip.MixProject do
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       docs: [main: "readme", extras: ["README.md"]],
       dialyzer: [plt_add_deps: :apps_direct],
       name: "StackLab TRINITY Platform Roundtrip",
@@ -31,6 +32,20 @@ defmodule StackLab.TRINITYPlatformRoundtrip.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp aliases do
+    [
+      ci: [
+        "deps.get",
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "test",
+        "credo --strict",
+        "dialyzer --format short",
+        "docs"
+      ]
     ]
   end
 end
