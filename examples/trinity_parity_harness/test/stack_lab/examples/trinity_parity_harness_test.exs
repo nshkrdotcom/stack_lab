@@ -59,6 +59,30 @@ defmodule StackLab.Examples.TRINITYParityHarnessTest do
     assert details.old == details.new
   end
 
+  test "phase 15 CUDA and stage rows sign off generated receipts" do
+    phase15_dir = write_phase15_receipts!()
+
+    assert {:ok, receipt} =
+             TRINITYParityHarness.run(
+               rows: [:cuda_parity, :stage_parity],
+               phase15_dir: phase15_dir
+             )
+
+    assert receipt.status == :pass
+
+    assert Enum.map(receipt.rows, &{&1.id, &1.status}) == [
+             cuda_parity: :pass,
+             stage_parity: :pass
+           ]
+
+    cuda = Enum.find(receipt.rows, &(&1.id == :cuda_parity))
+    assert cuda.details.stable_matches["agent_id"] == 37
+    assert cuda.details.route_hash_matches == 0
+
+    stage = Enum.find(receipt.rows, &(&1.id == :stage_parity))
+    assert stage.details.strict_stage_tolerances?
+  end
+
   test "no-bypass fixtures fail and pass in the intended places" do
     results = NoBypassFixtures.run()
 
@@ -70,5 +94,57 @@ defmodule StackLab.Examples.TRINITYParityHarnessTest do
            ]
 
     assert Enum.all?(results, &(&1.status == &1.expected_status))
+  end
+
+  defp write_phase15_receipts! do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "stack_lab_trinity_phase15_#{System.unique_integer([:positive])}"
+      )
+
+    File.mkdir_p!(root)
+    on_exit(fn -> File.rm_rf(root) end)
+
+    old_cases = Enum.map(1..37, &phase15_case(&1, "old-route-#{&1}"))
+    new_cases = Enum.map(1..37, &phase15_case(&1, "new-route-#{&1}"))
+
+    File.write!(
+      Path.join(root, "coordinator_cuda_qwen_router_prompt_eval_logits.json"),
+      Jason.encode!(%{cases: old_cases})
+    )
+
+    File.write!(
+      Path.join(root, "framework_cuda_qwen_router_prompt_eval_logits.json"),
+      Jason.encode!(%{cases: new_cases})
+    )
+
+    log = "Summary\n  passed: 37\n  failed: 0\n\nPASS qwen_router_prompt_eval\n"
+    File.write!(Path.join(root, "coordinator_cuda_qwen_router_prompt_eval.log"), log)
+    File.write!(Path.join(root, "framework_cuda_qwen_router_prompt_eval.log"), log)
+
+    File.write!(
+      Path.join(root, "stage_parity_summary.json"),
+      Jason.encode!(%{
+        ok: true,
+        exit_status: 0,
+        python_report: "python.json",
+        elixir_report: "elixir.json",
+        comparator_args: ["python.json", "elixir.json", "--strict-stage-tolerances"]
+      })
+    )
+
+    root
+  end
+
+  defp phase15_case(index, route_hash) do
+    %{
+      id: "case-#{index}",
+      agent_id: rem(index, 7),
+      role_id: rem(index, 3),
+      token_count: index + 10,
+      transcript_hash: "transcript-#{index}",
+      route_hash: route_hash
+    }
   end
 end

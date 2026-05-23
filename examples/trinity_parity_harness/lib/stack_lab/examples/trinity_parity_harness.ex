@@ -28,6 +28,16 @@ defmodule StackLab.Examples.TRINITYParityHarness do
     :deferred_stage_parity
   ]
 
+  @phase15_rows [
+    :source_inventory,
+    :task_surface,
+    :prompt_eval_fixtures,
+    :no_bypass_fixtures,
+    :cuda_parity,
+    :stage_parity,
+    :python_scripts
+  ]
+
   @all_task_count 17
   @coordinator_source_count 60
 
@@ -38,7 +48,7 @@ defmodule StackLab.Examples.TRINITYParityHarness do
 
     rows =
       opts
-      |> Keyword.get(:rows, @default_rows)
+      |> selected_rows()
       |> Enum.map(&run_row(&1, coordinator_root, framework_root, opts))
 
     status =
@@ -59,6 +69,15 @@ defmodule StackLab.Examples.TRINITYParityHarness do
     {:ok, receipt} = run()
     receipt
   end
+
+  @spec run!(keyword()) :: Receipt.t()
+  def run!(opts) do
+    {:ok, receipt} = run(opts)
+    receipt
+  end
+
+  @spec phase15_rows() :: [atom()]
+  def phase15_rows, do: @phase15_rows
 
   defp run_row(:source_inventory, coordinator_root, _framework_root, _opts) do
     files =
@@ -158,6 +177,86 @@ defmodule StackLab.Examples.TRINITYParityHarness do
     }
   end
 
+  defp run_row(:cuda_parity, _coordinator_root, _framework_root, opts) do
+    phase15_dir = phase15_dir(opts)
+    old_snapshot = Path.join(phase15_dir, "coordinator_cuda_qwen_router_prompt_eval_logits.json")
+    new_snapshot = Path.join(phase15_dir, "framework_cuda_qwen_router_prompt_eval_logits.json")
+    old_log = Path.join(phase15_dir, "coordinator_cuda_qwen_router_prompt_eval.log")
+    new_log = Path.join(phase15_dir, "framework_cuda_qwen_router_prompt_eval.log")
+
+    details = cuda_parity_details(old_snapshot, new_snapshot, old_log, new_log)
+    status = if details.pass?, do: :pass, else: :open_defect
+
+    %Row{
+      id: :cuda_parity,
+      description:
+        "old/new CUDA prompt-eval snapshots pass 37/37 and match decision-stable invariants",
+      status: status,
+      details: Map.delete(details, :pass?)
+    }
+  end
+
+  defp run_row(:stage_parity, _coordinator_root, _framework_root, opts) do
+    summary_path = Path.join(phase15_dir(opts), "stage_parity_summary.json")
+
+    details =
+      if File.regular?(summary_path) do
+        summary = summary_path |> File.read!() |> Jason.decode!()
+
+        %{
+          pass?: summary["ok"] == true and summary["exit_status"] == 0,
+          summary_path: summary_path,
+          python_report: summary["python_report"],
+          elixir_report: summary["elixir_report"],
+          strict_stage_tolerances?: "--strict-stage-tolerances" in summary["comparator_args"]
+        }
+      else
+        %{pass?: false, summary_path: summary_path, reason: :missing_summary}
+      end
+
+    %Row{
+      id: :stage_parity,
+      description: "strict Python/Elixir stage tolerance comparator completed successfully",
+      status: if(details.pass?, do: :pass, else: :open_defect),
+      details: Map.delete(details, :pass?)
+    }
+  end
+
+  defp run_row(:python_scripts, coordinator_root, _framework_root, _opts) do
+    expected = %{
+      py: [
+        "compare_sakana_parity_reports.py",
+        "convert_router_vector_to_safetensors.py",
+        "debug_sakana_large_tensor_chunks.py",
+        "debug_sakana_parity_sample.py",
+        "debug_sakana_router_trace.py",
+        "export_sakana_trinity_safetensors.py"
+      ],
+      sh: ["run_expensive_all_selected_decompose.sh", "run_original_submission_svd_weights.sh"],
+      md: ["SVD_PARITY_DEBUG.md"]
+    }
+
+    script_dir = Path.join(coordinator_root, "priv/sakana_trinity/scripts")
+
+    missing =
+      expected
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.reject(&File.regular?(Path.join(script_dir, &1)))
+
+    %Row{
+      id: :python_scripts,
+      description: "Sakana Python parity scripts remain preserved as the external reference gate",
+      status: if(missing == [], do: :pass, else: :open_defect),
+      details: %{
+        script_dir: script_dir,
+        expected: expected,
+        missing: missing,
+        preservation: :coordinator_external_reference_until_shim_cutover
+      }
+    }
+  end
+
   defp run_row(:deferred_cuda_parity, _coordinator_root, _framework_root, _opts) do
     %Row{
       id: :deferred_cuda_parity,
@@ -184,6 +283,68 @@ defmodule StackLab.Examples.TRINITYParityHarness do
       details: %{reason: :unknown_row}
     }
   end
+
+  defp selected_rows(opts) do
+    if Keyword.get(opts, :phase15, false),
+      do: @phase15_rows,
+      else: Keyword.get(opts, :rows, @default_rows)
+  end
+
+  defp cuda_parity_details(old_snapshot, new_snapshot, old_log, new_log) do
+    with {:old_snapshot, true} <- {:old_snapshot, File.regular?(old_snapshot)},
+         {:new_snapshot, true} <- {:new_snapshot, File.regular?(new_snapshot)},
+         {:old_log, true} <- {:old_log, File.regular?(old_log)},
+         {:new_log, true} <- {:new_log, File.regular?(new_log)} do
+      old_cases = snapshot_cases!(old_snapshot)
+      new_cases = snapshot_cases!(new_snapshot)
+      count = length(old_cases)
+      stable_keys = ~w(id agent_id role_id token_count transcript_hash)
+      stable_matches = Map.new(stable_keys, &{&1, matching_count(old_cases, new_cases, &1)})
+      route_hash_matches = matching_count(old_cases, new_cases, "route_hash")
+      old_log_pass? = qwen_log_pass?(old_log)
+      new_log_pass? = qwen_log_pass?(new_log)
+
+      %{
+        pass?:
+          count == 37 and length(new_cases) == 37 and old_log_pass? and new_log_pass? and
+            Enum.all?(stable_matches, fn {_key, matches} -> matches == 37 end),
+        old_snapshot: old_snapshot,
+        new_snapshot: new_snapshot,
+        old_log: old_log,
+        new_log: new_log,
+        old_case_count: count,
+        new_case_count: length(new_cases),
+        stable_matches: stable_matches,
+        route_hash_matches: route_hash_matches,
+        route_hash_policy: :diagnostic_across_processes
+      }
+    else
+      {missing, false} ->
+        %{pass?: false, reason: :missing_file, missing: missing}
+    end
+  end
+
+  defp snapshot_cases!(path) do
+    path
+    |> File.read!()
+    |> Jason.decode!()
+    |> Map.fetch!("cases")
+  end
+
+  defp matching_count(old_cases, new_cases, key) do
+    old_cases
+    |> Enum.zip(new_cases)
+    |> Enum.count(fn {old_case, new_case} -> Map.get(old_case, key) == Map.get(new_case, key) end)
+  end
+
+  defp qwen_log_pass?(path) do
+    log = File.read!(path)
+
+    String.contains?(log, "passed: 37") and String.contains?(log, "failed: 0") and
+      String.contains?(log, "PASS qwen_router_prompt_eval")
+  end
+
+  defp phase15_dir(opts), do: Keyword.get(opts, :phase15_dir, "tmp/phase15")
 
   defp mix_help_tasks!(runner, root) do
     output = runner.(root, ["help", "--search", "trinity"])
