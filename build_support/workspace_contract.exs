@@ -41,6 +41,8 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/synapse_product_acceptance",
     "examples/gepa_platform_roundtrip",
     "examples/trinity_platform_roundtrip",
+    "examples/trinity_single_node_roundtrip",
+    "examples/trinity_parity_harness",
     "examples/adaptive_control_roundtrip",
     "examples/persistence_mode_roundtrip",
     "examples/skill_roundtrip",
