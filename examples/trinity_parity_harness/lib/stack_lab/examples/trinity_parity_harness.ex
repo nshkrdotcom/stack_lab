@@ -39,7 +39,8 @@ defmodule StackLab.Examples.TRINITYParityHarness do
   ]
 
   @all_task_count 17
-  @coordinator_source_count 60
+  @coordinator_monolith_source_count 60
+  @coordinator_shim_source_count 18
 
   @spec run(keyword()) :: {:ok, Receipt.t()}
   def run(opts \\ []) do
@@ -85,13 +86,28 @@ defmodule StackLab.Examples.TRINITYParityHarness do
       |> Path.join("lib/**/*.ex")
       |> Path.wildcard()
 
-    status = if length(files) == @coordinator_source_count, do: :pass, else: :open_defect
+    actual_count = length(files)
+    expected_counts = [@coordinator_monolith_source_count, @coordinator_shim_source_count]
+
+    posture =
+      cond do
+        actual_count == @coordinator_shim_source_count -> :shim
+        actual_count == @coordinator_monolith_source_count -> :monolith
+        true -> :unknown
+      end
+
+    status = if actual_count in expected_counts, do: :pass, else: :open_defect
 
     %Row{
       id: :source_inventory,
-      description: "coordinator lib source inventory has the expected 60-file baseline",
+      description: "coordinator lib source inventory matches monolith baseline or Phase 16 shim",
       status: status,
-      details: %{expected: @coordinator_source_count, actual: length(files)}
+      details: %{
+        expected_monolith: @coordinator_monolith_source_count,
+        expected_shim: @coordinator_shim_source_count,
+        actual: actual_count,
+        posture: posture
+      }
     }
   end
 
