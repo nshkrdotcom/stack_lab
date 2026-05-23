@@ -27,6 +27,8 @@ defmodule StackLab.TRINITYPlatformRoundtrip.MixProject do
   defp deps do
     [
       {:trinity_framework, path: "../../../trinity_framework"},
+      {:trinity_contracts,
+       path: "../../../trinity_framework/core/trinity_contracts", override: true},
       {:app_kit_coordination_surface, path: "../../../app_kit/core/coordination_surface"},
       {:stack_lab_coordination_fabric_scanner, path: "../../support/coordination_fabric_scanner"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
