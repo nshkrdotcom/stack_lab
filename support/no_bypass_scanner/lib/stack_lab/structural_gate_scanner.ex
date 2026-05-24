@@ -124,6 +124,31 @@ defmodule StackLab.StructuralGateScanner do
   ]
   @provider_binding_refs ["linear_primary", "github_primary", "codex_primary"]
 
+  @product_lower_owner_module_prefixes [
+    "AITrace",
+    "Anthropic",
+    "Citadel",
+    "Codex",
+    "ExecutionPlane",
+    "GEPA",
+    "GEPAFramework",
+    "Gepa",
+    "GepaFramework",
+    "GitHubEx",
+    "GroundPlane",
+    "Inference",
+    "Jido",
+    "Jido.Integration",
+    "JidoIntegration",
+    "Linear",
+    "Mezzanine",
+    "OpenAI",
+    "OuterBrain",
+    "ReqLLM",
+    "Trinity",
+    "TrinityFramework"
+  ]
+
   @ground_plane_higher_layer_tokens [
     "AI",
     "ai",
@@ -551,11 +576,19 @@ defmodule StackLab.StructuralGateScanner do
   end
 
   defp ast_node_findings(checked_path, _content, {:alias, meta, [alias_ast]}, _remote?) do
-    {provider_remote_reference_findings(checked_path, meta, alias_ast, :alias), []}
+    findings =
+      provider_remote_reference_findings(checked_path, meta, alias_ast, :alias) ++
+        product_lower_owner_reference_findings(checked_path, meta, alias_ast, :alias)
+
+    {findings, []}
   end
 
   defp ast_node_findings(checked_path, _content, {:import, meta, [alias_ast | _]}, _remote?) do
-    {provider_remote_reference_findings(checked_path, meta, alias_ast, :import), []}
+    findings =
+      provider_remote_reference_findings(checked_path, meta, alias_ast, :import) ++
+        product_lower_owner_reference_findings(checked_path, meta, alias_ast, :import)
+
+    {findings, []}
   end
 
   defp ast_node_findings(
@@ -565,7 +598,11 @@ defmodule StackLab.StructuralGateScanner do
          _remote?
        )
        when is_atom(function_name) do
-    {provider_remote_reference_findings(checked_path, meta, alias_ast, :remote_call), []}
+    findings =
+      provider_remote_reference_findings(checked_path, meta, alias_ast, :remote_call) ++
+        product_lower_owner_reference_findings(checked_path, meta, alias_ast, :remote_call)
+
+    {findings, []}
   end
 
   defp ast_node_findings(checked_path, _content, {:%{}, meta, fields}, _remote?) do
@@ -776,6 +813,52 @@ defmodule StackLab.StructuralGateScanner do
   end
 
   defp provider_remote_reference_findings(_checked_path, _meta, _alias_ast, _role), do: []
+
+  defp product_lower_owner_reference_findings(
+         %CheckedPath{repo: "extravaganza", zone: :product} = checked_path,
+         meta,
+         alias_ast,
+         ast_role
+       ) do
+    alias_text = alias_to_string(alias_ast)
+
+    cond do
+      alias_text == "" ->
+        []
+
+      allowed_product_lower_owner_reference?(alias_text) ->
+        []
+
+      product_lower_owner_reference?(alias_text) ->
+        [
+          finding(checked_path, %{
+            rule: :direct_lower_owner_import_in_product,
+            reason: :product_direct_lower_owner_reference,
+            line: meta_line(meta),
+            token: alias_text,
+            ast_role: ast_role,
+            owner_phase: "Phase 1",
+            remediation:
+              "Product code must enter governed behavior through AppKit surfaces; pure Mezzanine.Pack authoring is the only lower exception."
+          })
+        ]
+
+      true ->
+        []
+    end
+  end
+
+  defp product_lower_owner_reference_findings(_checked_path, _meta, _alias_ast, _role), do: []
+
+  defp product_lower_owner_reference?(alias_text) do
+    Enum.any?(@product_lower_owner_module_prefixes, fn prefix ->
+      alias_text == prefix or String.starts_with?(alias_text, prefix <> ".")
+    end)
+  end
+
+  defp allowed_product_lower_owner_reference?(alias_text) do
+    alias_text == "Mezzanine.Pack" or String.starts_with?(alias_text, "Mezzanine.Pack.")
+  end
 
   defp closed_provider_dispatch_map_findings(checked_path, meta, fields) do
     if Zones.closed_provider_dispatch_scan_path?(checked_path) do

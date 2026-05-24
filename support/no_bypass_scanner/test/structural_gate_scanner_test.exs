@@ -141,6 +141,52 @@ defmodule StackLab.StructuralGateScannerTest do
     assert Enum.any?(receipt.findings, &(&1.rule == :provider_shaped_dto_field))
   end
 
+  test "fails product direct imports and calls into lower owner modules", %{roots: roots} do
+    product_path =
+      roots
+      |> Map.fetch!("extravaganza")
+      |> Path.join("apps/extravaganza_core/lib/extravaganza/product_bypass.ex")
+
+    allowed_pack_path =
+      roots
+      |> Map.fetch!("extravaganza")
+      |> Path.join("apps/extravaganza_core/lib/extravaganza/pack_authoring.ex")
+
+    write_file(product_path, """
+    defmodule Extravaganza.ProductBypass do
+      alias Citadel.AuthorityContract
+      import Jido.Integration.V2
+
+      def run(attrs) do
+        Mezzanine.WorkflowRuntime.start(attrs)
+        AITrace.Event.new("bypass")
+        AuthorityContract
+      end
+    end
+    """)
+
+    write_file(allowed_pack_path, """
+    defmodule Extravaganza.PackAuthoring do
+      alias Mezzanine.Pack
+
+      def pack(attrs), do: Pack.new(attrs)
+    end
+    """)
+
+    assert {:ok, receipt} =
+             StructuralGateScanner.scan([product_path, allowed_pack_path], target_roots: roots)
+
+    assert receipt.status == :open_defect
+
+    product_findings = Enum.filter(receipt.findings, &(&1.path == product_path))
+
+    assert Enum.count(product_findings, &(&1.rule == :direct_lower_owner_import_in_product)) >= 2
+    assert Enum.any?(product_findings, &(&1.token == "Mezzanine.WorkflowRuntime"))
+    assert Enum.any?(product_findings, &(&1.token == "AITrace.Event"))
+
+    refute Enum.any?(receipt.findings, &(&1.path == allowed_pack_path))
+  end
+
   test "passes registered generic dispatch proof bundle", %{roots: roots} do
     path =
       roots

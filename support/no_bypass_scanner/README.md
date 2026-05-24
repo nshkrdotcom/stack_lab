@@ -8,6 +8,13 @@ calls, direct generated SDK calls, direct env auth lookup, direct runtime
 mutation, direct DB access, and direct trace writes in governed workflows. It
 emits ref-only receipts and blocks release when findings remain open.
 
+The structural gate also blocks product code from importing or calling lower
+owner modules directly. Product implementation may call AppKit surfaces and may
+author pure `Mezzanine.Pack` contracts, but product code must not reach into
+Mezzanine workflow/runtime modules, Citadel authority modules, Jido
+Integration, Execution Plane, OuterBrain, GroundPlane, AITrace, TRINITY, GEPA,
+provider SDKs, or generated SDKs for governed behavior.
+
 The foundation gate also protects generic-stack cutovers. In product code, it
 allows provider words in command names, fixtures, docs, packs, receipts, and
 live examples, but flags provider-shaped implementation API names such as
