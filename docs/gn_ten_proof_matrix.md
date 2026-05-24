@@ -45,7 +45,7 @@ not claim authoritative audit truth or production deployment proof.
 | 000 repo contracts | docs + repo owners | documentation complete | copy reviewed repo-agent instructions into repo roots |
 | 100 development process | `stack_lab`, `AITrace` | StackLab development loop and local trace fixtures implemented | keep trace fixtures current with proof loop changes |
 | 200 refactoring | repo owners | refactoring deletion backlog proof implemented with inventory, deletion campaign links, and retention/no-op receipts | keep inventory current and open concrete deletion campaigns when active candidates appear |
-| 300 architecture | docs + `stack_lab` | manifest, artifact ledger, and product no-bypass fixtures implemented | keep product fixture proof wired into CI and expand fixtures as product shapes change |
+| 300 architecture | docs + `stack_lab` | manifest, artifact ledger, product no-bypass, and Context ABI roundtrip fixtures implemented | keep product and Context ABI fixture proofs wired into CI and expand fixtures as product shapes change |
 | 400 agent patterns | `outer_brain`, `citadel`, `jido_integration`, `execution_plane` | connector provider-free, budget, and agent-turn runtime pattern proofs implemented | add live runtime drills only when release claims require them |
 | 500 governance | `citadel`, `mezzanine`, `jido_integration` | tenant isolation, connector secret lease, prompt-injection fixtures, and governed connector compliance export fixture implemented | add incident export and production compliance-retention fixtures only when release claims require them |
 | 600 deployment | `stack_lab`, `mezzanine`, `AITrace` | local single-node deployment rehearsal implemented | convert local rehearsals into clean-host operator drills once deploy scripts are repo-owned |
@@ -129,6 +129,11 @@ path, and run GitHub or Linear live commands by prefixing them with
   with mock route selection, role injection, provider pool readiness, verifier
   refs, handoff scope refs, AppKit coordination projections, coordination
   fabric scanner receipts, trace refs, and replay refs.
+- `context_abi_roundtrip`: runs the deterministic fugu Context ABI proof from
+  AppKit context-surface input through OuterBrain packet compile and render
+  refs, Citadel authority, Mezzanine admission/routing/render handoff, Jido
+  fake model invocation, AITrace bounded evidence, AppKit projections, and
+  StackLab context/model/cost/lineage/tenant/memory scanner receipts.
 - `cost_budget_scanner`: verifies adaptive token, provider request,
   self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
   search, provider pool turn, role budget, promotion, failed retry, budget

@@ -25,6 +25,9 @@ The workspace is organized as:
 - `support/cost_budget_scanner/`
   - adaptive token, model, GPU, eval, replay, optimization, provider pool,
     role, promotion, retry, exhaustion, projection, span, and receipt checks
+- `support/context_abi_scanner/`
+  - Context ABI packet, authority, admission, route, render, model invocation,
+    AppKit projection, tenant, and AITrace linkage checks
 - `support/adaptive_control_scanner/`
   - TRINITY trace, dataset, GEPA target, gate, promotion, rollback, stale
     rejection, AppKit projection, and receipt checks
@@ -39,6 +42,7 @@ The workspace is organized as:
   - `restart_authority_drill`
   - `atom_cleanup_harness`
   - `pressure_failover_drill`
+  - `context_abi_roundtrip`
   - `gepa_platform_roundtrip`
   - `trinity_platform_roundtrip`
   - `adaptive_control_roundtrip`

@@ -408,3 +408,33 @@ proofs:
       posture:
         authoritative_audit?: false
         production_deployment_proven?: false
+
+  - id: context_abi_roundtrip
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: assembled_offline
+    command: cd examples/context_abi_roundtrip && mix stack_lab.context_abi.roundtrip --json
+    fixture: examples/context_abi_roundtrip
+    receipt: receipt://stack_lab/context_abi_roundtrip/latest
+    proves:
+      - product intent enters through AppKit context surface DTOs
+      - OuterBrain compiles a deterministic Context ABI packet and render refs
+      - Citadel grants ref-only context authority for the packet
+      - Mezzanine admits the packet, routes through the fixture adapter, and carries the render handoff into model invocation
+      - Jido Integration fake runtime emits a governed model-call receipt without live provider credentials
+      - AITrace emits bounded context, route, model, and eval facts
+      - StackLab context, model, cost, lineage, tenant, and memory scanners pass on the assembled receipt
+    does_not_prove:
+      - live provider behavior
+      - production persistence
+      - distributed BEAM placement
+      - TRINITY route quality beyond the fixture adapter
+      - GEPA optimization quality
+    next_action: keep the provider-free Context ABI proof green, then bind TRINITY routing and GEPA optimization phases on top of the same handoff refs
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/context_abi_roundtrip/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
