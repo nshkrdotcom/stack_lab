@@ -53,6 +53,7 @@ defmodule StackLab.Workspace.MixProject do
       {:weld, "~> 0.8.2", only: [:dev, :test], runtime: false},
       {:jason, "~> 1.4", runtime: false},
       {:stack_lab_lab_core, path: "support/lab_core"},
+      {:stack_lab_gn_ten_node_lab, path: "support/gn_ten_node_lab"},
       DependencySources.dep(:ground_plane_contracts, __DIR__),
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

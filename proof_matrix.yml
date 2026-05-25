@@ -150,15 +150,17 @@ proofs:
     contract_family: "300 architecture"
     status: implemented
     profile: local_quick
-    command: mix gn_ten.distribution.preflight --json
-    fixture: lib/stack_lab/gn_ten/distribution_preflight.ex
-    receipt: receipt://stack_lab/gn_ten_distributed_preflight/latest
+    command: mix stack_lab.gn_ten.node_lab.preflight --json
+    fixture: support/gn_ten_node_lab
+    receipt: receipt://stack_lab/gn_ten_node_lab_preflight/latest
     proves:
+      - the reusable support/gn_ten_node_lab package owns preflight and peer lifecycle checks
       - EPMD can be found and started on this host
       - StackLab can start a shortname controller node
       - StackLab can generate a redacted per-run cookie value without writing it to receipts
       - the planned distribution port range is validated
-      - a temporary peer can start, answer bounded erpc, stop, and become unreachable after cleanup
+      - frozen topology specs can be parsed with node-cap enforcement
+      - a temporary peer can start, sync code paths, answer bounded erpc, stop, and become unreachable after cleanup
       - current EPMD names and listen-socket exposure are recorded
       - existing multi-node proofs remain parallel in root CI until node-lab migration
     does_not_prove:
@@ -168,10 +170,10 @@ proofs:
       - per-run cookie application to peers
       - production distribution security
       - release artifact boot
-    next_action: create support/gn_ten_node_lab and move reusable peer lifecycle APIs behind the package boundary
+    next_action: use support/gn_ten_node_lab for Phase 5 topology specs, app boot, facade readiness, and pg group checks
     trace_receipt:
       schema: aitrace.single_node_proof_trace.v1
-      ref: trace://stack_lab/gn_ten_distributed_preflight/latest
+      ref: trace://stack_lab/gn_ten_node_lab_preflight/latest
       posture:
         authoritative_audit?: false
         production_deployment_proven?: false

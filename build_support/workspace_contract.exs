@@ -5,6 +5,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "support/lab_core",
     "support/spec_cell",
     "support/gn_ten_control_plane",
+    "support/gn_ten_node_lab",
     "support/connector_hardening_scanner",
     "support/tenant_isolation_scanner",
     "support/no_bypass_scanner",

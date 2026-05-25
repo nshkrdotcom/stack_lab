@@ -163,11 +163,14 @@ path, and run GitHub or Linear live commands by prefixing them with
   over-cap. It does not prove EPMD startup, peer lifecycle, owner facade
   availability, distributed business semantics, monolith/distributed parity,
   or 49-node scale feasibility.
-- `gn_ten_distributed_preflight`: records the v2 Phase 2 host preflight. It
-  proves EPMD can start, a shortname StackLab controller node can come up, a
-  redacted per-run cookie can be generated, the planned distribution port range
-  validates, a temporary peer can start/respond/stop/clean up, listen-socket
-  exposure is recorded, and existing multi-node proofs remain parallel in root
+- `gn_ten_distributed_preflight`: records the v2 Phase 3 node-lab package
+  preflight. It proves `support/gn_ten_node_lab` owns reusable preflight and
+  peer lifecycle checks; EPMD can start; a shortname StackLab controller node
+  can come up; a redacted per-run cookie can be generated; the planned
+  distribution port range validates; frozen topology specs can be parsed with
+  node-cap enforcement; a temporary peer can start, sync code paths, answer
+  bounded `:erpc`, stop, and become unreachable after cleanup; listen-socket
+  exposure is recorded; and existing multi-node proofs remain parallel in root
   CI until node-lab migration. It does not prove owner facades, domain
   semantics, parity, production security, per-run cookie application to peers,
   or release boot.

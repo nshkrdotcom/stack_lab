@@ -1,0 +1,47 @@
+{
+  "cookie_posture": {
+    "byte_size": 43,
+    "distribution_security_claim": "local_dev_only",
+    "posture": "generated_redacted",
+    "production_security_proven?": false,
+    "secret_value_present?": false
+  },
+  "distribution": {
+    "node_alive?": true,
+    "node_name": "stack_lab_node_lab_controller_1@ubuntu-dev",
+    "started_by_node_lab?": true
+  },
+  "does_not_prove": [
+    "owner facade availability",
+    "domain business semantics",
+    "monolith/distributed parity",
+    "production distribution security",
+    "release artifact boot"
+  ],
+  "epmd": {
+    "command": {
+      "args": [
+        "-daemon"
+      ],
+      "command": "/home/home/.asdf/installs/erlang/28.3/erts-16.2/bin/epmd",
+      "duration_ms": 4,
+      "exit_status": 0,
+      "status": "ok"
+    },
+    "path": "/home/home/.asdf/installs/erlang/28.3/erts-16.2/bin/epmd"
+  },
+  "failures": [],
+  "finished_at": "2026-05-25T08:18:51.639875Z",
+  "peer_probe": {
+    "code_paths_synced?": true,
+    "peer_node": "stack_lab_node_lab_peer_2@ubuntu-dev",
+    "reachable_after_stop?": false,
+    "remote_call": "ok",
+    "started?": true,
+    "stopped?": true
+  },
+  "receipt_ref": "receipt://stack_lab/gn_ten_node_lab_preflight/latest",
+  "schema_version": "stack_lab.gn_ten_node_lab.preflight.v1",
+  "started_at": "2026-05-25T08:18:51.460102Z",
+  "status": "pass"
+}
