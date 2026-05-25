@@ -40,11 +40,23 @@ Phase 12 adds persistence and external-substrate posture:
 - record Postgres and Temporal as opt-in external profiles only;
 - do not start Postgres, Temporal, or Toxiproxy from this proof app.
 
+Phase 13 adds monolith/distributed semantic parity:
+
+- run the fugu router/model roundtrip and the distributed router/model proof
+  from one command;
+- compare only deterministic semantic fields and ignore placement, timing, and
+  transport-attempt evidence;
+- hash parity inputs with `GroundPlane.Boundary.Codec`, never `inspect/1`,
+  `:erlang.term_to_binary/1`, or direct `Jason.encode!/1`;
+- record a parity receipt with deterministic fixture controls and diff
+  findings.
+
 ## Commands
 
 ```bash
 mix stack_lab.gn_ten.distributed.prove --profile context_6_node --json
 mix stack_lab.gn_ten.distributed.prove --profile router_model_6_node --json
+mix stack_lab.gn_ten.distributed.prove --profile parity --json
 mix stack_lab.gn_ten.distributed.prove --profile partition_recovery --json
 ```
 

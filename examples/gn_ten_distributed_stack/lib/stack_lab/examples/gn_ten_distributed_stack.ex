@@ -62,14 +62,21 @@ defmodule StackLab.Examples.GnTenDistributedStack.RouterModelReceipt do
     :context_packet_ref,
     :context_packet_hash,
     :authority_ref,
+    :admission_receipt_ref,
     :route_decision_ref,
+    :selected_route_kind,
     :selected_model_profile_ref,
+    :trinity_selected_role_ref,
+    :prompt_artifact_ref,
+    :provider_payload_ref,
+    :payload_hash,
     :model_invocation_ref,
     :model_receipt_ref,
     :model_token_summary,
     :model_cost_summary,
     :model_stream_refs,
     :stream_fragment_posture,
+    :appkit_projection_refs,
     :trace_refs,
     :node_trace_refs,
     :aitrace_exports,
@@ -94,14 +101,21 @@ defmodule StackLab.Examples.GnTenDistributedStack.RouterModelReceipt do
           context_packet_ref: String.t(),
           context_packet_hash: String.t(),
           authority_ref: String.t(),
+          admission_receipt_ref: String.t(),
           route_decision_ref: String.t(),
+          selected_route_kind: String.t(),
           selected_model_profile_ref: String.t(),
+          trinity_selected_role_ref: String.t(),
+          prompt_artifact_ref: String.t(),
+          provider_payload_ref: String.t(),
+          payload_hash: String.t(),
           model_invocation_ref: String.t(),
           model_receipt_ref: String.t(),
           model_token_summary: map(),
           model_cost_summary: map(),
           model_stream_refs: [String.t()],
           stream_fragment_posture: String.t(),
+          appkit_projection_refs: [String.t()],
           trace_refs: [String.t()],
           node_trace_refs: [map()],
           aitrace_exports: [map()],
@@ -112,6 +126,51 @@ defmodule StackLab.Examples.GnTenDistributedStack.RouterModelReceipt do
           node_lab_run: map(),
           distributed_envelope_scan: map(),
           node_placement: map(),
+          does_not_prove: [String.t()]
+        }
+end
+
+defmodule StackLab.Examples.GnTenDistributedStack.ParityReceipt do
+  @moduledoc "Monolith/distributed semantic parity receipt."
+
+  @enforce_keys [
+    :receipt_ref,
+    :schema_version,
+    :status,
+    :profile,
+    :topology_ref,
+    :monolith_baseline_receipt_ref,
+    :distributed_receipt_ref,
+    :canonical_encoder,
+    :hash_input_policy,
+    :semantic_fields,
+    :ignored_fields,
+    :monolith_semantic_hash,
+    :distributed_semantic_hash,
+    :parity_result,
+    :deterministic_fixture_controls,
+    :distributed_receipt_summary,
+    :does_not_prove
+  ]
+  defstruct @enforce_keys
+
+  @type t :: %__MODULE__{
+          receipt_ref: String.t(),
+          schema_version: String.t(),
+          status: :pass | :open_defect,
+          profile: String.t(),
+          topology_ref: String.t(),
+          monolith_baseline_receipt_ref: String.t(),
+          distributed_receipt_ref: String.t(),
+          canonical_encoder: String.t(),
+          hash_input_policy: map(),
+          semantic_fields: [String.t()],
+          ignored_fields: [String.t()],
+          monolith_semantic_hash: String.t(),
+          distributed_semantic_hash: String.t(),
+          parity_result: map(),
+          deterministic_fixture_controls: map(),
+          distributed_receipt_summary: map(),
           does_not_prove: [String.t()]
         }
 end
@@ -160,20 +219,66 @@ defmodule StackLab.Examples.GnTenDistributedStack do
 
   alias StackLab.Examples.GnTenDistributedStack.{
     FaultRecoveryReceipt,
+    ParityReceipt,
     Receipt,
     RouterModelReceipt
   }
 
   @context_schema_version "stack_lab.gn_ten_distributed_stack.context_6_node.v1"
   @router_model_schema_version "stack_lab.gn_ten_distributed_stack.router_model_6_node.v1"
+  @parity_schema_version "stack_lab.gn_ten_distributed_stack.parity.v1"
   @fault_recovery_schema_version "stack_lab.gn_ten_distributed_stack.partition_recovery.v1"
   @context_profile "context_6_node"
   @router_model_profile "router_model_6_node"
+  @parity_profile "parity"
   @fault_recovery_profile "partition_recovery"
   @envelope_schema_version "stack_lab.distributed_envelope.v1"
+  @canonical_encoder "GroundPlane.Boundary.Codec"
+  @parity_semantic_fields [
+    "status",
+    "context_packet_ref",
+    "context_packet_hash",
+    "authority_ref",
+    "admission_receipt_ref",
+    "route_decision_ref",
+    "selected_route_kind",
+    "selected_model_profile_ref",
+    "trinity_selected_role_ref",
+    "prompt_artifact_ref",
+    "provider_payload_ref",
+    "payload_hash",
+    "model_invocation_ref",
+    "model_receipt_ref",
+    "model_token_summary",
+    "model_cost_summary",
+    "model_stream_refs",
+    "stream_fragment_posture",
+    "appkit_projection_refs",
+    "trace_refs"
+  ]
+  @ignored_parity_fields [
+    "aitrace_exports",
+    "distributed_envelope_scan",
+    "distributed_receipt_ref",
+    "does_not_prove",
+    "evidence_status",
+    "node_lab_run",
+    "node_placement",
+    "node_trace_refs",
+    "persistence_profiles",
+    "persistence_status",
+    "profile",
+    "receipt_ref",
+    "schema_version",
+    "topology_ref",
+    "transport_attempt_ref",
+    "transport_attempts",
+    "wall_clock_duration_ms"
+  ]
   @context_roundtrip Module.concat([StackLab, Examples, ContextABIRoundtrip])
   @router_roundtrip Module.concat([StackLab, Examples, NSHKRRouterFabricRoundtrip])
   @persistence_roundtrip Module.concat([StackLab, Examples, PersistenceModeRoundtrip])
+  @boundary_codec Module.concat([GroundPlane, Boundary, Codec])
   @aitrace_evidence Module.concat([AITrace, RemoteFacade, Evidence])
   @aitrace_fixture_transport Module.concat([AITrace, NSHKR, ExportTransport, Fixture])
   @replay_bundle Module.concat([AITrace, Trace, ReplayBundle])
@@ -290,14 +395,21 @@ defmodule StackLab.Examples.GnTenDistributedStack do
          context_packet_ref: baseline.context_packet_ref,
          context_packet_hash: baseline.context_packet_hash,
          authority_ref: baseline.authority_ref,
+         admission_receipt_ref: baseline.admission_receipt_ref,
          route_decision_ref: baseline.route_decision_ref,
+         selected_route_kind: baseline.selected_route_kind,
          selected_model_profile_ref: baseline.selected_model_profile_ref,
+         trinity_selected_role_ref: baseline.trinity_selected_role_ref,
+         prompt_artifact_ref: baseline.prompt_artifact_ref,
+         provider_payload_ref: baseline.provider_payload_ref,
+         payload_hash: baseline.payload_hash,
          model_invocation_ref: baseline.model_invocation_ref,
          model_receipt_ref: baseline.model_receipt_ref,
          model_token_summary: baseline.model_token_summary,
          model_cost_summary: baseline.model_cost_summary,
          model_stream_refs: baseline.model_stream_refs,
          stream_fragment_posture: baseline.stream_fragment_posture,
+         appkit_projection_refs: baseline.appkit_projection_refs,
          trace_refs: baseline.trace_refs,
          node_trace_refs: node_trace_refs,
          aitrace_exports: aitrace_exports,
@@ -314,6 +426,44 @@ defmodule StackLab.Examples.GnTenDistributedStack do
            "live provider behavior",
            "fault recovery",
            "Execution Plane lower-lane execution"
+         ]
+       }}
+    end
+  end
+
+  @spec run_parity(keyword()) :: {:ok, ParityReceipt.t()} | {:error, term()}
+  def run_parity(opts \\ []) when is_list(opts) do
+    with {:ok, _started} <- Application.ensure_all_started(:aitrace),
+         {:ok, baseline} <- call(@router_roundtrip, :run, []),
+         {:ok, distributed} <- run_router_model_6_node(opts) do
+      monolith_semantic = monolith_semantic_shape(baseline)
+      distributed_semantic = distributed_semantic_shape(distributed)
+      parity_result = semantic_parity(monolith_semantic, distributed_semantic)
+
+      {:ok,
+       %ParityReceipt{
+         receipt_ref: parity_receipt_ref(distributed),
+         schema_version: @parity_schema_version,
+         status: parity_status(parity_result),
+         profile: @parity_profile,
+         topology_ref: distributed.topology_ref,
+         monolith_baseline_receipt_ref: baseline.receipt_ref,
+         distributed_receipt_ref: distributed.receipt_ref,
+         canonical_encoder: @canonical_encoder,
+         hash_input_policy: hash_input_policy(),
+         semantic_fields: @parity_semantic_fields,
+         ignored_fields: @ignored_parity_fields,
+         monolith_semantic_hash: semantic_hash(monolith_semantic),
+         distributed_semantic_hash: semantic_hash(distributed_semantic),
+         parity_result: parity_result,
+         deterministic_fixture_controls: deterministic_fixture_controls(),
+         distributed_receipt_summary: distributed_receipt_summary(distributed),
+         does_not_prove: [
+           "production distribution security",
+           "release artifact boot",
+           "live provider behavior",
+           "49-node scale behavior",
+           "semantic equivalence for fields outside semantic_fields"
          ]
        }}
     end
@@ -353,9 +503,16 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   @spec to_map(Receipt.t() | RouterModelReceipt.t() | FaultRecoveryReceipt.t()) :: map()
   def to_map(%Receipt{} = receipt), do: json_safe(receipt)
   def to_map(%RouterModelReceipt{} = receipt), do: json_safe(receipt)
+  def to_map(%ParityReceipt{} = receipt), do: json_safe(receipt)
   def to_map(%FaultRecoveryReceipt{} = receipt), do: json_safe(receipt)
 
-  @spec to_json!(Receipt.t() | RouterModelReceipt.t() | FaultRecoveryReceipt.t()) :: String.t()
+  @spec to_json!(
+          Receipt.t()
+          | RouterModelReceipt.t()
+          | ParityReceipt.t()
+          | FaultRecoveryReceipt.t()
+        ) ::
+          String.t()
   def to_json!(%Receipt{} = receipt) do
     call(@json, :encode!, [to_map(receipt), [pretty: true]])
   end
@@ -364,8 +521,50 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     call(@json, :encode!, [to_map(receipt), [pretty: true]])
   end
 
+  def to_json!(%ParityReceipt{} = receipt) do
+    call(@json, :encode!, [to_map(receipt), [pretty: true]])
+  end
+
   def to_json!(%FaultRecoveryReceipt{} = receipt) do
     call(@json, :encode!, [to_map(receipt), [pretty: true]])
+  end
+
+  @spec semantic_parity(map(), map(), keyword()) :: map()
+  def semantic_parity(monolith, distributed, opts \\ [])
+      when is_map(monolith) and is_map(distributed) do
+    semantic_fields = Keyword.get(opts, :semantic_fields, @parity_semantic_fields)
+    ignored_fields = Keyword.get(opts, :ignored_fields, @ignored_parity_fields)
+    monolith_shape = parity_safe(monolith)
+    distributed_shape = parity_safe(distributed)
+
+    monolith_semantic = Map.take(monolith_shape, semantic_fields)
+    distributed_semantic = Map.take(distributed_shape, semantic_fields)
+    diffs = parity_diffs(monolith_semantic, distributed_semantic, semantic_fields)
+
+    unexpected_fields =
+      unexpected_parity_fields(distributed_shape, semantic_fields, ignored_fields)
+
+    raw_payload_fields = raw_payload_fields(distributed_shape)
+
+    findings =
+      diffs ++
+        Enum.map(unexpected_fields, &parity_finding("unexpected_semantic_field", &1)) ++
+        Enum.map(raw_payload_fields, &parity_finding("raw_payload_field", &1))
+
+    %{
+      "status" => if(findings == [], do: "pass", else: "open_defect"),
+      "canonical_encoder" => @canonical_encoder,
+      "monolith_semantic_hash" => semantic_hash(monolith_semantic),
+      "distributed_semantic_hash" => semantic_hash(distributed_semantic),
+      "semantic_fields" => semantic_fields,
+      "ignored_fields" => ignored_fields,
+      "findings" => findings
+    }
+  end
+
+  @spec semantic_hash(map()) :: String.t()
+  def semantic_hash(shape) when is_map(shape) do
+    call(@boundary_codec, :digest, [parity_safe(shape)])
   end
 
   defp envelopes(baseline, node_lab_run, scenario \\ :context) do
@@ -405,13 +604,149 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   defp router_model_envelope_attrs(baseline, :router_model) do
     %{
       route_decision_ref: baseline.route_decision_ref,
+      selected_route_kind: baseline.selected_route_kind,
       selected_model_profile_ref: baseline.selected_model_profile_ref,
+      trinity_selected_role_ref: baseline.trinity_selected_role_ref,
+      prompt_artifact_ref: baseline.prompt_artifact_ref,
+      provider_payload_ref: baseline.provider_payload_ref,
+      payload_hash: baseline.payload_hash,
       model_invocation_ref: baseline.model_invocation_ref,
       model_receipt_ref: baseline.model_receipt_ref,
       model_token_summary: baseline.model_token_summary,
       model_cost_summary: baseline.model_cost_summary,
       model_stream_refs: baseline.model_stream_refs,
-      stream_fragment_posture: baseline.stream_fragment_posture
+      stream_fragment_posture: baseline.stream_fragment_posture,
+      appkit_projection_refs: baseline.appkit_projection_refs
+    }
+  end
+
+  defp monolith_semantic_shape(baseline) do
+    baseline
+    |> call_roundtrip_to_map()
+    |> Map.take(@parity_semantic_fields)
+    |> parity_safe()
+  end
+
+  defp distributed_semantic_shape(%RouterModelReceipt{} = receipt) do
+    receipt
+    |> to_map()
+    |> Map.take(@parity_semantic_fields)
+    |> parity_safe()
+  end
+
+  defp call_roundtrip_to_map(baseline) do
+    call(@router_roundtrip, :to_map, [baseline])
+  end
+
+  defp parity_diffs(monolith, distributed, semantic_fields) do
+    Enum.flat_map(semantic_fields, fn field ->
+      cond do
+        Map.has_key?(monolith, field) and not Map.has_key?(distributed, field) ->
+          [parity_finding("missing_field", field)]
+
+        Map.has_key?(distributed, field) and not Map.has_key?(monolith, field) ->
+          [parity_finding("unexpected_semantic_field", field)]
+
+        Map.get(monolith, field) != Map.get(distributed, field) ->
+          [
+            %{
+              "kind" => "value_mismatch",
+              "field" => field,
+              "monolith_hash" => semantic_hash(%{field => Map.get(monolith, field)}),
+              "distributed_hash" => semantic_hash(%{field => Map.get(distributed, field)})
+            }
+          ]
+
+        true ->
+          []
+      end
+    end)
+  end
+
+  defp unexpected_parity_fields(shape, semantic_fields, ignored_fields) do
+    shape
+    |> Map.keys()
+    |> Enum.reject(&(&1 in semantic_fields or &1 in ignored_fields))
+    |> Enum.sort()
+  end
+
+  defp raw_payload_fields(value), do: raw_payload_fields(value, [])
+
+  defp raw_payload_fields(value, path) when is_map(value) do
+    Enum.flat_map(value, fn {key, nested} ->
+      key_string = to_string(key)
+      next_path = path ++ [key_string]
+
+      if blocked_raw_payload_key?(key_string) do
+        [Enum.join(next_path, ".")]
+      else
+        raw_payload_fields(nested, next_path)
+      end
+    end)
+  end
+
+  defp raw_payload_fields(values, path) when is_list(values) do
+    values
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {value, index} ->
+      raw_payload_fields(value, path ++ [Integer.to_string(index)])
+    end)
+  end
+
+  defp raw_payload_fields(_value, _path), do: []
+
+  defp blocked_raw_payload_key?(key) do
+    normalized = String.downcase(key)
+
+    normalized in ["raw", "raw_prompt", "raw_memory", "raw_provider_payload", "provider_payload"] or
+      String.contains?(normalized, "credential_material") or
+      String.contains?(normalized, "secret")
+  end
+
+  defp parity_finding(kind, field) do
+    %{"kind" => kind, "field" => field}
+  end
+
+  defp parity_status(%{"status" => "pass"}), do: :pass
+  defp parity_status(_result), do: :open_defect
+
+  defp parity_receipt_ref(%RouterModelReceipt{} = receipt) do
+    receipt.receipt_ref
+    |> String.replace_prefix("gn-ten-distributed-router-model://", "")
+    |> then(&"gn-ten-distributed-parity://#{&1}")
+  end
+
+  defp hash_input_policy do
+    %{
+      "hash_inputs_use" => @canonical_encoder,
+      "forbidden_hash_inputs" => [
+        "inspect/1",
+        ":erlang.term_to_binary/1",
+        "Jason.encode!/1"
+      ],
+      "float_policy" => "convert_to_short_decimal_text_before_canonical_encoding"
+    }
+  end
+
+  defp deterministic_fixture_controls do
+    %{
+      "id_generators" => "deterministic fixture refs",
+      "clock" => "fixed UTC instants in fugu proof fixtures",
+      "transport_generated_fields" => "excluded from semantic parity hash",
+      "canonical_encoder" => @canonical_encoder
+    }
+  end
+
+  defp distributed_receipt_summary(%RouterModelReceipt{} = receipt) do
+    %{
+      "receipt_ref" => receipt.receipt_ref,
+      "status" => Atom.to_string(receipt.status),
+      "profile" => receipt.profile,
+      "topology_ref" => receipt.topology_ref,
+      "context_packet_hash" => receipt.context_packet_hash,
+      "route_decision_ref" => receipt.route_decision_ref,
+      "model_receipt_ref" => receipt.model_receipt_ref,
+      "node_count" => receipt.node_placement.domain_node_count
     }
   end
 
@@ -770,6 +1105,18 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   defp json_safe(values) when is_list(values), do: Enum.map(values, &json_safe/1)
   defp json_safe(value) when is_atom(value), do: Atom.to_string(value)
   defp json_safe(value), do: value
+
+  defp parity_safe(%DateTime{} = value), do: DateTime.to_iso8601(value)
+  defp parity_safe(%_struct{} = value), do: value |> Map.from_struct() |> parity_safe()
+
+  defp parity_safe(value) when is_map(value) do
+    Map.new(value, fn {key, nested} -> {to_string(key), parity_safe(nested)} end)
+  end
+
+  defp parity_safe(values) when is_list(values), do: Enum.map(values, &parity_safe/1)
+  defp parity_safe(value) when is_atom(value), do: Atom.to_string(value)
+  defp parity_safe(value) when is_float(value), do: :erlang.float_to_binary(value, [:short])
+  defp parity_safe(value), do: value
 
   defp call(module, function, args)
        when is_atom(module) and is_atom(function) and is_list(args) do

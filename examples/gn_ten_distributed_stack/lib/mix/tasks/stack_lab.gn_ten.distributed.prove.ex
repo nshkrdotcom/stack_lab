@@ -28,6 +28,9 @@ defmodule Mix.Tasks.StackLab.GnTen.Distributed.Prove do
       "router_model_6_node" ->
         run_router_model(opts)
 
+      "parity" ->
+        run_parity(opts)
+
       "partition_recovery" ->
         run_partition_recovery(opts)
 
@@ -74,6 +77,29 @@ defmodule Mix.Tasks.StackLab.GnTen.Distributed.Prove do
         Mix.shell().info("status=#{receipt.status}")
         Mix.shell().info("receipt_ref=#{receipt.receipt_ref}")
         Mix.shell().info("topology_ref=#{receipt.topology_ref}")
+
+      {:error, reason} ->
+        Mix.raise("distributed proof failed: #{inspect(reason)}")
+    end
+  end
+
+  defp run_parity(opts) do
+    json? = Keyword.get(opts, :json, false)
+
+    proof_opts =
+      opts
+      |> Keyword.take([:topology])
+      |> Enum.map(fn {:topology, path} -> {:topology_path, path} end)
+
+    case GnTenDistributedStack.run_parity(proof_opts) do
+      {:ok, receipt} when json? ->
+        Mix.shell().info(GnTenDistributedStack.to_json!(receipt))
+
+      {:ok, receipt} ->
+        Mix.shell().info("status=#{receipt.status}")
+        Mix.shell().info("receipt_ref=#{receipt.receipt_ref}")
+        Mix.shell().info("topology_ref=#{receipt.topology_ref}")
+        Mix.shell().info("parity_status=#{receipt.parity_result["status"]}")
 
       {:error, reason} ->
         Mix.raise("distributed proof failed: #{inspect(reason)}")

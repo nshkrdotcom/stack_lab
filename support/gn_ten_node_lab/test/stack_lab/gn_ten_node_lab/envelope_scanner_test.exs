@@ -69,6 +69,16 @@ defmodule StackLab.GnTenNodeLab.EnvelopeScannerTest do
     assert_has_rule(receipt, "payload_not_allowed")
   end
 
+  test "allows claim-check refs for rendered provider payloads" do
+    receipt =
+      valid_envelope()
+      |> Map.put(:provider_payload_ref, "provider-payload://fixture/hash")
+      |> Map.put(:prompt_artifact_ref, "prompt-artifact://fixture/hash")
+      |> EnvelopeScanner.scan()
+
+    refute_has_rule(receipt, "payload_not_allowed")
+  end
+
   test "flags local-only runtime terms" do
     receipt =
       valid_envelope()

@@ -178,6 +178,34 @@ proofs:
         authoritative_audit?: false
         production_deployment_proven?: false
 
+  - id: gn_ten_distributed_parity
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: local_full
+    command: mix stack_lab.gn_ten.distributed.prove --profile parity --json
+    fixture: examples/gn_ten_distributed_stack
+    receipt: receipt://stack_lab/gn_ten_distributed_parity/latest
+    proves:
+      - the fugu router/model monolith baseline and distributed router/model proof can run from one command
+      - semantic parity hashes match for context packet, authority, admission, route, render handoff, model invocation, AppKit projection, and trace refs
+      - parity hash inputs use GroundPlane.Boundary.Codec rather than inspect/1, :erlang.term_to_binary/1, or direct Jason.encode!/1
+      - node placement, timing, transport-attempt, and lifecycle facts are excluded from the semantic parity hash
+      - raw payload fields, unexpected semantic fields, missing fields, and terminal status mismatches produce open_defect findings
+    does_not_prove:
+      - production distribution security
+      - release artifact boot
+      - live provider behavior
+      - 49-node scale behavior
+      - semantic equivalence for fields outside the parity semantic field list
+    next_action: implement Phase 14 scale profiles with parity preserved as the semantic baseline
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/gn_ten_distributed_parity/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
   - id: product_no_bypass
     owner_repo: stack_lab
     contract_family: "300 architecture"

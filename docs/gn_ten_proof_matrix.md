@@ -174,6 +174,15 @@ path, and run GitHub or Linear live commands by prefixing them with
   CI until node-lab migration. It does not prove owner facades, domain
   semantics, parity, production security, per-run cookie application to peers,
   or release boot.
+- `gn_ten_distributed_parity`: records the v2 Phase 13 semantic parity proof.
+  It runs the fugu router/model monolith baseline and distributed router/model
+  proof from one command, hashes deterministic semantic fields with
+  `GroundPlane.Boundary.Codec`, excludes placement/timing/transport evidence,
+  and records open-defect findings for raw payload fields, unexpected semantic
+  fields, missing fields, and terminal status mismatches. It does not prove
+  production distribution security, release artifact boot, live provider
+  behavior, 49-node scale behavior, or semantic equivalence outside the named
+  parity field list.
 - `cost_budget_scanner`: verifies adaptive token, provider request,
   self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
   search, provider pool turn, role budget, promotion, failed retry, budget

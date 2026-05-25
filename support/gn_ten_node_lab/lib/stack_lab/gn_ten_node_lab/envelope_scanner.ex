@@ -175,15 +175,25 @@ defmodule StackLab.GnTenNodeLab.EnvelopeScanner do
   defp blocked_key_findings(key, value, path) do
     key_string = key |> to_string() |> String.downcase()
 
-    if Enum.any?(@blocked_key_fragments, &String.contains?(key_string, &1)) do
-      [
-        finding(:payload_not_allowed, :raw_or_sensitive_payload_field, path, %{
-          "value" => safe_inspect(value)
-        })
-      ]
-    else
-      []
+    cond do
+      claim_check_ref_key?(key_string) ->
+        []
+
+      Enum.any?(@blocked_key_fragments, &String.contains?(key_string, &1)) ->
+        [
+          finding(:payload_not_allowed, :raw_or_sensitive_payload_field, path, %{
+            "value" => safe_inspect(value)
+          })
+        ]
+
+      true ->
+        []
     end
+  end
+
+  defp claim_check_ref_key?(key) do
+    (String.ends_with?(key, "_ref") or String.ends_with?(key, "_refs")) and
+      not String.starts_with?(key, "raw_")
   end
 
   defp compare_tenant(_field, _tenant_ref, value) when value in [nil, ""], do: []

@@ -32,6 +32,8 @@ defmodule StackLab.GnTenDistributedStack.MixProject do
        path: "../nshkr_router_fabric_roundtrip", runtime: false},
       {:stack_lab_persistence_mode_roundtrip,
        path: "../persistence_mode_roundtrip", runtime: false},
+      {:ground_plane_contracts,
+       path: "../../../ground_plane/core/ground_plane_contracts", runtime: false},
       {:app_kit_mezzanine_bridge,
        path: "../../../app_kit/bridges/mezzanine_bridge", runtime: false},
       {:mezzanine_execution_engine,
