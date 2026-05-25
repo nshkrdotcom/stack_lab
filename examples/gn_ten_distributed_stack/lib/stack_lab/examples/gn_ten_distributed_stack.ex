@@ -16,6 +16,8 @@ defmodule StackLab.Examples.GnTenDistributedStack.Receipt do
     :aitrace_exports,
     :replay_bundle,
     :evidence_status,
+    :persistence_profiles,
+    :persistence_status,
     :node_lab_run,
     :distributed_envelope_scan,
     :node_placement,
@@ -38,6 +40,8 @@ defmodule StackLab.Examples.GnTenDistributedStack.Receipt do
           aitrace_exports: [map()],
           replay_bundle: map(),
           evidence_status: String.t(),
+          persistence_profiles: map(),
+          persistence_status: String.t(),
           node_lab_run: map(),
           distributed_envelope_scan: map(),
           node_placement: map(),
@@ -71,6 +75,8 @@ defmodule StackLab.Examples.GnTenDistributedStack.RouterModelReceipt do
     :aitrace_exports,
     :replay_bundle,
     :evidence_status,
+    :persistence_profiles,
+    :persistence_status,
     :node_lab_run,
     :distributed_envelope_scan,
     :node_placement,
@@ -101,6 +107,8 @@ defmodule StackLab.Examples.GnTenDistributedStack.RouterModelReceipt do
           aitrace_exports: [map()],
           replay_bundle: map(),
           evidence_status: String.t(),
+          persistence_profiles: map(),
+          persistence_status: String.t(),
           node_lab_run: map(),
           distributed_envelope_scan: map(),
           node_placement: map(),
@@ -120,6 +128,8 @@ defmodule StackLab.Examples.GnTenDistributedStack.FaultRecoveryReceipt do
     :baseline_receipt_ref,
     :fault_receipts,
     :owner_recovery_evidence,
+    :persistence_profiles,
+    :persistence_status,
     :trace_refs,
     :node_lab_run,
     :does_not_prove
@@ -135,6 +145,8 @@ defmodule StackLab.Examples.GnTenDistributedStack.FaultRecoveryReceipt do
           baseline_receipt_ref: String.t(),
           fault_receipts: [map()],
           owner_recovery_evidence: [map()],
+          persistence_profiles: map(),
+          persistence_status: String.t(),
           trace_refs: [String.t()],
           node_lab_run: map(),
           does_not_prove: [String.t()]
@@ -161,6 +173,7 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   @envelope_schema_version "stack_lab.distributed_envelope.v1"
   @context_roundtrip Module.concat([StackLab, Examples, ContextABIRoundtrip])
   @router_roundtrip Module.concat([StackLab, Examples, NSHKRRouterFabricRoundtrip])
+  @persistence_roundtrip Module.concat([StackLab, Examples, PersistenceModeRoundtrip])
   @aitrace_evidence Module.concat([AITrace, RemoteFacade, Evidence])
   @aitrace_fixture_transport Module.concat([AITrace, NSHKR, ExportTransport, Fixture])
   @replay_bundle Module.concat([AITrace, Trace, ReplayBundle])
@@ -195,12 +208,14 @@ defmodule StackLab.Examples.GnTenDistributedStack do
       node_trace_refs = node_trace_refs(baseline, node_lab_run, :context)
       aitrace_exports = export_trace_evidence(node_trace_refs, :context, evidence_opts)
       replay_bundle = replay_bundle(baseline, :context)
+      persistence_profiles = persistence_profiles()
 
       {:ok,
        %Receipt{
          receipt_ref: receipt_ref(baseline),
          schema_version: @context_schema_version,
-         status: status(baseline, node_lab_run, envelope_scan, aitrace_exports),
+         status:
+           status(baseline, node_lab_run, envelope_scan, aitrace_exports, persistence_profiles),
          profile: @context_profile,
          topology_ref: node_lab_run["topology_ref"],
          monolith_baseline_receipt_ref: baseline.receipt_ref,
@@ -212,6 +227,8 @@ defmodule StackLab.Examples.GnTenDistributedStack do
          aitrace_exports: aitrace_exports,
          replay_bundle: replay_bundle,
          evidence_status: evidence_status(aitrace_exports),
+         persistence_profiles: persistence_profiles,
+         persistence_status: persistence_status(persistence_profiles),
          node_lab_run: node_lab_run,
          distributed_envelope_scan: envelope_scan,
          node_placement: node_placement(node_lab_run),
@@ -253,12 +270,20 @@ defmodule StackLab.Examples.GnTenDistributedStack do
       node_trace_refs = node_trace_refs(baseline, node_lab_run, :router_model)
       aitrace_exports = export_trace_evidence(node_trace_refs, :router_model, evidence_opts)
       replay_bundle = replay_bundle(baseline, :router_model)
+      persistence_profiles = persistence_profiles()
 
       {:ok,
        %RouterModelReceipt{
          receipt_ref: router_model_receipt_ref(baseline),
          schema_version: @router_model_schema_version,
-         status: router_model_status(baseline, node_lab_run, envelope_scan, aitrace_exports),
+         status:
+           router_model_status(
+             baseline,
+             node_lab_run,
+             envelope_scan,
+             aitrace_exports,
+             persistence_profiles
+           ),
          profile: @router_model_profile,
          topology_ref: node_lab_run["topology_ref"],
          monolith_baseline_receipt_ref: baseline.receipt_ref,
@@ -278,6 +303,8 @@ defmodule StackLab.Examples.GnTenDistributedStack do
          aitrace_exports: aitrace_exports,
          replay_bundle: replay_bundle,
          evidence_status: evidence_status(aitrace_exports),
+         persistence_profiles: persistence_profiles,
+         persistence_status: persistence_status(persistence_profiles),
          node_lab_run: node_lab_run,
          distributed_envelope_scan: envelope_scan,
          node_placement: node_placement(node_lab_run),
@@ -308,6 +335,8 @@ defmodule StackLab.Examples.GnTenDistributedStack do
          baseline_receipt_ref: baseline.receipt_ref,
          fault_receipts: fault_receipts,
          owner_recovery_evidence: owner_recovery_evidence(),
+         persistence_profiles: baseline.persistence_profiles,
+         persistence_status: baseline.persistence_status,
          trace_refs: baseline.trace_refs,
          node_lab_run: baseline.node_lab_run,
          does_not_prove: [
@@ -398,19 +427,27 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     }
   end
 
-  defp status(baseline, node_lab_run, envelope_scan, aitrace_exports) do
+  defp status(baseline, node_lab_run, envelope_scan, aitrace_exports, persistence_profiles) do
     if baseline.status == :pass and node_lab_run["status"] == "pass" and
-         envelope_scan["status"] == "pass" and evidence_status(aitrace_exports) == "pass" do
+         envelope_scan["status"] == "pass" and evidence_status(aitrace_exports) == "pass" and
+         persistence_status(persistence_profiles) == "pass" do
       :pass
     else
       :open_defect
     end
   end
 
-  defp router_model_status(baseline, node_lab_run, envelope_scan, aitrace_exports) do
+  defp router_model_status(
+         baseline,
+         node_lab_run,
+         envelope_scan,
+         aitrace_exports,
+         persistence_profiles
+       ) do
     if baseline.status == :pass and node_lab_run["status"] == "pass" and
          envelope_scan["status"] == "pass" and route_and_model_refs_present?(baseline) and
-         model_accounting_present?(baseline) and evidence_status(aitrace_exports) == "pass" do
+         model_accounting_present?(baseline) and evidence_status(aitrace_exports) == "pass" and
+         persistence_status(persistence_profiles) == "pass" do
       :pass
     else
       :open_defect
@@ -516,6 +553,104 @@ defmodule StackLab.Examples.GnTenDistributedStack do
 
   defp evidence_status(exports) do
     if Enum.all?(exports, &(Map.get(&1, "status") == "pass")), do: "pass", else: "open_defect"
+  end
+
+  defp persistence_profiles do
+    case call(@persistence_roundtrip, :run, []) do
+      {:ok, receipt} ->
+        profile_receipts = Enum.map(receipt.profile_receipts, &profile_receipt_fact/1)
+        deterministic_profile_ids = ["mickey_mouse", "memory_debug"]
+
+        deterministic_profiles =
+          Enum.filter(profile_receipts, &(&1["profile_id"] in deterministic_profile_ids))
+
+        %{
+          "status" => Atom.to_string(receipt.status),
+          "source_receipt_ref" => receipt.receipt_ref,
+          "deterministic_profiles" => deterministic_profiles,
+          "opt_in_external_profiles" => opt_in_external_profiles(profile_receipts),
+          "matrix_scan" => json_safe(receipt.matrix_scan),
+          "substrate_started_by_stack_lab?" => false,
+          "temporal_started_by_stack_lab?" => false,
+          "postgres_started_by_stack_lab?" => false,
+          "raw_debug_payloads_persisted?" => false
+        }
+
+      {:error, reason} ->
+        %{
+          "status" => "open_defect",
+          "reason" => inspect(reason),
+          "deterministic_profiles" => [],
+          "opt_in_external_profiles" => [],
+          "substrate_started_by_stack_lab?" => false,
+          "temporal_started_by_stack_lab?" => false,
+          "postgres_started_by_stack_lab?" => false,
+          "raw_debug_payloads_persisted?" => false
+        }
+    end
+  end
+
+  defp persistence_status(%{
+         "status" => "pass",
+         "deterministic_profiles" => deterministic_profiles
+       }) do
+    profile_ids =
+      deterministic_profiles
+      |> Enum.map(&Map.fetch!(&1, "profile_id"))
+      |> MapSet.new()
+
+    if MapSet.subset?(MapSet.new(["mickey_mouse", "memory_debug"]), profile_ids) do
+      "pass"
+    else
+      "open_defect"
+    end
+  end
+
+  defp persistence_status(_profiles), do: "open_defect"
+
+  defp profile_receipt_fact(profile_receipt) do
+    %{
+      "profile_id" => profile_receipt.profile_id |> Atom.to_string(),
+      "selected_tier" => profile_receipt.selected_tier |> Atom.to_string(),
+      "store_set_id" => profile_receipt.store_set_id |> Atom.to_string(),
+      "capture_level" => profile_receipt.capture_level |> Atom.to_string(),
+      "restart_claim" => profile_receipt.restart_claim |> Atom.to_string(),
+      "durable_opt_in?" => profile_receipt.durable_opt_in?,
+      "durable_tag" => profile_receipt.durable_tag,
+      "proof_command" => profile_receipt.proof_command,
+      "storage_behavior_ref" => profile_receipt.storage_behavior_ref,
+      "authority_semantics_ref" => profile_receipt.authority_semantics_ref
+    }
+  end
+
+  defp opt_in_external_profiles(profile_receipts) do
+    postgres_profiles =
+      profile_receipts
+      |> Enum.filter(&(&1["profile_id"] in ["integration_postgres", "full_debug_tracked"]))
+      |> Enum.map(fn profile ->
+        Map.merge(profile, %{
+          "proof_mode" => "opt_in_preflight_only",
+          "compose_ref" => "tools/compose/multi-node.yml",
+          "toxiproxy_ref" => "tools/toxiproxy/toxiproxy.json",
+          "substrate_started_by_stack_lab?" => false
+        })
+      end)
+
+    postgres_profiles ++
+      [
+        %{
+          "profile_id" => "ops_durable_temporal",
+          "selected_tier" => "ops_durable",
+          "store_set_id" => "temporal_workflow_runtime",
+          "capture_level" => "metadata",
+          "restart_claim" => "durable_restart",
+          "durable_opt_in?" => true,
+          "durable_tag" => "persistence-durable-opt-in",
+          "proof_mode" => "blocked_until_repo_owned_just",
+          "just_command" => "cd /home/home/p/g/n/mezzanine && just dev-status",
+          "substrate_started_by_stack_lab?" => false
+        }
+      ]
   end
 
   defp replay_bundle(baseline, scenario) do

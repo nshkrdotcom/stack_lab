@@ -30,6 +30,8 @@ defmodule StackLab.GnTenDistributedStack.MixProject do
       {:stack_lab_context_abi_roundtrip, path: "../context_abi_roundtrip", runtime: false},
       {:stack_lab_nshkr_router_fabric_roundtrip,
        path: "../nshkr_router_fabric_roundtrip", runtime: false},
+      {:stack_lab_persistence_mode_roundtrip,
+       path: "../persistence_mode_roundtrip", runtime: false},
       {:app_kit_mezzanine_bridge,
        path: "../../../app_kit/bridges/mezzanine_bridge", runtime: false},
       {:mezzanine_execution_engine,

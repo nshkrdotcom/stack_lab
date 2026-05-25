@@ -31,6 +31,15 @@ Phase 11 records local fault and recovery posture:
 - keep WAN, production discovery, release boot, and live-provider retry
   semantics as explicit non-claims.
 
+Phase 12 adds persistence and external-substrate posture:
+
+- include the existing deterministic persistence matrix proof in distributed
+  receipts;
+- require `:mickey_mouse` and `:memory_debug` profile facts before a receipt is
+  `pass`;
+- record Postgres and Temporal as opt-in external profiles only;
+- do not start Postgres, Temporal, or Toxiproxy from this proof app.
+
 ## Commands
 
 ```bash
