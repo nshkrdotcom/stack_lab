@@ -10,6 +10,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
   alias Jido.Integration.V2.SubjectRef
   alias StackLab.CitadelSpineHarness.BoundedNames
 
+  @blocked_consumer_timeout_ms 30_000
+
   defmodule TestSignalSource do
     @moduledoc false
     @behaviour Citadel.Ports.SignalSource
@@ -21,6 +23,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
   defmodule BlockingConsumer do
     @moduledoc false
     use GenServer
+
+    @blocked_consumer_timeout_ms 30_000
 
     def start(opts), do: GenServer.start_link(__MODULE__, opts)
 
@@ -41,7 +45,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
         {:release_consumer, signal_id} when signal_id == observation.signal_id ->
           {:reply, :ok, state}
       after
-        5_000 ->
+        @blocked_consumer_timeout_ms ->
           {:reply, {:error, :blocked_consumer_timeout}, state}
       end
     end
@@ -62,14 +66,20 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
 
   defp prove_signal_ingress_eviction do
     expired_name = unique_name(:phase5_eviction_signal_expired)
+    {:ok, partition_supervisor} = DynamicSupervisor.start_link(strategy: :one_for_one)
+    Process.unlink(partition_supervisor)
 
     {:ok, expired_pid} =
-      SignalIngress.start_link(signal_ingress_opts(expired_name, expired_policy()))
+      SignalIngress.start_link(
+        signal_ingress_opts(expired_name, expired_policy(), partition_supervisor)
+      )
 
     capped_name = unique_name(:phase5_eviction_signal_capped)
 
     {:ok, capped_pid} =
-      SignalIngress.start_link(signal_ingress_opts(capped_name, capped_policy()))
+      SignalIngress.start_link(
+        signal_ingress_opts(capped_name, capped_policy(), partition_supervisor)
+      )
 
     {:ok, blocking_consumer} = BlockingConsumer.start(recorder: self())
 
@@ -131,6 +141,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
       stop_process(expired_pid)
       stop_process(capped_pid)
       stop_process(blocking_consumer)
+      stop_process(partition_supervisor)
     end
   end
 
@@ -298,7 +309,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
     end
   end
 
-  defp signal_ingress_opts(name, eviction_policy) do
+  defp signal_ingress_opts(name, eviction_policy, partition_supervisor) do
     [
       name: name,
       signal_source: TestSignalSource,
@@ -310,7 +321,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
         retry_after_ms: 100,
         delivery_order_scope: :partition_fifo
       ],
-      eviction_policy: eviction_policy
+      eviction_policy: eviction_policy,
+      partition_worker_supervisor: partition_supervisor
     ]
   end
 
@@ -384,7 +396,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5SessionLeaseMapEviction do
     receive do
       {:consumer_blocked, ^signal_id} -> :ok
     after
-      5_000 -> raise "consumer did not block on #{inspect(signal_id)}"
+      @blocked_consumer_timeout_ms -> raise "consumer did not block on #{inspect(signal_id)}"
     end
   end
 

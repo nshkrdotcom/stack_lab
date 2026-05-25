@@ -139,6 +139,12 @@ path, and run GitHub or Linear live commands by prefixing them with
   `Trinity.MezzanineRouterAdapter`, Mezzanine render handoff, Jido fake model
   invocation, AITrace bounded route/model/eval facts, AppKit projections, and
   StackLab context/router/coordination/model scanner receipts.
+- `fugu_single_node_readiness_handoff`: records the Phase 16 single-node
+  provider-free handoff receipt that unblocks the `../nshkr_v2` distributed
+  StackLab checklist. It names Context ABI, router fabric, and Extravaganza
+  external acceptance as required upstream proofs, records that live provider
+  checks are opt-in through explicit flags plus `~/scripts/with_bash_secrets`,
+  and leaves distributed BEAM placement to v2.
 - `cost_budget_scanner`: verifies adaptive token, provider request,
   self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
   search, provider pool turn, role budget, promotion, failed retry, budget

@@ -1,0 +1,71 @@
+{
+  "schema_version": "stack_lab.fugu_single_node_readiness.v1",
+  "status": "pass",
+  "receipt_ref": "receipt://stack_lab/fugu_single_node_readiness/latest",
+  "handoff_scope": "single_node_provider_free_fugu_substrate",
+  "v2_unblocker?": true,
+  "v2_readiness_gate": {
+    "target_docset": "../nshkr_v2",
+    "unblocks_phase": "Phase 0 readiness audit and Phase 8 context distributed proof",
+    "blocked_until_required_proofs_green?": true
+  },
+  "required_provider_free_proofs": [
+    {
+      "proof_id": "context_abi_roundtrip",
+      "command": "cd examples/context_abi_roundtrip && mix stack_lab.context_abi.roundtrip --json",
+      "receipt_ref": "receipt://stack_lab/context_abi_roundtrip/latest",
+      "required_status": "implemented"
+    },
+    {
+      "proof_id": "nshkr_router_fabric_roundtrip",
+      "command": "cd examples/nshkr_router_fabric_roundtrip && mix stack_lab.nshkr.router_fabric.roundtrip --json",
+      "receipt_ref": "receipt://stack_lab/nshkr_router_fabric_roundtrip/latest",
+      "required_status": "implemented"
+    },
+    {
+      "proof_id": "extravaganza_external_acceptance",
+      "command": "mix stack_lab.extravaganza.external_acceptance --json",
+      "receipt_ref": "receipt://stack_lab/extravaganza_external_acceptance/latest",
+      "required_status": "implemented"
+    }
+  ],
+  "live_provider_profile": {
+    "schema_version": "stack_lab.fugu_live_provider_guard.v1",
+    "live_provider_behavior_ci_default?": false,
+    "requires_explicit_flags": [
+      "--allow-live",
+      "--secrets-loaded"
+    ],
+    "required_secret_wrapper": "~/scripts/with_bash_secrets",
+    "guarded_command": "mix stack_lab.provider_smoke_check",
+    "does_not_prove": [
+      "production credential rotation",
+      "provider billing correctness",
+      "multi-product live-provider parity",
+      "distributed BEAM placement"
+    ]
+  },
+  "persistence_and_restart_claims": {
+    "single_node_profile": "provider_free_deterministic",
+    "persistence_profile": "ref_only_fixture",
+    "restart_claim": "covered_by_existing_restart_and_persistence proof rows where cited",
+    "temporal_claim": "not started by fugu handoff",
+    "postures": [
+      "no live provider credentials required",
+      "no distributed topology claim",
+      "generated receipts stay under StackLab tmp or docs/receipts"
+    ]
+  },
+  "distributed_claim": {
+    "proven?": false,
+    "handoff_owner": "../nshkr_v2",
+    "safe_action": "prove placement through StackLab distributed topology profiles"
+  },
+  "does_not_prove": [
+    "live provider behavior",
+    "distributed BEAM placement",
+    "production persistence",
+    "production credential rotation",
+    "49-node local scale feasibility"
+  ]
+}

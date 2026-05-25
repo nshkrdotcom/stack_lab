@@ -67,6 +67,7 @@ The current harness covers:
 - persistence-profile matrix receipts with explicit store, tier, capture, and
   restart-claim fields
 - GEPA, TRINITY, cost/budget, and adaptive-control prior-fabric proofs
+- fugu single-node readiness handoff for the distributed `nshkr_v2` proof plan
 - AITrace-backed receipt collection and release-proof mapping
 
 This makes StackLab the answer to "does the stack claim have executable proof?"
@@ -292,6 +293,15 @@ root that composes Linear terminal publication, GitHub disposable PR
 creation/review/cleanup, Codex app-server execution, Temporal substrate status,
 and a local receipt without accepting static provider selectors.
 Provider smoke remains a provider/substrate check, not product acceptance.
+For fugu closeout, the guarded wrapper refuses live-provider smoke unless the
+caller passes explicit live and secrets-loaded flags after using the documented
+secret wrapper:
+
+```bash
+mix stack_lab.fugu.readiness_handoff --json
+~/scripts/with_bash_secrets mix stack_lab.fugu.live_provider_smoke --allow-live --secrets-loaded -- --linear-api-key-stdin
+```
+
 Extravaganza product behavior is externally accepted by shelling out to the
 product-owned command:
 

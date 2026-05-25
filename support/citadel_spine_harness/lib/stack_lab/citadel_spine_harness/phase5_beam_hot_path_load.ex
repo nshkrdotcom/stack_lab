@@ -475,13 +475,20 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
   end
 
   defp start_signal_ingress(name, admission_policy) do
-    partition_supervisor = runtime_support_supervisor!()
+    case DynamicSupervisor.start_link(strategy: :one_for_one) do
+      {:ok, partition_supervisor} ->
+        Process.unlink(partition_supervisor)
 
-    case SignalIngress.start_link(
-           signal_ingress_opts(name, admission_policy, partition_supervisor)
-         ) do
-      {:ok, ingress_pid} ->
-        {:ok, ingress_pid, partition_supervisor}
+        case SignalIngress.start_link(
+               signal_ingress_opts(name, admission_policy, partition_supervisor)
+             ) do
+          {:ok, ingress_pid} ->
+            {:ok, ingress_pid, partition_supervisor}
+
+          {:error, reason} ->
+            stop_process(partition_supervisor)
+            {:error, reason}
+        end
 
       {:error, reason} ->
         {:error, reason}
@@ -495,19 +502,6 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
       admission_policy: admission_policy,
       partition_worker_supervisor: partition_supervisor
     ]
-  end
-
-  defp runtime_support_supervisor! do
-    supervisor = StackLab.CitadelSpineHarness.RuntimeSupportSupervisor
-
-    case Process.whereis(supervisor) do
-      pid when is_pid(pid) ->
-        supervisor
-
-      nil ->
-        {:ok, _apps} = Application.ensure_all_started(:stack_lab_citadel_spine_harness)
-        supervisor
-    end
   end
 
   defp sustained_policy do

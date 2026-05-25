@@ -468,3 +468,31 @@ proofs:
       posture:
         authoritative_audit?: false
         production_deployment_proven?: false
+
+  - id: fugu_single_node_readiness_handoff
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: assembled_offline
+    command: mix stack_lab.fugu.readiness_handoff --json
+    fixture: docs/receipts/gn_ten_phase16/fugu_single_node_handoff.json
+    receipt: receipt://stack_lab/fugu_single_node_readiness/latest
+    proves:
+      - provider-free fugu Context ABI and router fabric proofs are the single-node substrate blockers for distributed v2 work
+      - Extravaganza external product acceptance is part of the single-node handoff posture
+      - live provider checks are opt-in and guarded by explicit live and secrets-loaded flags
+      - distributed BEAM placement is handed off to the nshkr_v2 StackLab topology checklist instead of being claimed here
+      - persistence and restart claims are profile-specific and remain provider-free unless separately proven
+    does_not_prove:
+      - live provider behavior
+      - distributed BEAM placement
+      - production persistence
+      - production credential rotation
+      - 49-node local scale feasibility
+    next_action: use this receipt as the explicit v2 readiness gate before distributed context topology work begins
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/fugu_single_node_readiness/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
