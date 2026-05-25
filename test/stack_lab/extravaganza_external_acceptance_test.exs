@@ -10,6 +10,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptanceTest do
     run
     evidence
     route_evidence
+    context_ai_summary
     events
     reviews
     review_decision
@@ -75,6 +76,8 @@ defmodule StackLab.ExtravaganzaExternalAcceptanceTest do
     assert receipt["validated_refs"]["evidence_chain_ref"] == "evidence-chain://example"
     assert receipt["validated_route_evidence"]["binding_ref"] == "binding://example"
     assert receipt["validated_route_evidence"]["trace_replay"]["status"] == "not_emitted"
+    assert receipt["validated_context_ai_summary"]["surface"] == "AppKit.ContextSurface"
+    assert receipt["validated_context_ai_summary"]["payload_hash"] =~ "sha256:"
   end
 
   test "rejects product output that lacks required refs" do
@@ -89,6 +92,15 @@ defmodule StackLab.ExtravaganzaExternalAcceptanceTest do
     assert {:error, reason} = ExtravaganzaExternalAcceptance.run(runner: runner)
     assert reason.code == "extravaganza_receipt_missing_refs"
     assert reason.missing_refs == ["authority_ref"]
+  end
+
+  test "accepts product receipt with compile warning prefix" do
+    runner = fn _command, _args, _opts ->
+      {"==> dependency warning\n" <> Jason.encode!(product_receipt()), 0}
+    end
+
+    assert {:ok, receipt} = ExtravaganzaExternalAcceptance.run(runner: runner)
+    assert receipt["status"] == "pass"
   end
 
   test "rejects product output without a lower receipt or lower denial ref" do
@@ -140,6 +152,51 @@ defmodule StackLab.ExtravaganzaExternalAcceptanceTest do
     assert "product_role_ref" in reason.missing_fields
   end
 
+  test "rejects product output without product-safe context AI summary" do
+    runner = fn _command, _args, _opts ->
+      product_receipt =
+        product_receipt()
+        |> pop_in(["data", "context_ai_summary"])
+        |> elem(1)
+        |> pop_in(["data", "proof", "context_ai_summary"])
+        |> elem(1)
+        |> update_in(["data", "proof", "readbacks"], fn readbacks ->
+          Enum.map(readbacks, fn
+            %{"name" => "context_ai_summary"} = readback -> Map.put(readback, "data", %{})
+            readback -> readback
+          end)
+        end)
+
+      {Jason.encode!(product_receipt), 0}
+    end
+
+    assert {:error, reason} = ExtravaganzaExternalAcceptance.run(runner: runner)
+    assert reason.code == "extravaganza_receipt_missing_context_ai_summary"
+  end
+
+  test "rejects product output with raw context AI fields" do
+    runner = fn _command, _args, _opts ->
+      product_receipt =
+        product_receipt()
+        |> put_in(["data", "context_ai_summary", "forbidden_raw_fields_present?"], true)
+        |> put_in(["data", "proof", "context_ai_summary", "forbidden_raw_fields_present?"], true)
+        |> update_in(["data", "proof", "readbacks"], fn readbacks ->
+          Enum.map(readbacks, fn
+            %{"name" => "context_ai_summary"} = readback ->
+              put_in(readback, ["data", "forbidden_raw_fields_present?"], true)
+
+            readback ->
+              readback
+          end)
+        end)
+
+      {Jason.encode!(product_receipt), 0}
+    end
+
+    assert {:error, reason} = ExtravaganzaExternalAcceptance.run(runner: runner)
+    assert reason.code == "extravaganza_receipt_context_summary_has_raw_fields"
+  end
+
   defp product_receipt do
     refs = %{
       "subject_ref" => "subject://example",
@@ -167,6 +224,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptanceTest do
     }
 
     route_evidence = route_evidence(refs)
+    context_summary = context_ai_summary(refs)
 
     %{
       "schema" => "extravaganza.headless.response.v1",
@@ -178,12 +236,15 @@ defmodule StackLab.ExtravaganzaExternalAcceptanceTest do
       "refs" => refs,
       "data" => %{
         "route_evidence" => route_evidence,
+        "context_ai_summary" => context_summary,
         "proof" => %{
           "proof_class" => "product_same_run_deterministic",
           "all_readbacks_share_refs" => true,
           "route_evidence" => route_evidence,
+          "context_ai_summary" => context_summary,
           "steps" => ["mezzanine_runtime_projection_projected"],
-          "readbacks" => Enum.map(@required_readbacks, &readback(&1, refs, route_evidence))
+          "readbacks" =>
+            Enum.map(@required_readbacks, &readback(&1, refs, route_evidence, context_summary))
         },
         "start" => %{
           "subject_ref" => refs["subject_ref"],
@@ -195,14 +256,21 @@ defmodule StackLab.ExtravaganzaExternalAcceptanceTest do
     }
   end
 
-  defp readback("route_evidence" = name, refs, route_evidence) do
+  defp readback("route_evidence" = name, refs, route_evidence, _context_summary) do
     refs
     |> Map.put("name", name)
     |> Map.put("ok", true)
     |> Map.put("data", route_evidence)
   end
 
-  defp readback(name, refs, _route_evidence) do
+  defp readback("context_ai_summary" = name, refs, _route_evidence, context_summary) do
+    refs
+    |> Map.put("name", name)
+    |> Map.put("ok", true)
+    |> Map.put("data", context_summary)
+  end
+
+  defp readback(name, refs, _route_evidence, _context_summary) do
     refs
     |> Map.put("name", name)
     |> Map.put("ok", true)
@@ -225,6 +293,35 @@ defmodule StackLab.ExtravaganzaExternalAcceptanceTest do
       "trace_replay" => %{
         "status" => "not_emitted",
         "replay_system_ref" => "ai_trace",
+        "trace_ref" => refs["trace_ref"]
+      }
+    }
+  end
+
+  defp context_ai_summary(refs) do
+    %{
+      "surface" => "AppKit.ContextSurface",
+      "proof_class" => "extravaganza_context_ai_product_projection",
+      "live_provider_required?" => false,
+      "lower_stack_imports?" => false,
+      "forbidden_raw_fields_present?" => false,
+      "context_packet" => %{
+        "context_packet_ref" => "context-packet://example",
+        "packet_hash" => "sha256:" <> String.duplicate("a", 64),
+        "receipt_ref" => "context-packet-receipt://example"
+      },
+      "route_decision" => %{"route_decision_ref" => "route-decision://example"},
+      "model_invocation" => %{
+        "model_invocation_ref" => "model-invocation://example",
+        "model_receipt_ref" => "model-receipt://example",
+        "prompt_artifact_ref" => "prompt-artifact://example",
+        "provider_payload_ref" => "provider-payload://example",
+        "payload_hash" => "sha256:" <> String.duplicate("b", 64)
+      },
+      "eval_verdict" => %{"eval_verdict_ref" => "eval-verdict://example"},
+      "operator_review" => %{"review_ref" => "review://example"},
+      "projection_facts" => %{
+        "context_packet_ref" => "context-packet://example",
         "trace_ref" => refs["trace_ref"]
       }
     }

@@ -11,6 +11,7 @@ defmodule StackLab.NoBypassScannerTest do
     assert receipt.status == :pass
     assert receipt.fixture_ref == "AOC-044"
     assert receipt.owner_repo == "extravaganza"
+    assert "app-kit-context-surface://tenant-1/context" in receipt.approved_facade_refs
     assert receipt.findings == []
   end
 
@@ -56,6 +57,7 @@ defmodule StackLab.NoBypassScannerTest do
       target_code_paths: ["apps/extravaganza_core/lib/extravaganza/headless_surface.ex"],
       approved_facade_refs: [
         "app-kit-adaptive-control-surface://tenant-1/adaptive",
+        "app-kit-context-surface://tenant-1/context",
         "app-kit-headless-surface://tenant-1/headless",
         "app-kit-authority-projection://tenant-1/headless"
       ],

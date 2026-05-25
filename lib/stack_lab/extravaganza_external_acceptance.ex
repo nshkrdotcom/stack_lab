@@ -35,6 +35,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
     run
     evidence
     route_evidence
+    context_ai_summary
     events
     reviews
     review_decision
@@ -69,6 +70,20 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
     evidence_ref
     trace_ref
   )
+
+  @required_context_ai_summary_paths [
+    ["context_packet", "context_packet_ref"],
+    ["context_packet", "packet_hash"],
+    ["context_packet", "receipt_ref"],
+    ["route_decision", "route_decision_ref"],
+    ["model_invocation", "model_invocation_ref"],
+    ["model_invocation", "model_receipt_ref"],
+    ["model_invocation", "prompt_artifact_ref"],
+    ["model_invocation", "provider_payload_ref"],
+    ["model_invocation", "payload_hash"],
+    ["eval_verdict", "eval_verdict_ref"],
+    ["operator_review", "review_ref"]
+  ]
 
   @spec command_args() :: [String.t()]
   def command_args, do: @product_args
@@ -130,7 +145,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
   end
 
   defp decode_product_receipt(output) do
-    case Jason.decode(String.trim(output)) do
+    case decode_json_receipt(output) do
       {:ok, %{} = receipt} ->
         {:ok, receipt}
 
@@ -146,6 +161,35 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
     end
   end
 
+  defp decode_json_receipt(output) do
+    trimmed = String.trim(output)
+
+    case Jason.decode(trimmed) do
+      {:ok, decoded} -> {:ok, decoded}
+      {:error, _reason} -> decode_trailing_json_receipt(trimmed)
+    end
+  end
+
+  defp decode_trailing_json_receipt(output) do
+    output
+    |> :binary.matches("{")
+    |> Enum.map(fn {position, 1} ->
+      binary_part(output, position, byte_size(output) - position)
+    end)
+    |> Enum.reverse()
+    |> Enum.find_value(fn candidate ->
+      case Jason.decode(String.trim(candidate)) do
+        {:ok, %{"schema" => @product_schema} = receipt} -> {:ok, receipt}
+        {:ok, %{} = receipt} -> {:ok, receipt}
+        _other -> nil
+      end
+    end)
+    |> case do
+      nil -> Jason.decode(output)
+      decoded -> decoded
+    end
+  end
+
   defp validate_product_receipt(%{} = receipt) do
     with :ok <-
            require_equal(receipt["schema"], @product_schema, "extravaganza_receipt_bad_schema"),
@@ -155,7 +199,8 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
          :ok <- require_required_refs(receipt),
          :ok <- require_lower_terminal_ref(receipt),
          :ok <- require_readbacks(receipt),
-         :ok <- require_route_evidence(receipt) do
+         :ok <- require_route_evidence(receipt),
+         :ok <- require_context_ai_summary(receipt) do
       require_projection_proof(receipt)
     end
   end
@@ -245,6 +290,74 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
     end
   end
 
+  defp require_context_ai_summary(receipt) do
+    summary = context_ai_summary(receipt)
+
+    with :ok <- require_context_summary_present(summary),
+         :ok <- require_context_summary_surface(summary),
+         :ok <- require_context_summary_product_safe(summary),
+         :ok <- require_context_summary_hashes(summary) do
+      require_context_summary_refs(summary)
+    end
+  end
+
+  defp require_context_summary_present(%{} = summary) when map_size(summary) > 0, do: :ok
+
+  defp require_context_summary_present(_summary) do
+    {:error, error("extravaganza_receipt_missing_context_ai_summary")}
+  end
+
+  defp require_context_summary_surface(%{"surface" => "AppKit.ContextSurface"}), do: :ok
+
+  defp require_context_summary_surface(summary) do
+    {:error, error("extravaganza_receipt_bad_context_surface", surface: summary["surface"])}
+  end
+
+  defp require_context_summary_product_safe(summary) do
+    if summary["live_provider_required?"] == false and summary["lower_stack_imports?"] == false and
+         summary["forbidden_raw_fields_present?"] == false do
+      :ok
+    else
+      context_summary_safety_error(summary)
+    end
+  end
+
+  defp context_summary_safety_error(%{"forbidden_raw_fields_present?" => value})
+       when value != false do
+    {:error, error("extravaganza_receipt_context_summary_has_raw_fields")}
+  end
+
+  defp context_summary_safety_error(_summary) do
+    {:error, error("extravaganza_receipt_context_summary_not_product_safe")}
+  end
+
+  defp require_context_summary_hashes(summary) do
+    cond do
+      not safe_sha?(get_in(summary, ["context_packet", "packet_hash"])) ->
+        {:error, error("extravaganza_receipt_context_packet_hash_invalid")}
+
+      not safe_sha?(get_in(summary, ["model_invocation", "payload_hash"])) ->
+        {:error, error("extravaganza_receipt_model_payload_hash_invalid")}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp require_context_summary_refs(summary) do
+    missing =
+      @required_context_ai_summary_paths
+      |> Enum.reject(fn path -> safe_ref?(get_in(summary, path)) end)
+      |> Enum.map(&Enum.join(&1, "."))
+
+    if missing == [] do
+      :ok
+    else
+      {:error,
+       error("extravaganza_receipt_context_summary_missing_refs", missing_fields: missing)}
+    end
+  end
+
   defp external_receipt(product_receipt, opts) do
     root = Keyword.get(opts, :extravaganza_root, default_extravaganza_root())
     refs = refs(product_receipt)
@@ -270,6 +383,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
       },
       "validated_refs" => validated_refs(refs),
       "validated_route_evidence" => route_evidence(product_receipt),
+      "validated_context_ai_summary" => compact_context_summary(product_receipt),
       "product_receipt" => product_summary(product_receipt),
       "provider_smoke" => %{
         "classification" => "separate_provider_only_not_product_acceptance",
@@ -304,6 +418,7 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
       "readbacks" => Enum.map(readbacks(receipt), & &1["name"]),
       "steps" => proof_steps(receipt),
       "route_evidence" => route_evidence(receipt),
+      "context_ai_summary" => compact_context_summary(receipt),
       "refs" =>
         Map.take(
           refs(receipt),
@@ -348,6 +463,49 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
 
   defp route_evidence_readback(_readback), do: nil
 
+  defp context_ai_summary(receipt) do
+    direct = map_or_empty(get_in(receipt, ["data", "context_ai_summary"]))
+    proof_summary = map_or_empty(get_in(receipt, ["data", "proof", "context_ai_summary"]))
+
+    cond do
+      direct != %{} ->
+        direct
+
+      proof_summary != %{} ->
+        proof_summary
+
+      true ->
+        receipt
+        |> readbacks()
+        |> Enum.find_value(%{}, &context_ai_summary_readback/1)
+    end
+  end
+
+  defp context_ai_summary_readback(%{"name" => "context_ai_summary"} = readback) do
+    map_or_empty(readback["data"])
+  end
+
+  defp context_ai_summary_readback(_readback), do: nil
+
+  defp compact_context_summary(receipt) do
+    summary = context_ai_summary(receipt)
+
+    %{
+      "surface" => summary["surface"],
+      "proof_class" => summary["proof_class"],
+      "context_packet_ref" => get_in(summary, ["context_packet", "context_packet_ref"]),
+      "packet_hash" => get_in(summary, ["context_packet", "packet_hash"]),
+      "route_decision_ref" => get_in(summary, ["route_decision", "route_decision_ref"]),
+      "model_invocation_ref" => get_in(summary, ["model_invocation", "model_invocation_ref"]),
+      "model_receipt_ref" => get_in(summary, ["model_invocation", "model_receipt_ref"]),
+      "eval_verdict_ref" => get_in(summary, ["eval_verdict", "eval_verdict_ref"]),
+      "review_ref" => get_in(summary, ["operator_review", "review_ref"]),
+      "prompt_artifact_ref" => get_in(summary, ["model_invocation", "prompt_artifact_ref"]),
+      "provider_payload_ref" => get_in(summary, ["model_invocation", "provider_payload_ref"]),
+      "payload_hash" => get_in(summary, ["model_invocation", "payload_hash"])
+    }
+  end
+
   defp readbacks(receipt) do
     case proof(receipt)["readbacks"] do
       readbacks when is_list(readbacks) -> readbacks
@@ -359,6 +517,8 @@ defmodule StackLab.ExtravaganzaExternalAcceptance do
   defp map_or_empty(_value), do: %{}
 
   defp safe_ref?(value), do: is_binary(value) and String.trim(value) != ""
+  defp safe_sha?("sha256:" <> hash), do: byte_size(hash) == 64
+  defp safe_sha?(_value), do: false
 
   defp mix_executable, do: System.find_executable("mix") || "mix"
 
