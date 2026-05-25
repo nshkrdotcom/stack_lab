@@ -10,7 +10,7 @@ defmodule StackLab.NSHKRRouterFabricRoundtrip.MixProject do
       deps: deps(),
       aliases: aliases(),
       docs: [main: "readme", extras: ["README.md"]],
-      dialyzer: [plt_add_deps: :apps_direct],
+      dialyzer: [plt_add_deps: :apps_direct, plt_add_apps: [:mix]],
       name: "StackLab NSHKR Router Fabric Roundtrip",
       description: "Deterministic provider-free NSHKR router fabric proof"
     ]
@@ -53,7 +53,7 @@ defmodule StackLab.NSHKRRouterFabricRoundtrip.MixProject do
       {:jason, "~> 1.4"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.40.1", only: [:dev, :test], runtime: false}
     ]
   end
 

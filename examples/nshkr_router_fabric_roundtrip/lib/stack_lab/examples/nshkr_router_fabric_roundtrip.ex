@@ -18,6 +18,10 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip.Receipt do
     :payload_hash,
     :model_invocation_ref,
     :model_receipt_ref,
+    :model_token_summary,
+    :model_cost_summary,
+    :model_stream_refs,
+    :stream_fragment_posture,
     :appkit_projection_refs,
     :scanner_receipts,
     :failure_receipts,
@@ -114,6 +118,10 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
          payload_hash: render_result.payload_hash,
          model_invocation_ref: model_receipt.invocation_ref,
          model_receipt_ref: model_receipt.receipt_ref,
+         model_token_summary: model_receipt.token_summary,
+         model_cost_summary: model_receipt.cost_summary,
+         model_stream_refs: model_receipt.stream_refs,
+         stream_fragment_posture: stream_fragment_posture(model_receipt),
          appkit_projection_refs: appkit_projection_refs(projections),
          scanner_receipts: scanner_receipts,
          failure_receipts: [failure_fixtures.failure_receipt],
@@ -270,6 +278,14 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
   defp invoke_model(invocation_request) do
     _ = Code.ensure_loaded(FakeInvoker)
     InferenceRuntime.invoke(invocation_request, invoker: FakeInvoker)
+  end
+
+  defp stream_fragment_posture(model_receipt) do
+    if model_receipt.stream_refs == [] do
+      "not_requested"
+    else
+      "stream_refs_only"
+    end
   end
 
   defp appkit_projections(packet, admission_receipt, grant, route_decision, model_receipt) do

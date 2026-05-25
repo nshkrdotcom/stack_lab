@@ -28,6 +28,8 @@ defmodule StackLab.GnTenDistributedStack.MixProject do
     [
       {:stack_lab_gn_ten_node_lab, path: "../../support/gn_ten_node_lab", runtime: false},
       {:stack_lab_context_abi_roundtrip, path: "../context_abi_roundtrip", runtime: false},
+      {:stack_lab_nshkr_router_fabric_roundtrip,
+       path: "../nshkr_router_fabric_roundtrip", runtime: false},
       {:app_kit_mezzanine_bridge,
        path: "../../../app_kit/bridges/mezzanine_bridge", runtime: false},
       {:mezzanine_execution_engine,
@@ -36,6 +38,8 @@ defmodule StackLab.GnTenDistributedStack.MixProject do
        path: "../../../citadel/core/context_authority_contract", runtime: false},
       {:outer_brain_context_abi,
        path: "../../../outer_brain/core/context_abi", override: true, runtime: false},
+      {:jido_inference_runtime,
+       path: "../../../jido_integration/core/inference_runtime", runtime: false},
       {:execution_plane,
        path: "../../../execution_plane/core/execution_plane", override: true, runtime: false},
       {:aitrace, path: "../../../AITrace", override: true, runtime: false},
