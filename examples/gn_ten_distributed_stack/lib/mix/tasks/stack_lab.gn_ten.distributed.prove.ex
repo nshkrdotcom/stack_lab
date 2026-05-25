@@ -28,6 +28,9 @@ defmodule Mix.Tasks.StackLab.GnTen.Distributed.Prove do
       "router_model_6_node" ->
         run_router_model(opts)
 
+      "partition_recovery" ->
+        run_partition_recovery(opts)
+
       other ->
         Mix.raise("unsupported distributed proof profile: #{other}")
     end
@@ -64,6 +67,28 @@ defmodule Mix.Tasks.StackLab.GnTen.Distributed.Prove do
       |> Enum.map(fn {:topology, path} -> {:topology_path, path} end)
 
     case GnTenDistributedStack.run_router_model_6_node(proof_opts) do
+      {:ok, receipt} when json? ->
+        Mix.shell().info(GnTenDistributedStack.to_json!(receipt))
+
+      {:ok, receipt} ->
+        Mix.shell().info("status=#{receipt.status}")
+        Mix.shell().info("receipt_ref=#{receipt.receipt_ref}")
+        Mix.shell().info("topology_ref=#{receipt.topology_ref}")
+
+      {:error, reason} ->
+        Mix.raise("distributed proof failed: #{inspect(reason)}")
+    end
+  end
+
+  defp run_partition_recovery(opts) do
+    json? = Keyword.get(opts, :json, false)
+
+    proof_opts =
+      opts
+      |> Keyword.take([:topology])
+      |> Enum.map(fn {:topology, path} -> {:topology_path, path} end)
+
+    case GnTenDistributedStack.run_partition_recovery(proof_opts) do
       {:ok, receipt} when json? ->
         Mix.shell().info(GnTenDistributedStack.to_json!(receipt))
 

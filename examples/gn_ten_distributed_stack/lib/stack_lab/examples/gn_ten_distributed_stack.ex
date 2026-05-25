@@ -108,17 +108,56 @@ defmodule StackLab.Examples.GnTenDistributedStack.RouterModelReceipt do
         }
 end
 
+defmodule StackLab.Examples.GnTenDistributedStack.FaultRecoveryReceipt do
+  @moduledoc "Distributed gn-ten fault and recovery proof receipt."
+
+  @enforce_keys [
+    :receipt_ref,
+    :schema_version,
+    :status,
+    :profile,
+    :topology_ref,
+    :baseline_receipt_ref,
+    :fault_receipts,
+    :owner_recovery_evidence,
+    :trace_refs,
+    :node_lab_run,
+    :does_not_prove
+  ]
+  defstruct @enforce_keys
+
+  @type t :: %__MODULE__{
+          receipt_ref: String.t(),
+          schema_version: String.t(),
+          status: :pass | :open_defect,
+          profile: String.t(),
+          topology_ref: String.t(),
+          baseline_receipt_ref: String.t(),
+          fault_receipts: [map()],
+          owner_recovery_evidence: [map()],
+          trace_refs: [String.t()],
+          node_lab_run: map(),
+          does_not_prove: [String.t()]
+        }
+end
+
 defmodule StackLab.Examples.GnTenDistributedStack do
   @moduledoc """
   Local distributed gn-ten proof scenarios.
   """
 
-  alias StackLab.Examples.GnTenDistributedStack.{Receipt, RouterModelReceipt}
+  alias StackLab.Examples.GnTenDistributedStack.{
+    FaultRecoveryReceipt,
+    Receipt,
+    RouterModelReceipt
+  }
 
   @context_schema_version "stack_lab.gn_ten_distributed_stack.context_6_node.v1"
   @router_model_schema_version "stack_lab.gn_ten_distributed_stack.router_model_6_node.v1"
+  @fault_recovery_schema_version "stack_lab.gn_ten_distributed_stack.partition_recovery.v1"
   @context_profile "context_6_node"
   @router_model_profile "router_model_6_node"
+  @fault_recovery_profile "partition_recovery"
   @envelope_schema_version "stack_lab.distributed_envelope.v1"
   @context_roundtrip Module.concat([StackLab, Examples, ContextABIRoundtrip])
   @router_roundtrip Module.concat([StackLab, Examples, NSHKRRouterFabricRoundtrip])
@@ -126,6 +165,7 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   @aitrace_fixture_transport Module.concat([AITrace, NSHKR, ExportTransport, Fixture])
   @replay_bundle Module.concat([AITrace, Trace, ReplayBundle])
   @envelope_scanner Module.concat([StackLab, GnTenNodeLab, EnvelopeScanner])
+  @fault_drill Module.concat([StackLab, GnTenNodeLab, FaultDrill])
   @runner Module.concat([StackLab, GnTenNodeLab, Runner])
   @json Module.concat([Jason])
 
@@ -252,16 +292,50 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     end
   end
 
-  @spec to_map(Receipt.t() | RouterModelReceipt.t()) :: map()
+  @spec run_partition_recovery(keyword()) ::
+          {:ok, FaultRecoveryReceipt.t()} | {:error, term()}
+  def run_partition_recovery(opts \\ []) when is_list(opts) do
+    with {:ok, baseline} <- run_router_model_6_node(opts) do
+      fault_receipts = fault_receipts(baseline)
+
+      {:ok,
+       %FaultRecoveryReceipt{
+         receipt_ref: fault_recovery_receipt_ref(baseline),
+         schema_version: @fault_recovery_schema_version,
+         status: fault_recovery_status(fault_receipts),
+         profile: @fault_recovery_profile,
+         topology_ref: baseline.topology_ref,
+         baseline_receipt_ref: baseline.receipt_ref,
+         fault_receipts: fault_receipts,
+         owner_recovery_evidence: owner_recovery_evidence(),
+         trace_refs: baseline.trace_refs,
+         node_lab_run: baseline.node_lab_run,
+         does_not_prove: [
+           "WAN partition behavior",
+           "production service discovery",
+           "release artifact boot",
+           "live provider retry semantics",
+           "Execution Plane lower-lane partition behavior"
+         ]
+       }}
+    end
+  end
+
+  @spec to_map(Receipt.t() | RouterModelReceipt.t() | FaultRecoveryReceipt.t()) :: map()
   def to_map(%Receipt{} = receipt), do: json_safe(receipt)
   def to_map(%RouterModelReceipt{} = receipt), do: json_safe(receipt)
+  def to_map(%FaultRecoveryReceipt{} = receipt), do: json_safe(receipt)
 
-  @spec to_json!(Receipt.t() | RouterModelReceipt.t()) :: String.t()
+  @spec to_json!(Receipt.t() | RouterModelReceipt.t() | FaultRecoveryReceipt.t()) :: String.t()
   def to_json!(%Receipt{} = receipt) do
     call(@json, :encode!, [to_map(receipt), [pretty: true]])
   end
 
   def to_json!(%RouterModelReceipt{} = receipt) do
+    call(@json, :encode!, [to_map(receipt), [pretty: true]])
+  end
+
+  def to_json!(%FaultRecoveryReceipt{} = receipt) do
     call(@json, :encode!, [to_map(receipt), [pretty: true]])
   end
 
@@ -376,6 +450,12 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     "gn-ten-distributed-router-model://#{suffix}"
   end
 
+  defp fault_recovery_receipt_ref(baseline) do
+    baseline.receipt_ref
+    |> String.replace_prefix("gn-ten-distributed-router-model://", "")
+    |> then(&"gn-ten-distributed-partition-recovery://#{&1}")
+  end
+
   defp default_context_topology_path do
     Path.expand("../../../priv/topologies/context_6_node.exs", __DIR__)
   end
@@ -482,6 +562,69 @@ defmodule StackLab.Examples.GnTenDistributedStack do
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  defp fault_receipts(baseline) do
+    run = baseline.node_lab_run
+
+    [
+      call(@fault_drill, :crash_node!, [run, "jido_model_runtime_0"]),
+      call(@fault_drill, :disconnect_nodes!, [
+        run,
+        "mezzanine_workflow_0",
+        "jido_model_runtime_0"
+      ]),
+      call(@fault_drill, :heal_nodes!, [run, "mezzanine_workflow_0", "jido_model_runtime_0"]),
+      call(@fault_drill, :delay_facade!, [
+        run,
+        "jido_model_runtime_0",
+        "JidoIntegration.RemoteFacade.ModelRuntime",
+        5_001
+      ]),
+      call(@fault_drill, :inject_stale_dto!, [
+        run,
+        "seam://mezzanine/jido/model-invocation",
+        "fixture://stack_lab/partition_recovery/stale-model-invocation"
+      ]),
+      call(@fault_drill, :duplicate_submit!, [run, baseline.model_invocation_ref]),
+      call(@fault_drill, :kill_exporter!, [run, :aitrace_evidence])
+    ]
+  end
+
+  defp fault_recovery_status(fault_receipts) do
+    if Enum.all?(fault_receipts, &(Map.get(&1, "status") == "pass")),
+      do: :pass,
+      else: :open_defect
+  end
+
+  defp owner_recovery_evidence do
+    [
+      %{
+        "owner" => "citadel",
+        "package" => "surfaces/citadel_domain_surface",
+        "evidence_ref" => "citadel_domain_surface_fault_injection_and_operability_test",
+        "safe_action" => "bounded duplicate, timeout, and dead-letter posture"
+      },
+      %{
+        "owner" => "mezzanine",
+        "package" => "core/workflow_runtime",
+        "evidence_ref" => "Mezzanine.WorkflowRuntime.TemporalDispatchContract",
+        "safe_action" => "workflow start outbox and retry visibility contracts"
+      },
+      %{
+        "owner" => "stack_lab",
+        "package" => "examples/pressure_failover_drill",
+        "evidence_ref" => "PressureFailoverDrill duplicate_delivery and transport_interruption",
+        "safe_action" =>
+          "duplicate delivery converges and transport interruption remains pending until replay"
+      },
+      %{
+        "owner" => "aitrace",
+        "package" => "AITrace",
+        "evidence_ref" => "AITrace.RemoteFacade.Evidence",
+        "safe_action" => "export unavailable posture remains bounded"
+      }
+    ]
+  end
 
   defp json_safe(%_struct{} = value), do: value |> Map.from_struct() |> json_safe()
 

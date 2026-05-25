@@ -7,7 +7,15 @@ defmodule StackLab.GnTenNodeLab do
   evidence semantics remain in their owner repos.
   """
 
-  alias StackLab.GnTenNodeLab.{BootPlan, EnvelopeScanner, Peer, Preflight, Runner, Topology}
+  alias StackLab.GnTenNodeLab.{
+    BootPlan,
+    EnvelopeScanner,
+    FaultDrill,
+    Peer,
+    Preflight,
+    Runner,
+    Topology
+  }
 
   @spec preflight(keyword()) :: {:ok, map()} | {:error, map()}
   defdelegate preflight(opts \\ []), to: Preflight, as: :run
@@ -41,6 +49,27 @@ defmodule StackLab.GnTenNodeLab do
 
   @spec scan_envelopes([map()], keyword()) :: map()
   defdelegate scan_envelopes(envelopes, opts \\ []), to: EnvelopeScanner, as: :scan_many
+
+  @spec crash_node!(map(), String.t()) :: map()
+  defdelegate crash_node!(run, node_ref), to: FaultDrill
+
+  @spec disconnect_nodes!(map(), String.t(), String.t()) :: map()
+  defdelegate disconnect_nodes!(run, left_ref, right_ref), to: FaultDrill
+
+  @spec heal_nodes!(map(), String.t(), String.t()) :: map()
+  defdelegate heal_nodes!(run, left_ref, right_ref), to: FaultDrill
+
+  @spec delay_facade!(map(), String.t(), String.t(), non_neg_integer()) :: map()
+  defdelegate delay_facade!(run, node_ref, facade_ref, delay_ms), to: FaultDrill
+
+  @spec inject_stale_dto!(map(), String.t(), String.t()) :: map()
+  defdelegate inject_stale_dto!(run, seam_ref, fixture_ref), to: FaultDrill
+
+  @spec duplicate_submit!(map(), String.t()) :: map()
+  defdelegate duplicate_submit!(run, accepted_ref), to: FaultDrill
+
+  @spec kill_exporter!(map(), atom()) :: map()
+  defdelegate kill_exporter!(run, exporter_profile), to: FaultDrill
 
   @spec with_peer((Peer.t() -> term()), keyword()) :: {:ok, term()} | {:error, map()}
   defdelegate with_peer(fun, opts \\ []), to: Peer

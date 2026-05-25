@@ -22,11 +22,21 @@ Phase 9 extends the proof through the fugu router/model substrate:
 - keep Execution Plane lower-lane execution out of the default proof until a
   scenario requires it.
 
+Phase 11 records local fault and recovery posture:
+
+- emit bounded fault receipts for node crash, distribution disconnect/heal,
+  facade timeout, stale DTO, duplicate delivery, and trace exporter failure;
+- cite owner recovery evidence for Mezzanine, Citadel, StackLab's existing
+  pressure/failover drill, and AITrace;
+- keep WAN, production discovery, release boot, and live-provider retry
+  semantics as explicit non-claims.
+
 ## Commands
 
 ```bash
 mix stack_lab.gn_ten.distributed.prove --profile context_6_node --json
 mix stack_lab.gn_ten.distributed.prove --profile router_model_6_node --json
+mix stack_lab.gn_ten.distributed.prove --profile partition_recovery --json
 ```
 
 ## QC

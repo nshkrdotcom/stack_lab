@@ -68,4 +68,23 @@ defmodule StackLab.Examples.GnTenDistributedStackTest do
     refute json =~ "raw_prompt"
     refute json =~ "provider_payload\":"
   end
+
+  test "runs the partition recovery fault receipt proof" do
+    assert {:ok, receipt} = GnTenDistributedStack.run_partition_recovery()
+
+    assert receipt.status == :pass
+    assert receipt.profile == "partition_recovery"
+    assert length(receipt.fault_receipts) == 7
+    assert Enum.all?(receipt.fault_receipts, &(&1["status"] == "pass"))
+    assert Enum.any?(receipt.fault_receipts, &(&1["fault_kind"] == "node_crash"))
+    assert Enum.any?(receipt.fault_receipts, &(&1["fault_kind"] == "stale_dto"))
+    assert Enum.any?(receipt.fault_receipts, &(&1["fault_kind"] == "trace_exporter_failure"))
+    assert Enum.any?(receipt.owner_recovery_evidence, &(&1["owner"] == "mezzanine"))
+    assert Enum.any?(receipt.owner_recovery_evidence, &(&1["owner"] == "citadel"))
+
+    json = GnTenDistributedStack.to_json!(receipt)
+    refute json =~ "cookie_value"
+    refute json =~ "raw_prompt"
+    refute json =~ "provider_payload\":"
+  end
 end
