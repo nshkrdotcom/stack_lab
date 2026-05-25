@@ -86,8 +86,8 @@ defmodule StackLab.GnTen.ProofMatrixTest do
     assert report.schema_version == "gn_ten_proof_matrix_v1"
     assert report.workspace_ref == "workspace://nshkrdotcom/gn-ten"
     assert report.branch_policy == "main_only"
-    assert report.proof_count == 23
-    assert report.implemented_count == 23
+    assert report.proof_count == 24
+    assert report.implemented_count == 24
     assert report.partial_count == 0
     assert report.missing_proof_count == 0
     assert report.highest_risk_missing_proof == nil

@@ -1,0 +1,120 @@
+{
+  "cookie_posture": {
+    "byte_size": 43,
+    "phase3_required_action": "support/gn_ten_node_lab must apply a per-run cookie when it owns peer boot",
+    "posture": "generated_redacted_not_applied_in_phase2",
+    "secret_value_present?": false
+  },
+  "distribution": {
+    "name_domain": "shortnames",
+    "node_alive?": true,
+    "node_name": "stack_lab_preflight_controller_2@ubuntu-dev",
+    "started_by_preflight?": true
+  },
+  "does_not_prove": [
+    "owner facade availability",
+    "domain business semantics",
+    "monolith/distributed parity",
+    "per-run cookie application to peers",
+    "production distribution security",
+    "release artifact boot"
+  ],
+  "epmd": {
+    "command": {
+      "args": [
+        "-daemon"
+      ],
+      "command": "/home/home/.asdf/installs/erlang/28.3/erts-16.2/bin/epmd",
+      "duration_ms": 7,
+      "exit_status": 0,
+      "redacted?": false,
+      "status": "ok"
+    },
+    "duration_ms": 8,
+    "executable_found?": true,
+    "names": {
+      "ports": [
+        {
+          "name": "stack_lab_preflight_controller_2",
+          "port": 38737
+        }
+      ],
+      "raw_redacted": "epmd: up and running on port 4369 with data:\nname stack_lab_preflight_controller_2 at port 38737",
+      "status": "ok"
+    },
+    "path": "/home/home/.asdf/installs/erlang/28.3/erts-16.2/bin/epmd",
+    "start_status": "ok"
+  },
+  "existing_multi_node_proofs": [
+    {
+      "current_root_ci_posture": "included_by_blitz_monorepo_test_credo_docs",
+      "phase2_migration_decision": "kept_parallel_until_support_gn_ten_node_lab_migration",
+      "project": "examples/multi_node_roundtrip"
+    },
+    {
+      "current_root_ci_posture": "included_by_blitz_monorepo_test_credo_docs",
+      "phase2_migration_decision": "source_reference_and_future_consumer",
+      "project": "support/citadel_spine_harness"
+    }
+  ],
+  "failures": [],
+  "finished_at": "2026-05-25T07:50:16.280528Z",
+  "peer_probe": {
+    "peer_node": "stack_lab_preflight_peer_3@ubuntu-dev",
+    "reachable_after_stop?": false,
+    "remote_call": "ok",
+    "remote_call_duration_ms": 0,
+    "started?": true,
+    "stopped?": true
+  },
+  "port_range": {
+    "configured?": true,
+    "max": 43100,
+    "min": 43000,
+    "vm_args": [
+      "-kernel",
+      "inet_dist_listen_min",
+      "43000",
+      "inet_dist_listen_max",
+      "43100"
+    ]
+  },
+  "receipt_ref": "receipt://stack_lab/gn_ten_distributed_preflight/latest",
+  "run_id": "gn-ten-preflight-1",
+  "schema_version": "stack_lab.gn_ten.distribution_preflight.v1",
+  "socket_exposure": {
+    "loopback_only?": false,
+    "ports_checked": [
+      4369,
+      38737
+    ],
+    "posture": "non_loopback_or_unknown",
+    "sockets": [
+      {
+        "local": "0.0.0.0:38737",
+        "loopback?": false,
+        "port": 38737
+      },
+      {
+        "local": "0.0.0.0:4369",
+        "loopback?": false,
+        "port": 4369
+      },
+      {
+        "local": "[::]:4369",
+        "loopback?": false,
+        "port": 4369
+      }
+    ],
+    "source": "ss -ltn"
+  },
+  "started_at": "2026-05-25T07:50:16.090073Z",
+  "status": "pass",
+  "trace_ref": "trace://stack_lab/gn_ten_distributed_preflight/latest",
+  "warnings": [
+    {
+      "code": "non_loopback_distribution_socket",
+      "message": "local development may continue, but staging/production distribution claims must fail closed"
+    }
+  ]
+}
