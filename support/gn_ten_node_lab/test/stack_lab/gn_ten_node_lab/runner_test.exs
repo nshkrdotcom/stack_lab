@@ -33,9 +33,24 @@ defmodule StackLab.GnTenNodeLab.RunnerTest do
 
     assert {:ok, status} = Runner.status(state_path: state_path)
     assert status["status"] == "pass"
+    assert status["summary"]["run_id"] == "run-test"
+    assert status["summary"]["log_path"] == log_path
+    assert status["summary"]["artifact_hygiene"]["log_path_allowed?"] == true
+    assert status["summary"]["artifact_hygiene"]["log_path_exists?"] == true
+
+    assert [%{"node_id" => "fixture_profile_0", "health" => "ready_then_cleaned_up"}] =
+             status["summary"]["nodes"]
+
+    refute encoded_contains_cookie?(status)
 
     assert {:ok, probe} = Runner.probe("fixture_profile_0", state_path: state_path)
     assert probe["status"] == "pass"
+
+    assert {:ok, attach} = Runner.attach("fixture_profile_0", state_path: state_path)
+    assert attach["status"] == "not_attached"
+    assert attach["attach_supported?"] == false
+    assert attach["redacted_attach_recipe"]["secret_value_present?"] == false
+    refute encoded_contains_cookie?(attach)
 
     assert {:ok, down} = Runner.down(state_path: state_path)
     assert down["cleanup"]["state_file_removed?"] == true
@@ -63,6 +78,16 @@ defmodule StackLab.GnTenNodeLab.RunnerTest do
 
     assert {:error, receipt} = Runner.probe("unknown_node", state_path: state_path)
     assert [%{code: "node_not_found"}] = receipt["failures"]
+  end
+
+  test "attach reports missing run state without cookie leakage" do
+    state_path = temp_state_path()
+
+    assert {:error, receipt} = Runner.attach("fixture_profile_0", state_path: state_path)
+    assert receipt["status"] == "fail"
+    assert [%{code: "no_active_run"}] = receipt["failures"]
+    assert receipt["cookie_posture"]["secret_value_present?"] == false
+    refute encoded_contains_cookie?(receipt)
   end
 
   defp fixture_topology_path do

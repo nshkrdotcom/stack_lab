@@ -15,7 +15,8 @@ It owns local test-harness mechanics:
 - checked-in topology fixture loading;
 - required app boot probes;
 - owner-defined facade host and `:pg` readiness checks;
-- JSON admin receipts for `preflight`, `up`, `status`, `probe`, and `down`;
+- JSON admin receipts for `preflight`, `up`, `status`, `probe`, `attach`, and
+  `down`;
 - distributed envelope scanning for tenant, authority, trace, idempotency,
   payload-mode, redaction, local-term, raw-payload, cross-tenant, stale-schema,
   and direct-lower-import defects;
@@ -48,6 +49,7 @@ mix stack_lab.gn_ten.node_lab.up \
   --json
 mix stack_lab.gn_ten.node_lab.status --json
 mix stack_lab.gn_ten.node_lab.probe --node fixture_profile_0 --json
+mix stack_lab.gn_ten.node_lab.attach --node fixture_profile_0 --json
 mix stack_lab.gn_ten.node_lab.down --json
 ```
 
@@ -56,6 +58,13 @@ run-state receipt, and cleans up peers before returning. `--keep` is accepted
 and recorded as an explicit intent, but cross-command peer retention is not a
 v2 Phase 6 claim. A later daemon or release-path controller must own that
 stronger claim.
+
+`status` returns a debug summary with node ids, profile names, node names,
+started apps, owner `:pg` membership, facade readiness, log path, latest
+receipt refs, cleanup posture, and artifact hygiene. `attach` prints a
+redacted local debug-shell recipe for a logical node. It intentionally omits
+the Erlang cookie value and records that Phase 15 does not prove production
+security or cross-command peer retention.
 
 ## Distributed Envelope Scanner
 

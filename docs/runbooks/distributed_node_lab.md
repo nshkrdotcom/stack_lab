@@ -34,11 +34,33 @@ retention. That claim belongs to a later daemon or release-path controller.
 ```bash
 mix stack_lab.gn_ten.node_lab.status --json
 mix stack_lab.gn_ten.node_lab.probe --node fixture_profile_0 --json
+mix stack_lab.gn_ten.node_lab.attach --node fixture_profile_0 --json
 mix stack_lab.gn_ten.node_lab.down --json
 ```
 
-`status` reads the latest run-state receipt. `probe` reads one logical node
-receipt from that state. `down` removes the run-state file and is idempotent.
+`status` reads the latest run-state receipt and reports a debug summary:
+logical node ids, profiles, peer node names, started OTP apps, owner `:pg`
+membership, facade readiness, current connection posture, log path, latest
+receipt refs, cleanup posture, and artifact hygiene. `probe` reads one logical
+node receipt from that state. `attach` prints a redacted local debug-shell
+recipe for the node. `down` removes the run-state file and is idempotent.
+
+## Attach
+
+```bash
+mix stack_lab.gn_ten.node_lab.attach --node fixture_profile_0 --json
+```
+
+The attach receipt names the node and profile and prints only a redacted
+manual shell shape:
+
+```text
+iex --sname debug_shell_<run> --cookie <redacted_run_cookie> --remsh <node>
+```
+
+Phase 15 does not store or print cookie values. It also does not claim durable
+cross-command peer retention; current peer-mode proofs clean up peers before
+returning unless a future retained controller owns that stronger behavior.
 
 ## Safety Notes
 

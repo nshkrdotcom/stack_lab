@@ -54,12 +54,15 @@ defmodule StackLab.GnTenNodeLab.Runner do
 
     case RunState.read(state_path) do
       {:ok, state} ->
+        scrubbed_state = scrub_state(state)
+
         {:ok,
          %{
            "schema_version" => "stack_lab.gn_ten_node_lab.status.v1",
            "status" => "pass",
            "state_path" => state_path,
-           "run_state" => scrub_state(state)
+           "summary" => status_summary(scrubbed_state, state_path),
+           "run_state" => scrubbed_state
          }}
 
       {:error, %{code: "no_active_run"}} ->
@@ -78,6 +81,27 @@ defmodule StackLab.GnTenNodeLab.Runner do
            "status" => "error",
            "state_path" => state_path,
            "failures" => [failure]
+         }}
+    end
+  end
+
+  @spec attach(String.t(), keyword()) :: {:ok, map()} | {:error, map()}
+  def attach(node_id, opts \\ []) when is_binary(node_id) and is_list(opts) do
+    state_path = Keyword.get(opts, :state_path, RunState.default_path())
+
+    with {:ok, state} <- RunState.read(state_path),
+         {:ok, node_receipt} <- find_node_receipt(state, node_id) do
+      {:ok, attach_receipt(state, state_path, node_receipt)}
+    else
+      {:error, failure} ->
+        {:error,
+         %{
+           "schema_version" => "stack_lab.gn_ten_node_lab.attach.v1",
+           "status" => "fail",
+           "state_path" => state_path,
+           "node_id" => node_id,
+           "failures" => [failure],
+           "cookie_posture" => cookie_posture()
          }}
     end
   end
@@ -259,13 +283,19 @@ defmodule StackLab.GnTenNodeLab.Runner do
   end
 
   defp find_node(state, node_id) do
+    with {:ok, node} <- find_node_receipt(state, node_id) do
+      {:ok, Map.get(node, "node")}
+    end
+  end
+
+  defp find_node_receipt(state, node_id) do
     nodes =
       state
       |> Map.get("boot_receipts", [])
       |> Enum.filter(&(Map.get(&1, "node_id") == node_id))
 
     case nodes do
-      [node | _rest] -> {:ok, Map.get(node, "node")}
+      [node | _rest] -> {:ok, scrub_state(node)}
       [] -> {:error, %{code: "node_not_found", node_id: node_id}}
     end
   end
@@ -274,8 +304,163 @@ defmodule StackLab.GnTenNodeLab.Runner do
 
   defp scrub_state(state) when is_map(state) do
     state
-    |> Map.delete("cookie")
-    |> Map.delete("cookie_value")
+    |> Enum.reject(fn {key, _value} -> sensitive_key?(key) end)
+    |> Map.new(fn {key, value} -> {key, scrub_state(value)} end)
+  end
+
+  defp scrub_state(values) when is_list(values), do: Enum.map(values, &scrub_state/1)
+  defp scrub_state(value), do: value
+
+  defp sensitive_key?(key) do
+    key
+    |> to_string()
+    |> String.downcase()
+    |> then(
+      &(String.contains?(&1, "cookie") or String.contains?(&1, "secret") or
+          String.contains?(&1, "credential"))
+    )
+  end
+
+  defp status_summary(state, state_path) do
+    boot_receipts = Map.get(state, "boot_receipts", [])
+    log_artifact = Map.get(state, "log_artifact", %{})
+
+    %{
+      "run_id" => Map.get(state, "run_id"),
+      "topology_ref" => Map.get(state, "topology_ref"),
+      "node_count" => Map.get(state, "node_count", length(boot_receipts)),
+      "peers_kept?" => Map.get(state, "peers_kept?", false),
+      "connection_posture" => connection_posture(state),
+      "current_node_connections" => current_node_connections(state),
+      "nodes" => Enum.map(boot_receipts, &status_node(&1, log_artifact)),
+      "log_path" => Map.get(log_artifact, "path"),
+      "artifact_hygiene" => artifact_hygiene(state_path, log_artifact),
+      "latest_receipt_refs" => latest_receipt_refs(state, state_path),
+      "cleanup_status" => cleanup_status(state),
+      "cookie_posture" => cookie_posture()
+    }
+  end
+
+  defp status_node(receipt, log_artifact) do
+    %{
+      "node_id" => Map.get(receipt, "node_id"),
+      "profile" => Map.get(receipt, "profile"),
+      "node" => Map.get(receipt, "node"),
+      "started_apps" => Map.get(receipt, "started_apps", []),
+      "owner_group_membership" => Map.get(receipt, "owner_group_membership", []),
+      "facade_probe_status" => facade_probe_status(receipt),
+      "ready?" => Map.get(receipt, "ready?", false),
+      "health" => node_health(receipt),
+      "log_path" => Map.get(log_artifact, "path")
+    }
+  end
+
+  defp facade_probe_status(%{"owner_group_membership" => memberships}) when memberships != [] do
+    if Enum.all?(memberships, &(Map.get(&1, "member_count", 0) > 0)), do: "ready", else: "empty"
+  end
+
+  defp facade_probe_status(_receipt), do: "not_required"
+
+  defp node_health(%{"ready?" => true}), do: "ready_then_cleaned_up"
+  defp node_health(_receipt), do: "unknown"
+
+  defp connection_posture(%{"peers_kept?" => true}), do: "active_peer_retention_requested"
+  defp connection_posture(_state), do: "phase6_plus_peers_cleaned_up_after_receipt"
+
+  defp current_node_connections(%{"peers_kept?" => true, "boot_receipts" => receipts}) do
+    Enum.map(receipts, &Map.get(&1, "node"))
+  end
+
+  defp current_node_connections(_state), do: []
+
+  defp artifact_hygiene(state_path, log_artifact) do
+    log_path = Map.get(log_artifact, "path")
+
+    %{
+      "state_path" => state_path,
+      "state_path_allowed?" => generated_path?(state_path),
+      "log_path" => log_path,
+      "log_path_present?" => is_binary(log_path) and log_path != "",
+      "log_path_allowed?" => generated_path?(log_path),
+      "log_path_exists?" => is_binary(log_path) and File.exists?(log_path),
+      "contains_cookie?" => Map.get(log_artifact, "contains_cookie?", false),
+      "contains_raw_payload?" => Map.get(log_artifact, "contains_raw_payload?", false)
+    }
+  end
+
+  defp generated_path?(nil), do: false
+
+  defp generated_path?(path) when is_binary(path) do
+    expanded = Path.expand(path)
+    tmp = Path.expand(System.tmp_dir!())
+    stack_tmp = Path.expand("tmp/stack_lab")
+
+    String.starts_with?(expanded, tmp <> "/") or String.starts_with?(expanded, stack_tmp <> "/")
+  end
+
+  defp latest_receipt_refs(state, state_path) do
+    %{
+      "run_state_path" => state_path,
+      "log_artifact_path" => get_in(state, ["log_artifact", "path"]),
+      "trace_refs" => Map.get(state, "trace_refs", []),
+      "topology_ref" => Map.get(state, "topology_ref")
+    }
+  end
+
+  defp cleanup_status(state) do
+    cleanup = Map.get(state, "cleanup", [])
+
+    %{
+      "cleanup_receipt_count" => length(cleanup),
+      "all_stopped?" => cleanup != [] and Enum.all?(cleanup, &Map.get(&1, "stopped?", false))
+    }
+  end
+
+  defp attach_receipt(state, state_path, node_receipt) do
+    run_id = Map.get(state, "run_id", "unknown_run")
+    node = Map.get(node_receipt, "node")
+    peers_kept? = Map.get(state, "peers_kept?", false)
+
+    %{
+      "schema_version" => "stack_lab.gn_ten_node_lab.attach.v1",
+      "status" => if(peers_kept?, do: "ready", else: "not_attached"),
+      "state_path" => state_path,
+      "run_id" => run_id,
+      "node_id" => Map.get(node_receipt, "node_id"),
+      "profile" => Map.get(node_receipt, "profile"),
+      "node" => node,
+      "attach_supported?" => peers_kept?,
+      "reason" => attach_reason(peers_kept?),
+      "cookie_posture" => cookie_posture(),
+      "redacted_attach_recipe" => %{
+        "operation" => "local_development_remsh",
+        "manual_shape" =>
+          "iex --sname debug_shell_#{safe_path_component(run_id)} --cookie <redacted_run_cookie> --remsh #{node}",
+        "cookie_source" => "StackLab run temp cookie file, value intentionally omitted",
+        "secret_value_present?" => false,
+        "production_security_claim" => false
+      },
+      "observer_hint" => ":observer.start() may be used only from a local debug shell",
+      "non_claims" => [
+        "production_security",
+        "tenant_authority",
+        "cross_command_peer_retention_unless_peers_kept"
+      ]
+    }
+  end
+
+  defp attach_reason(true), do: "peer_retention_claimed_by_current_run_state"
+
+  defp attach_reason(false) do
+    "peers were cleaned up after receipt; rerun node_lab.up with a future retained controller"
+  end
+
+  defp cookie_posture do
+    %{
+      "posture" => "generated_or_controller_cookie_redacted",
+      "secret_value_present?" => false,
+      "production_security_claim" => false
+    }
   end
 
   defp peer_name(instance) do
