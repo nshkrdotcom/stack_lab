@@ -134,6 +134,11 @@ path, and run GitHub or Linear live commands by prefixing them with
   refs, Citadel authority, Mezzanine admission/routing/render handoff, Jido
   fake model invocation, AITrace bounded evidence, AppKit projections, and
   StackLab context/model/cost/lineage/tenant/memory scanner receipts.
+- `nshkr_router_fabric_roundtrip`: runs the deterministic fugu router fabric
+  proof from admitted Context ABI packet through
+  `Trinity.MezzanineRouterAdapter`, Mezzanine render handoff, Jido fake model
+  invocation, AITrace bounded route/model/eval facts, AppKit projections, and
+  StackLab context/router/coordination/model scanner receipts.
 - `cost_budget_scanner`: verifies adaptive token, provider request,
   self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
   search, provider pool turn, role budget, promotion, failed retry, budget

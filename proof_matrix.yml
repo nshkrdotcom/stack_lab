@@ -438,3 +438,32 @@ proofs:
       posture:
         authoritative_audit?: false
         production_deployment_proven?: false
+
+  - id: nshkr_router_fabric_roundtrip
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: assembled_offline
+    command: cd examples/nshkr_router_fabric_roundtrip && mix stack_lab.nshkr.router_fabric.roundtrip --json
+    fixture: examples/nshkr_router_fabric_roundtrip
+    receipt: receipt://stack_lab/nshkr_router_fabric_roundtrip/latest
+    proves:
+      - admitted Context ABI packet is routed through the concrete TRINITY Mezzanine router adapter
+      - Mezzanine route decision carries route policy, authority, selected model profile, verifier, fallback plan, and TRINITY route-plan refs
+      - OuterBrain render refs are carried into Jido Integration fake model invocation without raw prompt or provider payload leakage
+      - AppKit projects context packet, route decision, model invocation, and eval verdict refs through product-safe DTOs
+      - AITrace emits bounded context, route, model, and eval facts
+      - StackLab context ABI, router fabric, coordination fabric, and model inference scanners pass on the assembled receipt
+    does_not_prove:
+      - live provider behavior
+      - distributed BEAM placement
+      - GEPA optimization quality
+      - production persistence
+      - learned TRINITY route quality beyond deterministic adapter wiring
+    next_action: keep the provider-free router fabric proof green, then bind GEPA optimization and adaptive-control phases on top of the same route/render/model refs
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/nshkr_router_fabric_roundtrip/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
