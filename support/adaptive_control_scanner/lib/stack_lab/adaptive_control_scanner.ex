@@ -42,6 +42,7 @@ defmodule StackLab.AdaptiveControlScanner do
     :shadow_gate_refs,
     :canary_gate_refs,
     :approval_refs,
+    :citadel_authority_refs,
     :promotion_refs,
     :rollback_refs,
     :stale_artifact_rejection_refs,

@@ -22,6 +22,29 @@ defmodule StackLab.MemoryFabricScannerTest do
     assert [%{reason: :missing_required_memory_refs}] = receipt.findings
   end
 
+  test "runtime facts reject silent memory candidate mutation" do
+    assert {:ok, receipt} =
+             MemoryFabricScanner.scan(%{
+               owner_repo: "outer_brain",
+               runtime_facts: [promotion_fact()]
+             })
+
+    assert receipt.status == :pass
+
+    assert {:ok, receipt} =
+             MemoryFabricScanner.scan(%{
+               owner_repo: "outer_brain",
+               runtime_facts: [
+                 promotion_fact()
+                 |> Map.delete(:eval_evidence_refs)
+                 |> Map.delete(:citadel_authority_ref)
+               ]
+             })
+
+    assert receipt.status == :open_defect
+    assert [%{reason: :silent_memory_candidate_mutation}] = receipt.findings
+  end
+
   test "static scanner catches direct adapter references outside memory engine owner path" do
     path = Path.expand("../fixtures/direct_adapter_reference.source", __DIR__)
 
@@ -60,5 +83,17 @@ defmodule StackLab.MemoryFabricScannerTest do
       idempotency_key: "idem",
       trace_ref: "trace://a"
     }
+  end
+
+  defp promotion_fact do
+    runtime_fact()
+    |> Map.merge(%{
+      candidate_ref: "memory-candidate://tenant-a/a",
+      promotion_ref: "memory-promotion://tenant-a/a",
+      rollback_ref: "memory-rollback://tenant-a/a",
+      eval_evidence_refs: ["eval://memory/a"],
+      citadel_authority_ref: "authority://citadel/promotion/a",
+      appkit_projection_ref: "appkit://memory/promotion/a"
+    })
   end
 end

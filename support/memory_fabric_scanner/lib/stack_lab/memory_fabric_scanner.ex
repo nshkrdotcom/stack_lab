@@ -37,9 +37,17 @@ defmodule StackLab.MemoryFabricScanner do
     :idempotency_key,
     :trace_ref
   ]
+  @promotion_gate_refs [
+    :candidate_ref,
+    :promotion_ref,
+    :rollback_ref,
+    :eval_evidence_refs,
+    :citadel_authority_ref,
+    :appkit_projection_ref
+  ]
   @direct_adapter_module "OuterBrain.MemoryEngine.Store"
   @owner_path "outer_brain/core/memory_engine"
-  @rules [:direct_adapter_calls, :required_runtime_refs]
+  @rules [:direct_adapter_calls, :required_runtime_refs, :silent_memory_candidate_mutation]
 
   @spec scan(map()) :: {:ok, Receipt.t()} | {:error, term()}
   def scan(attrs) when is_map(attrs) do
@@ -132,29 +140,65 @@ defmodule StackLab.MemoryFabricScanner do
       @required_runtime_refs
       |> Enum.reject(&present_string?(fact, &1))
 
-    case missing do
-      [] ->
-        []
-
-      fields ->
-        [
-          finding(
-            :required_runtime_refs,
-            :missing_required_memory_refs,
-            "runtime_fact:#{index}",
-            %{fields: fields}
-          )
-        ]
-    end
+    required_runtime_ref_findings(missing, index) ++ promotion_gate_findings(fact, index)
   end
 
   defp runtime_fact_findings(_fact, index),
     do: [finding(:required_runtime_refs, :invalid_runtime_fact, "runtime_fact:#{index}", %{})]
 
+  defp required_runtime_ref_findings([], _index), do: []
+
+  defp required_runtime_ref_findings(fields, index) do
+    [
+      finding(
+        :required_runtime_refs,
+        :missing_required_memory_refs,
+        "runtime_fact:#{index}",
+        %{fields: fields}
+      )
+    ]
+  end
+
+  defp promotion_gate_findings(fact, index) do
+    if promotion_fact?(fact) and missing_promotion_gate_refs(fact) != [] do
+      [
+        finding(
+          :silent_memory_candidate_mutation,
+          :silent_memory_candidate_mutation,
+          "runtime_fact:#{index}",
+          %{fields: missing_promotion_gate_refs(fact)}
+        )
+      ]
+    else
+      []
+    end
+  end
+
+  defp promotion_fact?(fact) do
+    present_string?(fact, :candidate_ref) or present_string?(fact, :promotion_ref)
+  end
+
+  defp missing_promotion_gate_refs(fact) do
+    Enum.reject(@promotion_gate_refs, fn
+      :eval_evidence_refs -> non_empty_string_list?(fact, :eval_evidence_refs)
+      field -> present_string?(fact, field)
+    end)
+  end
+
   defp present_string?(fact, field) do
     case Map.get(fact, field) || Map.get(fact, Atom.to_string(field)) do
       value when is_binary(value) -> String.trim(value) != ""
       _other -> false
+    end
+  end
+
+  defp non_empty_string_list?(fact, field) do
+    case Map.get(fact, field) || Map.get(fact, Atom.to_string(field)) do
+      values when is_list(values) and values != [] ->
+        Enum.all?(values, &(is_binary(&1) and String.trim(&1) != ""))
+
+      _other ->
+        false
     end
   end
 

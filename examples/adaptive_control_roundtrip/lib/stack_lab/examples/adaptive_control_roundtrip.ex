@@ -120,6 +120,7 @@ defmodule StackLab.Examples.AdaptiveControlRoundtrip do
           shadow_gate_refs: ["shadow://candidate/worker/v2"],
           canary_gate_refs: ["canary://candidate/worker/v2"],
           approval_refs: ["approval://operator/worker/v2"],
+          citadel_authority_refs: ["authority://citadel/promotion/a"],
           promotion_refs: ["promotion://candidate/worker/v2"],
           rollback_refs: ["rollback://candidate/worker/v1"],
           stale_artifact_rejection_refs: ["stale-rejection://candidate/worker/v1"],

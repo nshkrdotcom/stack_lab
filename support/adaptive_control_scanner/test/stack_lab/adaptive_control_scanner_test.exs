@@ -54,6 +54,7 @@ defmodule StackLab.AdaptiveControlScannerTest do
              :shadow_gate_refs,
              :canary_gate_refs,
              :approval_refs,
+             :citadel_authority_refs,
              :promotion_refs,
              :rollback_refs,
              :stale_artifact_rejection_refs,
@@ -79,6 +80,24 @@ defmodule StackLab.AdaptiveControlScannerTest do
     assert has_finding?(receipt, :raw_payload, {:forbidden_raw_field, :provider_payload})
   end
 
+  test "rejects promotion facts that lack eval or Citadel gates" do
+    fact =
+      complete_fact()
+      |> Map.delete(:eval_dataset_refs)
+      |> Map.delete(:citadel_authority_refs)
+
+    assert {:ok, receipt} =
+             AdaptiveControlScanner.scan(%{
+               owner_repo: "mezzanine",
+               package_path: "core/adaptive_control_engine",
+               adaptive_control_facts: [fact]
+             })
+
+    assert receipt.status == :open_defect
+    assert has_finding?(receipt, :eval_dataset_refs, :missing_required_refs)
+    assert has_finding?(receipt, :citadel_authority_refs, :missing_required_refs)
+  end
+
   defp has_finding?(receipt, rule, reason) do
     Enum.any?(receipt.findings, fn finding ->
       finding.rule == rule and finding.reason == reason
@@ -95,6 +114,7 @@ defmodule StackLab.AdaptiveControlScannerTest do
       shadow_gate_refs: ["shadow://candidate/worker/v2"],
       canary_gate_refs: ["canary://candidate/worker/v2"],
       approval_refs: ["approval://operator/worker/v2"],
+      citadel_authority_refs: ["authority://citadel/promotion/a"],
       promotion_refs: ["promotion://candidate/worker/v2"],
       rollback_refs: ["rollback://candidate/worker/v1"],
       stale_artifact_rejection_refs: ["stale-rejection://candidate/worker/v1"],
