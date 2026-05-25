@@ -1,0 +1,177 @@
+{
+  "cost_posture": {
+    "cost_claim": "no_live_provider_billing_in_fugu_ci",
+    "cost_evidence_refs": [
+      "support/cost_budget_scanner",
+      "receipt://stack_lab/context_abi_roundtrip/latest",
+      "receipt://stack_lab/nshkr_router_fabric_roundtrip/latest",
+      "receipt://stack_lab/fugu_release_claim_closeout/latest"
+    ],
+    "live_provider_calls": 0,
+    "profile": "provider_free_deterministic",
+    "provider_cost_usd": "0.00"
+  },
+  "decisions": {
+    "context_abi_extraction": {
+      "current_owner": "outer_brain/core/context_abi",
+      "decision": "defer_hex_or_external_extraction",
+      "rationale": "the contract is stable enough for fugu single-node use, but should stay owner-local until v2 distributed parity and standalone public API ergonomics are proven",
+      "revisit_after": [
+        "receipt://stack_lab/gn_ten_distributed_context_roundtrip/latest",
+        "receipt://stack_lab/gn_ten_distributed_parity/latest"
+      ]
+    },
+    "gepa_next": {
+      "decision": "prioritize_candidate_quality_without_auto_promotion",
+      "next_features": [
+        "candidate quality fixtures",
+        "shadow and canary promotion receipts",
+        "cost-capped optimization loops",
+        "rollback proof before production promotion"
+      ]
+    },
+    "router_next": {
+      "decision": "prioritize_distributed_parity_then_learning",
+      "next_features": [
+        "v2 distributed route receipt parity",
+        "route quality replay metrics",
+        "fallback exhaustion negative fixtures",
+        "learned route policy only after deterministic receipts stay stable"
+      ]
+    }
+  },
+  "failure_fixture_closeout": {
+    "covered_families": [
+      {
+        "family": "context",
+        "fixture_refs": [
+          "support/context_abi_scanner",
+          "examples/context_abi_roundtrip"
+        ],
+        "owner": "OuterBrain.ContextABI.Failure",
+        "status": "covered_for_provider_free_release"
+      },
+      {
+        "family": "authority",
+        "fixture_refs": [
+          "support/no_bypass_scanner",
+          "support/tenant_isolation_scanner",
+          "examples/governed_run_roundtrip"
+        ],
+        "owner": "Citadel authority grants",
+        "status": "covered_for_provider_free_release"
+      },
+      {
+        "family": "router",
+        "fixture_refs": [
+          "support/router_fabric_scanner",
+          "support/coordination_fabric_scanner",
+          "examples/nshkr_router_fabric_roundtrip"
+        ],
+        "owner": "TRINITY route adapter",
+        "status": "covered_for_provider_free_release"
+      },
+      {
+        "family": "model_execution",
+        "fixture_refs": [
+          "support/model_inference_scanner",
+          "examples/context_abi_roundtrip",
+          "examples/nshkr_router_fabric_roundtrip"
+        ],
+        "owner": "Jido Integration fake runtime",
+        "status": "covered_for_provider_free_release"
+      },
+      {
+        "family": "eval_cost_lineage",
+        "fixture_refs": [
+          "support/cost_budget_scanner",
+          "support/ai_run_lineage_scanner",
+          "examples/cost_roundtrip",
+          "examples/replay_roundtrip"
+        ],
+        "owner": "Mezzanine/AppKit/AITrace receipts",
+        "status": "covered_for_provider_free_release"
+      },
+      {
+        "family": "memory_persistence_restart",
+        "fixture_refs": [
+          "support/memory_fabric_scanner",
+          "support/persistence_matrix_scanner",
+          "examples/outer_brain_restart_durability",
+          "examples/mezzanine_restart_recovery"
+        ],
+        "owner": "OuterBrain and Mezzanine restart proofs",
+        "status": "covered_for_provider_free_release"
+      },
+      {
+        "family": "optimization_adaptive",
+        "fixture_refs": [
+          "support/optimization_fabric_scanner",
+          "support/adaptive_control_scanner",
+          "examples/gepa_platform_roundtrip",
+          "examples/adaptive_control_roundtrip"
+        ],
+        "owner": "GEPA and adaptive control proofs",
+        "status": "covered_for_provider_free_release"
+      }
+    ],
+    "no_new_release_blocking_defects?": true,
+    "open_warnings": [
+      {
+        "code": "artifact_source_sha_stale",
+        "safe_action": "refresh contract artifact ledger before claiming artifact-source provenance freshness",
+        "status": "non_release_warning"
+      }
+    ]
+  },
+  "hardening_scope": "fugu_single_node_provider_free_post_cutover",
+  "local_performance": {
+    "measurement_scope": "local_receipt_build_snapshot",
+    "memory_bytes": {
+      "atom": 724921,
+      "atom_used": 724921,
+      "binary": 78840,
+      "code": 16300095,
+      "ets": 890824,
+      "processes": 15996464,
+      "processes_used": 15983816,
+      "system": 55380960,
+      "total": 71377424
+    },
+    "online_scheduler_count": 24,
+    "performance_claim": "resource_snapshot_only_not_slo",
+    "process_count": 106,
+    "process_limit": 1048576,
+    "receipt_build_elapsed_us": 0,
+    "scheduler_count": 24
+  },
+  "open_non_release_claims": [
+    {
+      "claim": "distributed_BEAM_placement",
+      "owner": "../nshkr_v2",
+      "status": "handoff"
+    },
+    {
+      "claim": "live_provider_behavior",
+      "owner": "future opt-in live-provider proof",
+      "status": "not_ci_default"
+    },
+    {
+      "claim": "Context ABI community extraction",
+      "owner": "future extraction decision",
+      "status": "deferred"
+    }
+  ],
+  "receipt_ref": "receipt://stack_lab/fugu_post_cutover_hardening/latest",
+  "schema_version": "stack_lab.fugu_post_cutover_hardening.v1",
+  "status": "pass",
+  "v2_handoff": {
+    "handoff_posture": "single_node_substrate_green_distributed_proof_not_claimed",
+    "required_green_receipts_before_v2_phase8": [
+      "receipt://stack_lab/fugu_single_node_readiness/latest",
+      "receipt://stack_lab/fugu_release_claim_closeout/latest",
+      "receipt://stack_lab/fugu_post_cutover_hardening/latest"
+    ],
+    "target_docset": "../nshkr_v2/06_implementation_checklist.md"
+  }
+}

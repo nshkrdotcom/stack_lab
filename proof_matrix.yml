@@ -524,3 +524,31 @@ proofs:
       posture:
         authoritative_audit?: false
         production_deployment_proven?: false
+
+  - id: fugu_post_cutover_hardening
+    owner_repo: stack_lab
+    contract_family: "600 deployment"
+    status: implemented
+    profile: local_full
+    command: mix stack_lab.fugu.post_cutover_hardening --json
+    fixture: docs/receipts/gn_ten_phase18/fugu_post_cutover_hardening.json
+    receipt: receipt://stack_lab/fugu_post_cutover_hardening/latest
+    proves:
+      - local post-cutover resource snapshot is recorded without making SLO claims
+      - fugu deterministic cost posture remains provider-free with zero live-provider calls
+      - covered failure fixture families are mapped to existing StackLab scanners and roundtrips
+      - Context ABI extraction is explicitly deferred until v2 distributed parity and public API ergonomics are proven
+      - router and GEPA next-work decisions are recorded without auto-promotion claims
+    does_not_prove:
+      - distributed BEAM placement
+      - live provider behavior
+      - production persistence
+      - provider billing correctness
+      - Context ABI community package extraction
+    next_action: start the nshkr_v2 distributed StackLab proof only after this hardening receipt and the fugu readiness/closeout receipts are green
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/fugu_post_cutover_hardening/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false

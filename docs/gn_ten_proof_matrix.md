@@ -151,6 +151,10 @@ path, and run GitHub or Linear live commands by prefixing them with
   distributed BEAM placement, production persistence, credential rotation,
   provider billing, 49-node scale, and artifact freshness warnings outside the
   release claim until separately proven.
+- `fugu_post_cutover_hardening`: records the Phase 18 hardening receipt. It
+  captures a local resource snapshot, provider-free cost posture, covered
+  failure fixture families, Context ABI extraction deferral, router/GEPA
+  next-work decisions, and the `../nshkr_v2` handoff boundary.
 - `cost_budget_scanner`: verifies adaptive token, provider request,
   self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
   search, provider pool turn, role budget, promotion, failed retry, budget

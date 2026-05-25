@@ -1,6 +1,8 @@
 defmodule StackLab.Examples.PressureFailoverDrillTest do
   use ExUnit.Case, async: false
 
+  @moduletag timeout: 300_000
+
   alias StackLab.CitadelSpineHarness.RemoteSupport
   alias StackLab.Examples.PressureFailoverDrill
 

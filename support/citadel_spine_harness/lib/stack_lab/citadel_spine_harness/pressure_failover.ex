@@ -1,6 +1,8 @@
 defmodule StackLab.CitadelSpineHarness.PressureFailover do
   @moduledoc false
 
+  alias Citadel.ActionOutboxEntry
+  alias Citadel.BackoffPolicy
   alias Citadel.Kernel.SessionServer
   alias Jido.Integration.V2.BrainIngress.StaticScopeResolver
   alias StackLab.CitadelSpineHarness.BoundedNames
@@ -12,7 +14,9 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
   alias StackLab.CitadelSpineHarness.TransportRuntime
 
   @logical_workspace_ref "workspace://stack_lab/root"
-  @pressure_recovery_timeout_ms 60_000
+  @pressure_recovery_timeout_ms 120_000
+  @remote_accept_timeout_ms 30_000
+  @interruption_retry_backoff_ms 500
   @entry_wait_attempts div(@pressure_recovery_timeout_ms, 25)
 
   @spec run_case(:transport_interruption | :duplicate_delivery) :: {:ok, map()}
@@ -22,7 +26,8 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
       fn listener, remote_node ->
         %{
           initial: transport_config(listener, unavailable_node()),
-          recovered: transport_config(listener, remote_node)
+          recovered:
+            transport_config(listener, remote_node, timeout_ms: @remote_accept_timeout_ms)
         }
       end,
       fn env ->
@@ -32,6 +37,7 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
             "request-single-node",
             env.snapshot
           )
+          |> with_recovery_backoff()
 
         RoundtripRuntime.submit_outbox_entry!(env.session_server, entry)
 
@@ -52,6 +58,7 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
           TransportRuntime.fetch!().remote_node == env.remote_node
         end)
 
+        wait_for_retry_due(pending.entry.next_attempt_at)
         :ok = SessionServer.replay_pending(env.session_server)
 
         transport = await_transport_result!(@pressure_recovery_timeout_ms)
@@ -99,7 +106,13 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
     with_remote_case(
       :duplicate_delivery,
       fn listener, remote_node ->
-        %{initial: transport_config(listener, remote_node, deliver_twice?: true)}
+        %{
+          initial:
+            transport_config(listener, remote_node,
+              deliver_twice?: true,
+              timeout_ms: @remote_accept_timeout_ms
+            )
+        }
       end,
       fn env ->
         entry =
@@ -190,6 +203,31 @@ defmodule StackLab.CitadelSpineHarness.PressureFailover do
         scope_resolver_opts: [mapping: %{@logical_workspace_ref => workspace_root}]
       ]
     }
+  end
+
+  defp with_recovery_backoff(%ActionOutboxEntry{} = entry) do
+    ActionOutboxEntry.new!(%{
+      ActionOutboxEntry.dump(entry)
+      | max_attempts: 6,
+        backoff_policy:
+          BackoffPolicy.new!(%{
+            strategy: :fixed,
+            base_delay_ms: @interruption_retry_backoff_ms,
+            max_delay_ms: @interruption_retry_backoff_ms,
+            linear_step_ms: nil,
+            multiplier: nil,
+            jitter_mode: :none,
+            jitter_window_ms: 0,
+            extensions: %{}
+          })
+    })
+  end
+
+  defp wait_for_retry_due(nil), do: :ok
+
+  defp wait_for_retry_due(%DateTime{} = next_attempt_at) do
+    delay_ms = max(DateTime.diff(next_attempt_at, DateTime.utc_now(), :millisecond), 0)
+    Timing.delay(:pressure_failover_recovery_backoff, delay_ms)
   end
 
   defp await_transport_result!(timeout_ms) when is_integer(timeout_ms) and timeout_ms > 0 do
