@@ -12,10 +12,25 @@ It owns local test-harness mechanics:
 - peer node lifecycle;
 - code-path sync in dev peer mode;
 - bounded `:erpc` admin/proof calls;
+- checked-in topology fixture loading;
+- required app boot probes;
+- owner-defined facade host and `:pg` readiness checks;
 - node cleanup receipts.
 
 It does not own AppKit, Mezzanine, Citadel, OuterBrain, Jido Integration,
 Execution Plane, AITrace, TRINITY, GEPA, or product business semantics.
+
+## Topology Fixtures
+
+Temporary v2 topology fixtures live under `priv/topologies/` until
+`examples/gn_ten_distributed_stack` exists:
+
+- `control_3_node.exs`
+- `context_6_node.exs`
+
+These fixtures name owner facade modules and owner-defined `:pg` groups. The
+node lab can host those modules on peer nodes for readiness proof, but StackLab
+does not define the domain contract.
 
 ## Security Posture
 

@@ -9,6 +9,7 @@ defmodule StackLab.GnTenNodeLab.Topology do
   @type profile :: %{
           required(:profile) => atom(),
           required(:instances) => pos_integer(),
+          optional(:node_ids) => [String.t()],
           optional(:required_apps) => [atom()],
           optional(:owner_groups) => [tuple()],
           optional(:env) => map(),
@@ -26,6 +27,13 @@ defmodule StackLab.GnTenNodeLab.Topology do
 
   @max_default_nodes 32
   @max_stress_nodes 49
+
+  @spec load_file(Path.t()) :: {:ok, t()} | {:error, [map()]}
+  def load_file(path) when is_binary(path) do
+    with {:ok, spec} <- read_spec_file(path) do
+      validate(spec)
+    end
+  end
 
   @spec validate(map()) :: {:ok, t()} | {:error, [map()]}
   def validate(spec) when is_map(spec) do
@@ -48,6 +56,26 @@ defmodule StackLab.GnTenNodeLab.Topology do
   @spec stress_node_cap() :: pos_integer()
   def stress_node_cap, do: @max_stress_nodes
 
+  @spec instance_specs(t()) :: [map()]
+  def instance_specs(%__MODULE__{profiles: profiles}) do
+    Enum.flat_map(profiles, fn profile ->
+      node_ids = profile_node_ids(profile)
+
+      0..(profile.instances - 1)//1
+      |> Enum.map(fn index ->
+        %{
+          node_id: Enum.at(node_ids, index),
+          profile: profile.profile,
+          instance_index: index,
+          required_apps: profile.required_apps,
+          owner_groups: profile.owner_groups,
+          env: profile.env,
+          vm_args: profile.vm_args
+        }
+      end)
+    end)
+  end
+
   defp normalize(spec) do
     %__MODULE__{
       topology_ref: field(spec, :topology_ref),
@@ -63,6 +91,7 @@ defmodule StackLab.GnTenNodeLab.Topology do
     %{
       profile: atom_field(profile, :profile),
       instances: field(profile, :instances),
+      node_ids: Enum.map(List.wrap(field(profile, :node_ids)), &to_string/1),
       required_apps: Enum.map(List.wrap(field(profile, :required_apps)), &normalize_atom/1),
       owner_groups: List.wrap(field(profile, :owner_groups)),
       env: field(profile, :env) || %{},
@@ -79,6 +108,7 @@ defmodule StackLab.GnTenNodeLab.Topology do
     |> require_value(topology.profiles != [], "missing_profiles")
     |> require_value(node_count(topology) <= node_cap(topology), "node_count_above_cap")
     |> Kernel.++(profile_failures(topology.profiles))
+    |> Kernel.++(instance_failures(topology))
   end
 
   defp profile_failures(profiles) do
@@ -87,11 +117,22 @@ defmodule StackLab.GnTenNodeLab.Topology do
       []
       |> require_value(is_atom(profile.profile), "invalid_profile_name")
       |> require_value(valid_instances?(profile.instances), "invalid_profile_instances")
+      |> require_value(valid_node_ids?(profile), "invalid_profile_node_ids")
       |> require_value(
         owner_groups_safe?(profile.owner_groups),
         "stack_lab_owner_group_forbidden"
       )
     end)
+  end
+
+  defp instance_failures(%__MODULE__{} = topology) do
+    node_ids = Enum.map(instance_specs(topology), & &1.node_id)
+
+    if length(node_ids) == length(Enum.uniq(node_ids)) do
+      []
+    else
+      [failure("duplicate_profile_instance_id")]
+    end
   end
 
   defp node_cap(%__MODULE__{topology_ref: topology_ref}) do
@@ -114,6 +155,18 @@ defmodule StackLab.GnTenNodeLab.Topology do
   end
 
   defp valid_instances?(instances), do: is_integer(instances) and instances > 0
+
+  defp valid_node_ids?(%{node_ids: []}), do: true
+
+  defp valid_node_ids?(%{node_ids: node_ids, instances: instances}) do
+    length(node_ids) == instances and Enum.all?(node_ids, &valid_node_id?/1)
+  end
+
+  defp valid_node_id?(node_id) when is_binary(node_id) do
+    Regex.match?(~r/^[a-z][a-z0-9_]*[a-z0-9]$/, node_id)
+  end
+
+  defp valid_node_id?(_node_id), do: false
 
   defp valid_range?(first..last//1), do: first >= 1 and last <= 65_535 and first < last
   defp valid_range?(_range), do: false
@@ -141,5 +194,35 @@ defmodule StackLab.GnTenNodeLab.Topology do
     end
   end
 
+  defp profile_node_ids(%{node_ids: [_ | _] = node_ids}), do: node_ids
+
+  defp profile_node_ids(%{profile: profile, instances: instances}) do
+    0..(instances - 1)//1
+    |> Enum.map(&"#{profile}_#{&1}")
+  end
+
+  defp read_spec_file(path) do
+    case Path.extname(path) do
+      ".exs" ->
+        {spec, _binding} = Code.eval_file(path)
+        {:ok, spec}
+
+      ".json" ->
+        path
+        |> File.read()
+        |> case do
+          {:ok, body} -> Jason.decode(body)
+          {:error, reason} -> {:error, [failure("topology_file_read_failed", reason)]}
+        end
+
+      _other ->
+        {:error, [failure("unsupported_topology_file")]}
+    end
+  rescue
+    error ->
+      {:error, [failure("topology_file_eval_failed", Exception.message(error))]}
+  end
+
   defp failure(code), do: %{code: code}
+  defp failure(code, reason), do: %{code: code, reason: inspect(reason)}
 end
