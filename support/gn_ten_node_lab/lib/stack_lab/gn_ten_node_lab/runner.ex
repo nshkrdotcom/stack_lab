@@ -13,6 +13,7 @@ defmodule StackLab.GnTenNodeLab.Runner do
     run_id = Keyword.get_lazy(opts, :run_id, &run_id/0)
     state_path = Keyword.get(opts, :state_path, RunState.default_path())
     keep? = Keyword.get(opts, :keep?, false)
+    artifact_root = Keyword.get_lazy(opts, :artifact_root, &default_artifact_root/0)
 
     result =
       with {:ok, topology} <- Topology.load_file(topology_path),
@@ -20,19 +21,28 @@ defmodule StackLab.GnTenNodeLab.Runner do
            {:ok, peers} <- start_instances(instances),
            {:ok, boot_receipts} <- boot_instances(peers),
            cleanup <- cleanup_peers(peers) do
+        log_artifact = write_log_artifact!(artifact_root, run_id, boot_receipts, cleanup, [])
+
         {:ok,
          receipt("pass", started_at, run_id, topology, topology_path,
            keep?: keep?,
            boot_receipts: boot_receipts,
            cleanup: cleanup,
-           failures: []
+           failures: [],
+           log_artifact: log_artifact
          )}
       else
         {:error, failures} when is_list(failures) ->
-          {:error, failure_receipt(started_at, run_id, topology_path, keep?, failures, [])}
+          log_artifact = write_log_artifact!(artifact_root, run_id, [], [], failures)
+
+          {:error,
+           failure_receipt(started_at, run_id, topology_path, keep?, failures, [], log_artifact)}
 
         {:error, failure} ->
-          {:error, failure_receipt(started_at, run_id, topology_path, keep?, [failure], [])}
+          log_artifact = write_log_artifact!(artifact_root, run_id, [], [], [failure])
+
+          {:error,
+           failure_receipt(started_at, run_id, topology_path, keep?, [failure], [], log_artifact)}
       end
 
     maybe_write_state(result, state_path)
@@ -219,6 +229,7 @@ defmodule StackLab.GnTenNodeLab.Runner do
       "boot_receipts" => Keyword.fetch!(attrs, :boot_receipts),
       "cleanup" => Keyword.fetch!(attrs, :cleanup),
       "failures" => Keyword.fetch!(attrs, :failures),
+      "log_artifact" => Keyword.fetch!(attrs, :log_artifact),
       "cookie_posture" => %{
         "posture" => "generated_or_controller_cookie_redacted",
         "secret_value_present?" => false
@@ -226,7 +237,7 @@ defmodule StackLab.GnTenNodeLab.Runner do
     }
   end
 
-  defp failure_receipt(started_at, run_id, topology_path, keep?, failures, cleanup) do
+  defp failure_receipt(started_at, run_id, topology_path, keep?, failures, cleanup, log_artifact) do
     %{
       "schema_version" => @schema_version,
       "status" => "fail",
@@ -239,6 +250,7 @@ defmodule StackLab.GnTenNodeLab.Runner do
       "keep_mode" => "phase6_task_receipt_only",
       "failures" => failures,
       "cleanup" => cleanup,
+      "log_artifact" => log_artifact,
       "cookie_posture" => %{
         "posture" => "generated_or_controller_cookie_redacted",
         "secret_value_present?" => false
@@ -273,5 +285,110 @@ defmodule StackLab.GnTenNodeLab.Runner do
 
   defp run_id do
     "run-#{System.system_time(:millisecond)}-#{System.unique_integer([:positive, :monotonic])}"
+  end
+
+  defp write_log_artifact!(artifact_root, run_id, boot_receipts, cleanup, failures) do
+    log_path = Path.join([artifact_root, safe_path_component(run_id), "logs", "distributed.log"])
+    File.mkdir_p!(Path.dirname(log_path))
+
+    lines =
+      boot_lines(run_id, boot_receipts) ++
+        cleanup_lines(run_id, cleanup) ++
+        failure_lines(run_id, failures)
+
+    File.write!(log_path, Enum.join(lines, "\n") <> "\n")
+
+    %{
+      "schema_version" => "stack_lab.gn_ten_node_lab.log_artifact.v1",
+      "path" => log_path,
+      "line_count" => length(lines),
+      "redaction" => "cookies_secrets_and_raw_payloads_redacted",
+      "contains_cookie?" => false,
+      "contains_raw_payload?" => false
+    }
+  end
+
+  defp boot_lines(run_id, boot_receipts) do
+    Enum.map(boot_receipts, fn receipt ->
+      log_line(%{
+        run_id: run_id,
+        profile: Map.get(receipt, "profile", "unknown_profile"),
+        node_id: Map.get(receipt, "node_id", "unknown_node"),
+        node: Map.get(receipt, "node", "unknown@node"),
+        stream: "lifecycle",
+        correlation_ref: "corr://#{run_id}/#{Map.get(receipt, "node_id", "unknown_node")}/boot",
+        message: "node booted and owner facade readiness passed"
+      })
+    end)
+  end
+
+  defp cleanup_lines(run_id, cleanup) do
+    Enum.map(cleanup, fn receipt ->
+      log_line(%{
+        run_id: run_id,
+        profile: "cleanup",
+        node_id: Map.get(receipt, "node_id", "unknown_node"),
+        node: Map.get(receipt, "node", "unknown@node"),
+        stream: "lifecycle",
+        correlation_ref:
+          "corr://#{run_id}/#{Map.get(receipt, "node_id", "unknown_node")}/cleanup",
+        message: "peer stopped and reachability checked"
+      })
+    end)
+  end
+
+  defp failure_lines(run_id, failures) do
+    Enum.map(failures, fn failure ->
+      log_line(%{
+        run_id: run_id,
+        profile: "failure",
+        node_id:
+          to_string(Map.get(failure, :node_id, Map.get(failure, "node_id", "unknown_node"))),
+        node: "unknown@node",
+        stream: "stderr",
+        correlation_ref: "corr://#{run_id}/failure",
+        message: "node lab failure #{safe_failure_code(failure)}"
+      })
+    end)
+  end
+
+  defp log_line(attrs) do
+    [
+      DateTime.utc_now() |> DateTime.to_iso8601(),
+      attrs.profile,
+      attrs.node_id,
+      attrs.node,
+      attrs.stream,
+      attrs.correlation_ref,
+      redact_message(attrs.message)
+    ]
+    |> Enum.join(" ")
+  end
+
+  defp safe_failure_code(failure) when is_map(failure) do
+    failure
+    |> Map.get(:code, Map.get(failure, "code", "unknown"))
+    |> to_string()
+    |> redact_message()
+  end
+
+  defp redact_message(message) do
+    message
+    |> to_string()
+    |> String.replace(
+      ~r/(?i)(cookie|secret|authorization|auth_header|credential)[^ ]*/,
+      "[REDACTED]"
+    )
+    |> String.replace(~r/(?i)(raw_prompt|raw_memory|provider_payload)[^ ]*/, "[REDACTED]")
+  end
+
+  defp safe_path_component(value) do
+    value
+    |> to_string()
+    |> String.replace(~r/[^A-Za-z0-9_.-]/, "_")
+  end
+
+  defp default_artifact_root do
+    Path.join(System.tmp_dir!(), "stack_lab/gn_ten_node_lab")
   end
 end

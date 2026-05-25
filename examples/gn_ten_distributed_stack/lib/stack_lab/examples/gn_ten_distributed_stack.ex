@@ -12,6 +12,10 @@ defmodule StackLab.Examples.GnTenDistributedStack.Receipt do
     :context_packet_hash,
     :authority_ref,
     :trace_refs,
+    :node_trace_refs,
+    :aitrace_exports,
+    :replay_bundle,
+    :evidence_status,
     :node_lab_run,
     :distributed_envelope_scan,
     :node_placement,
@@ -30,6 +34,10 @@ defmodule StackLab.Examples.GnTenDistributedStack.Receipt do
           context_packet_hash: String.t(),
           authority_ref: String.t(),
           trace_refs: [String.t()],
+          node_trace_refs: [map()],
+          aitrace_exports: [map()],
+          replay_bundle: map(),
+          evidence_status: String.t(),
           node_lab_run: map(),
           distributed_envelope_scan: map(),
           node_placement: map(),
@@ -59,6 +67,10 @@ defmodule StackLab.Examples.GnTenDistributedStack.RouterModelReceipt do
     :model_stream_refs,
     :stream_fragment_posture,
     :trace_refs,
+    :node_trace_refs,
+    :aitrace_exports,
+    :replay_bundle,
+    :evidence_status,
     :node_lab_run,
     :distributed_envelope_scan,
     :node_placement,
@@ -85,6 +97,10 @@ defmodule StackLab.Examples.GnTenDistributedStack.RouterModelReceipt do
           model_stream_refs: [String.t()],
           stream_fragment_posture: String.t(),
           trace_refs: [String.t()],
+          node_trace_refs: [map()],
+          aitrace_exports: [map()],
+          replay_bundle: map(),
+          evidence_status: String.t(),
           node_lab_run: map(),
           distributed_envelope_scan: map(),
           node_placement: map(),
@@ -106,6 +122,9 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   @envelope_schema_version "stack_lab.distributed_envelope.v1"
   @context_roundtrip Module.concat([StackLab, Examples, ContextABIRoundtrip])
   @router_roundtrip Module.concat([StackLab, Examples, NSHKRRouterFabricRoundtrip])
+  @aitrace_evidence Module.concat([AITrace, RemoteFacade, Evidence])
+  @aitrace_fixture_transport Module.concat([AITrace, NSHKR, ExportTransport, Fixture])
+  @replay_bundle Module.concat([AITrace, Trace, ReplayBundle])
   @envelope_scanner Module.concat([StackLab, GnTenNodeLab, EnvelopeScanner])
   @runner Module.concat([StackLab, GnTenNodeLab, Runner])
   @json Module.concat([Jason])
@@ -114,6 +133,7 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   def run_context_6_node(opts \\ []) when is_list(opts) do
     topology_path = Keyword.get_lazy(opts, :topology_path, &default_context_topology_path/0)
     state_path = Keyword.get_lazy(opts, :state_path, &default_state_path/0)
+    evidence_opts = Keyword.get(opts, :evidence_opts, [])
 
     with {:ok, _started} <- Application.ensure_all_started(:aitrace),
          {:ok, baseline} <- call(@context_roundtrip, :run, []),
@@ -132,11 +152,15 @@ defmodule StackLab.Examples.GnTenDistributedStack do
           [supported_schema_versions: [@envelope_schema_version]]
         ])
 
+      node_trace_refs = node_trace_refs(baseline, node_lab_run, :context)
+      aitrace_exports = export_trace_evidence(node_trace_refs, :context, evidence_opts)
+      replay_bundle = replay_bundle(baseline, :context)
+
       {:ok,
        %Receipt{
          receipt_ref: receipt_ref(baseline),
          schema_version: @context_schema_version,
-         status: status(baseline, node_lab_run, envelope_scan),
+         status: status(baseline, node_lab_run, envelope_scan, aitrace_exports),
          profile: @context_profile,
          topology_ref: node_lab_run["topology_ref"],
          monolith_baseline_receipt_ref: baseline.receipt_ref,
@@ -144,6 +168,10 @@ defmodule StackLab.Examples.GnTenDistributedStack do
          context_packet_hash: baseline.context_packet_hash,
          authority_ref: baseline.authority_ref,
          trace_refs: baseline.trace_refs,
+         node_trace_refs: node_trace_refs,
+         aitrace_exports: aitrace_exports,
+         replay_bundle: replay_bundle,
+         evidence_status: evidence_status(aitrace_exports),
          node_lab_run: node_lab_run,
          distributed_envelope_scan: envelope_scan,
          node_placement: node_placement(node_lab_run),
@@ -163,6 +191,7 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   def run_router_model_6_node(opts \\ []) when is_list(opts) do
     topology_path = Keyword.get_lazy(opts, :topology_path, &default_router_model_topology_path/0)
     state_path = Keyword.get_lazy(opts, :state_path, &default_router_model_state_path/0)
+    evidence_opts = Keyword.get(opts, :evidence_opts, [])
 
     with {:ok, _started} <- Application.ensure_all_started(:aitrace),
          {:ok, baseline} <- call(@router_roundtrip, :run, []),
@@ -181,11 +210,15 @@ defmodule StackLab.Examples.GnTenDistributedStack do
           [supported_schema_versions: [@envelope_schema_version]]
         ])
 
+      node_trace_refs = node_trace_refs(baseline, node_lab_run, :router_model)
+      aitrace_exports = export_trace_evidence(node_trace_refs, :router_model, evidence_opts)
+      replay_bundle = replay_bundle(baseline, :router_model)
+
       {:ok,
        %RouterModelReceipt{
          receipt_ref: router_model_receipt_ref(baseline),
          schema_version: @router_model_schema_version,
-         status: router_model_status(baseline, node_lab_run, envelope_scan),
+         status: router_model_status(baseline, node_lab_run, envelope_scan, aitrace_exports),
          profile: @router_model_profile,
          topology_ref: node_lab_run["topology_ref"],
          monolith_baseline_receipt_ref: baseline.receipt_ref,
@@ -201,6 +234,10 @@ defmodule StackLab.Examples.GnTenDistributedStack do
          model_stream_refs: baseline.model_stream_refs,
          stream_fragment_posture: baseline.stream_fragment_posture,
          trace_refs: baseline.trace_refs,
+         node_trace_refs: node_trace_refs,
+         aitrace_exports: aitrace_exports,
+         replay_bundle: replay_bundle,
+         evidence_status: evidence_status(aitrace_exports),
          node_lab_run: node_lab_run,
          distributed_envelope_scan: envelope_scan,
          node_placement: node_placement(node_lab_run),
@@ -287,19 +324,19 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     }
   end
 
-  defp status(baseline, node_lab_run, envelope_scan) do
+  defp status(baseline, node_lab_run, envelope_scan, aitrace_exports) do
     if baseline.status == :pass and node_lab_run["status"] == "pass" and
-         envelope_scan["status"] == "pass" do
+         envelope_scan["status"] == "pass" and evidence_status(aitrace_exports) == "pass" do
       :pass
     else
       :open_defect
     end
   end
 
-  defp router_model_status(baseline, node_lab_run, envelope_scan) do
+  defp router_model_status(baseline, node_lab_run, envelope_scan, aitrace_exports) do
     if baseline.status == :pass and node_lab_run["status"] == "pass" and
          envelope_scan["status"] == "pass" and route_and_model_refs_present?(baseline) and
-         model_accounting_present?(baseline) do
+         model_accounting_present?(baseline) and evidence_status(aitrace_exports) == "pass" do
       :pass
     else
       :open_defect
@@ -354,6 +391,97 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   defp default_router_model_state_path do
     Path.join(System.tmp_dir!(), "stack_lab_gn_ten_distributed_router_model_6_node.json")
   end
+
+  defp node_trace_refs(baseline, node_lab_run, scenario) do
+    root_trace_ref = baseline.trace_refs |> List.wrap() |> List.first()
+
+    node_lab_run
+    |> Map.fetch!("boot_receipts")
+    |> Enum.map(fn node ->
+      %{
+        "source_node_ref" => "node://#{node["node_id"]}",
+        "node_id" => node["node_id"],
+        "profile" => node["profile"],
+        "trace_ref" => root_trace_ref,
+        "correlation_ref" => "corr://#{scenario_ref(scenario)}/trace/#{node["node_id"]}"
+      }
+    end)
+  end
+
+  defp export_trace_evidence(node_trace_refs, scenario, evidence_opts) do
+    Enum.map(node_trace_refs, fn node_trace_ref ->
+      request = %{
+        "schema_ref" => "schema://stack_lab/aitrace/distributed-export/v1",
+        "tenant_ref" => tenant_ref(scenario),
+        "correlation_ref" => node_trace_ref["correlation_ref"],
+        "idempotency_key" =>
+          "idem://#{scenario_ref(scenario)}/aitrace/#{node_trace_ref["node_id"]}",
+        "trace_ref" => node_trace_ref["trace_ref"],
+        "redaction_class" => "bounded_refs_only",
+        "source_node_ref" => node_trace_ref["source_node_ref"]
+      }
+
+      case call(@aitrace_evidence, :export_trace, [
+             request,
+             Keyword.merge([transport: @aitrace_fixture_transport], evidence_opts)
+           ]) do
+        {:ok, export} ->
+          Map.merge(node_trace_ref, %{"status" => "pass", "export" => export})
+
+        {:error, reason} ->
+          Map.merge(node_trace_ref, %{"status" => "open_defect", "export_error" => reason})
+      end
+    end)
+  end
+
+  defp evidence_status(exports) do
+    if Enum.all?(exports, &(Map.get(&1, "status") == "pass")), do: "pass", else: "open_defect"
+  end
+
+  defp replay_bundle(baseline, scenario) do
+    attrs =
+      %{
+        bundle_ref: "replay-bundle://stack_lab/#{scenario_ref(scenario)}/distributed",
+        source_trace_ref: baseline.trace_refs |> List.wrap() |> List.first(),
+        replay_trace_ref: "trace://stack_lab/#{scenario_ref(scenario)}/replay",
+        divergence_list_ref: "divergence://stack_lab/#{scenario_ref(scenario)}/none",
+        audit_ref: "audit://stack_lab/#{scenario_ref(scenario)}/phase10",
+        redaction_policy_ref: "redaction-policy://stack_lab/bounded-refs-only",
+        release_manifest_ref:
+          "release-manifest://stack_lab/local-distributed/#{scenario_ref(scenario)}",
+        context_packet_ref: baseline.context_packet_ref,
+        context_packet_hash: baseline.context_packet_hash
+      }
+      |> maybe_put(:route_decision_ref, Map.get(baseline, :route_decision_ref))
+      |> maybe_put(:model_invocation_ref, Map.get(baseline, :model_invocation_ref))
+      |> maybe_put(:model_receipt_ref, Map.get(baseline, :model_receipt_ref))
+
+    case call(@replay_bundle, :new, [attrs]) do
+      {:ok, bundle} ->
+        bundle
+        |> Map.from_struct()
+        |> Map.take([
+          :bundle_ref,
+          :source_trace_ref,
+          :replay_trace_ref,
+          :divergence_list_ref,
+          :audit_ref,
+          :redaction_policy_ref,
+          :release_manifest_ref,
+          :context_packet_ref,
+          :context_packet_hash,
+          :route_decision_ref,
+          :model_invocation_ref,
+          :model_receipt_ref
+        ])
+
+      {:error, reason} ->
+        %{"status" => "open_defect", "reason" => inspect(reason)}
+    end
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
   defp json_safe(%_struct{} = value), do: value |> Map.from_struct() |> json_safe()
 

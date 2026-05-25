@@ -19,6 +19,16 @@ defmodule StackLab.GnTenNodeLab.RunnerTest do
     assert receipt["peers_kept?"] == false
     assert [%{"node_id" => "fixture_profile_0", "ready?" => true}] = receipt["boot_receipts"]
     assert [%{"stopped?" => true, "reachable_after_stop?" => false}] = receipt["cleanup"]
+
+    assert %{"path" => log_path, "contains_cookie?" => false, "contains_raw_payload?" => false} =
+             receipt["log_artifact"]
+
+    assert File.exists?(log_path)
+    log = File.read!(log_path)
+    assert log =~ "fixture_profile_0"
+    assert log =~ "lifecycle"
+    refute log =~ "cookie_value"
+    refute log =~ "raw_prompt"
     refute encoded_contains_cookie?(receipt)
 
     assert {:ok, status} = Runner.status(state_path: state_path)
