@@ -7,7 +7,7 @@ defmodule StackLab.GnTenNodeLab do
   evidence semantics remain in their owner repos.
   """
 
-  alias StackLab.GnTenNodeLab.{BootPlan, Peer, Preflight, Runner, Topology}
+  alias StackLab.GnTenNodeLab.{BootPlan, EnvelopeScanner, Peer, Preflight, Runner, Topology}
 
   @spec preflight(keyword()) :: {:ok, map()} | {:error, map()}
   defdelegate preflight(opts \\ []), to: Preflight, as: :run
@@ -35,6 +35,12 @@ defmodule StackLab.GnTenNodeLab do
 
   @spec down(keyword()) :: {:ok, map()} | {:error, map()}
   defdelegate down(opts \\ []), to: Runner
+
+  @spec scan_envelope(map(), keyword()) :: map()
+  defdelegate scan_envelope(envelope, opts \\ []), to: EnvelopeScanner, as: :scan
+
+  @spec scan_envelopes([map()], keyword()) :: map()
+  defdelegate scan_envelopes(envelopes, opts \\ []), to: EnvelopeScanner, as: :scan_many
 
   @spec with_peer((Peer.t() -> term()), keyword()) :: {:ok, term()} | {:error, map()}
   defdelegate with_peer(fun, opts \\ []), to: Peer

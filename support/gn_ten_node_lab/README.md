@@ -16,6 +16,9 @@ It owns local test-harness mechanics:
 - required app boot probes;
 - owner-defined facade host and `:pg` readiness checks;
 - JSON admin receipts for `preflight`, `up`, `status`, `probe`, and `down`;
+- distributed envelope scanning for tenant, authority, trace, idempotency,
+  payload-mode, redaction, local-term, raw-payload, cross-tenant, stale-schema,
+  and direct-lower-import defects;
 - node cleanup receipts.
 
 It does not own AppKit, Mezzanine, Citadel, OuterBrain, Jido Integration,
@@ -53,6 +56,22 @@ run-state receipt, and cleans up peers before returning. `--keep` is accepted
 and recorded as an explicit intent, but cross-command peer retention is not a
 v2 Phase 6 claim. A later daemon or release-path controller must own that
 stronger claim.
+
+## Distributed Envelope Scanner
+
+The package exposes `StackLab.GnTenNodeLab.scan_envelope/2` and
+`scan_envelopes/2`. The scanner validates only boundary hygiene; owner repos
+remain responsible for domain semantics.
+
+It fails:
+
+- missing schema, tenant, authority, trace, idempotency, source node,
+  payload-mode, redaction, correlation, target profile, or issue time fields;
+- stale schema versions when supported versions are supplied;
+- cross-tenant read hints;
+- raw prompt/memory/provider/secret payload fields;
+- local-only runtime terms such as PIDs, ports, references, and functions;
+- direct lower-import or bypass hints.
 
 ## Security Posture
 
