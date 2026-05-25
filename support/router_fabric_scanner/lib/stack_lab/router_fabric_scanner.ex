@@ -178,37 +178,35 @@ defmodule StackLab.RouterFabricScanner do
     request = attrs |> facts(:route_requests) |> List.first()
     decision = attrs |> facts(:route_decisions) |> List.first()
 
-    cond do
-      is_nil(request) or is_nil(decision) ->
-        []
-
-      true ->
-        []
-        |> maybe_consistency_finding(
-          fetch(request, :route_policy_ref) == fetch(decision, :route_policy_ref),
-          :route_policy_consistency,
-          :route_policy_mismatch
-        )
-        |> maybe_consistency_finding(
-          fetch(request, :authority_ref) == fetch(decision, :authority_packet_ref),
-          :authority_consistency,
-          :authority_ref_mismatch
-        )
-        |> maybe_consistency_finding(
-          fetch(request, :context_packet_ref) == fetch(decision, :context_packet_ref) and
-            fetch(request, :packet_hash) == fetch(decision, :packet_hash),
-          :handoff_ref_consistency,
-          :packet_ref_mismatch
-        )
-        |> maybe_consistency_finding(
-          fetch(decision, :selected_model_profile_ref) in fetch(
-            request,
-            :model_class_allowlist,
-            []
-          ),
-          :selected_model_allowlist,
-          :selected_model_not_allowed
-        )
+    if is_nil(request) or is_nil(decision) do
+      []
+    else
+      []
+      |> maybe_consistency_finding(
+        fetch(request, :route_policy_ref) == fetch(decision, :route_policy_ref),
+        :route_policy_consistency,
+        :route_policy_mismatch
+      )
+      |> maybe_consistency_finding(
+        fetch(request, :authority_ref) == fetch(decision, :authority_packet_ref),
+        :authority_consistency,
+        :authority_ref_mismatch
+      )
+      |> maybe_consistency_finding(
+        fetch(request, :context_packet_ref) == fetch(decision, :context_packet_ref) and
+          fetch(request, :packet_hash) == fetch(decision, :packet_hash),
+        :handoff_ref_consistency,
+        :packet_ref_mismatch
+      )
+      |> maybe_consistency_finding(
+        fetch(decision, :selected_model_profile_ref) in fetch(
+          request,
+          :model_class_allowlist,
+          []
+        ),
+        :selected_model_allowlist,
+        :selected_model_not_allowed
+      )
     end
   end
 

@@ -88,6 +88,44 @@ defmodule StackLab.ContextABIScannerTest do
     assert has_finding?(receipt, :tenant_consistency, :cross_tenant_refs)
   end
 
+  test "validates optional owner-local failure receipt fixtures" do
+    assert {:ok, receipt} =
+             ContextABIScanner.scan(%{
+               context_packets: [packet()],
+               context_compile_receipts: [compile_receipt()],
+               authority_grants: [grant()],
+               admission_receipts: [admission_receipt()],
+               route_decisions: [route_decision()],
+               render_results: [render_result()],
+               model_invocation_receipts: [model_receipt()],
+               failure_receipts: [failure_receipt()],
+               appkit_projections: [%{context_packet_ref: packet().context_packet_ref}],
+               aitrace_facts: [%{trace_ref: packet().trace_ref}]
+             })
+
+    assert receipt.status == :pass
+    assert :failure_receipt_contract in receipt.checked_rules
+
+    assert {:ok, bad_receipt} =
+             ContextABIScanner.scan(%{
+               context_packets: [packet()],
+               context_compile_receipts: [compile_receipt()],
+               authority_grants: [grant()],
+               admission_receipts: [admission_receipt()],
+               route_decisions: [route_decision()],
+               render_results: [render_result()],
+               model_invocation_receipts: [model_receipt()],
+               failure_receipts: [
+                 %{failure_receipt() | reason_code: "outer_brain.eval.golden_case_failed.v1"}
+               ],
+               appkit_projections: [%{context_packet_ref: packet().context_packet_ref}],
+               aitrace_facts: [%{trace_ref: packet().trace_ref}]
+             })
+
+    assert bad_receipt.status == :open_defect
+    assert has_finding?(bad_receipt, :failure_receipt_contract, :reason_code_owner_mismatch)
+  end
+
   defp has_finding?(receipt, rule, reason) do
     Enum.any?(receipt.findings, &(&1.rule == rule and &1.reason == reason))
   end
@@ -185,6 +223,26 @@ defmodule StackLab.ContextABIScannerTest do
       credential_lease_ref: "credential-lease://fixture",
       trace_ref: packet().trace_ref,
       idempotency_key: "idem://model"
+    }
+  end
+
+  defp failure_receipt do
+    %{
+      failure_receipt_ref: "ai-execution-failure-receipt://a",
+      failure_ref: "failure://mezzanine/#{String.duplicate("a", 64)}",
+      tenant_ref: packet().tenant_ref,
+      workflow_ref: admission_receipt().workflow_ref,
+      stage: :eval,
+      owner: :mezzanine,
+      reason_code: "mezzanine.eval.golden_case_failed.v1",
+      failure_family: :eval,
+      safe_message: "golden case failed",
+      product_summary: "Evaluation did not approve this result.",
+      operator_summary: "Eval gate failed. Review suite and case refs.",
+      safe_action: :review_eval_evidence,
+      status: :failed,
+      trace_ref: packet().trace_ref,
+      evidence_refs: ["eval-case://a"]
     }
   end
 

@@ -20,6 +20,8 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip.Receipt do
     :model_receipt_ref,
     :appkit_projection_refs,
     :scanner_receipts,
+    :failure_receipts,
+    :failure_projection_refs,
     :aitrace_facts,
     :trace_refs,
     :does_not_prove
@@ -35,6 +37,7 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
 
   alias AITrace.AIPlatform
   alias AppKit.ContextSurface
+  alias AppKit.EvalSurface
   alias Citadel.ContextAuthority
   alias Citadel.ContextAuthority.AuthorityRequest
   alias Jido.Integration.InferenceRuntime
@@ -43,6 +46,7 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
   alias Mezzanine.AIExecution
   alias Mezzanine.AIExecution.RuntimeDeps
   alias Mezzanine.ContextPacketEngine
+  alias Mezzanine.EvalEngine
   alias OuterBrain.ContextABI
   alias StackLab.ContextABIScanner
   alias StackLab.CoordinationFabricScanner
@@ -76,19 +80,21 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
            appkit_projections(packet, admission_receipt, grant, route_decision, model_receipt),
          {:ok, aitrace_facts} <-
            aitrace_facts(packet, grant, route_decision, model_receipt, projections),
+         {:ok, failure_fixtures} <- failure_fixtures(packet),
          {:ok, scanner_receipts} <-
-           scanner_receipts(
-             packet,
-             compile_receipt,
-             grant,
-             admission_receipt,
-             route_request,
-             route_decision,
-             render_result,
-             model_receipt,
-             projections,
-             aitrace_facts
-           ) do
+           scanner_receipts(%{
+             packet: packet,
+             compile_receipt: compile_receipt,
+             grant: grant,
+             admission_receipt: admission_receipt,
+             route_request: route_request,
+             route_decision: route_decision,
+             render_result: render_result,
+             model_receipt: model_receipt,
+             projections: projections,
+             failure_fixtures: failure_fixtures,
+             aitrace_facts: aitrace_facts
+           }) do
       {:ok,
        %Receipt{
          receipt_ref: receipt_ref(packet, route_decision),
@@ -110,6 +116,8 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
          model_receipt_ref: model_receipt.receipt_ref,
          appkit_projection_refs: appkit_projection_refs(projections),
          scanner_receipts: scanner_receipts,
+         failure_receipts: [failure_fixtures.failure_receipt],
+         failure_projection_refs: [failure_fixtures.failure_projection.failure_ref],
          aitrace_facts: aitrace_facts,
          trace_refs: [@trace_ref, model_receipt.trace_ref],
          does_not_prove: [
@@ -370,18 +378,40 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
     end
   end
 
-  defp scanner_receipts(
-         packet,
-         compile_receipt,
-         grant,
-         admission_receipt,
-         route_request,
-         route_decision,
-         render_result,
-         model_receipt,
-         projections,
-         aitrace_facts
-       ) do
+  defp failure_fixtures(packet) do
+    with {:ok, failure} <-
+           EvalEngine.failure_from_reason(:eval_parent_budget_exceeded,
+             trace_ref: "trace://router-fabric/demo/eval-failure"
+           ),
+         {:ok, failure_receipt} <-
+           AIExecution.failure_receipt(failure,
+             tenant_ref: packet.tenant_ref,
+             workflow_ref: @workflow_ref,
+             stage: :eval,
+             trace_ref: "trace://router-fabric/demo/eval-failure"
+           ),
+         {:ok, failure_projection} <- EvalSurface.failure_projection(failure) do
+      {:ok,
+       %{
+         failure_receipt: failure_receipt,
+         failure_projection: failure_projection
+       }}
+    end
+  end
+
+  defp scanner_receipts(%{
+         packet: packet,
+         compile_receipt: compile_receipt,
+         grant: grant,
+         admission_receipt: admission_receipt,
+         route_request: route_request,
+         route_decision: route_decision,
+         render_result: render_result,
+         model_receipt: model_receipt,
+         projections: projections,
+         failure_fixtures: failure_fixtures,
+         aitrace_facts: aitrace_facts
+       }) do
     with {:ok, context_scan} <-
            ContextABIScanner.scan(%{
              owner_repo: "stack_lab",
@@ -393,7 +423,8 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
              route_decisions: [route_decision],
              render_results: [render_result],
              model_invocation_receipts: [model_receipt],
-             appkit_projections: Map.values(projections),
+             failure_receipts: [failure_fixtures.failure_receipt],
+             appkit_projections: Map.values(projections) ++ [failure_fixtures.failure_projection],
              aitrace_facts: aitrace_facts
            }),
          {:ok, router_scan} <-
@@ -534,6 +565,7 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
     do: Map.new(value, fn {k, v} -> {to_string(k), json_safe(v)} end)
 
   defp json_safe(values) when is_list(values), do: Enum.map(values, &json_safe/1)
+  defp json_safe(value) when is_boolean(value), do: value
   defp json_safe(value) when is_atom(value), do: Atom.to_string(value)
   defp json_safe(value), do: value
 end

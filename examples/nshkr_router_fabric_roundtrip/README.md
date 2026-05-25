@@ -3,7 +3,8 @@
 `stack_lab_nshkr_router_fabric_roundtrip` proves the first NSHKR router MVP:
 an admitted Context ABI packet is routed through
 `Trinity.MezzanineRouterAdapter`, rendered through OuterBrain, invoked through
-the Jido fake runtime, recorded in AITrace, and projected through AppKit.
+the Jido fake runtime, recorded in AITrace, projected through AppKit, and
+checked with a bounded eval-failure receipt fixture.
 
 The proof is deterministic and provider-free. It does not prove live-provider
 quality, distributed placement, GEPA optimization, or production persistence.

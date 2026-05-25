@@ -96,7 +96,7 @@ defmodule StackLab.Examples.TRINITYPlatformRoundtrip do
           budget_ref: "budget/role/worker",
           context_budget_ref: "context/role/worker",
           handoff_policy_ref: "handoff/role/worker",
-          appkit_projection_ref: "appkit/coordination/worker",
+          projection_ref: "appkit/coordination/worker",
           gepa_target_refs: ["gepa/target/role_prompt"]
         }
       ],

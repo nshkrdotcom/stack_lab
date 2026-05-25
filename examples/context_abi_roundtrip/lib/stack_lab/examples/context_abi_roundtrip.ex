@@ -85,17 +85,17 @@ defmodule StackLab.Examples.ContextABIRoundtrip do
          {:ok, aitrace_facts} <-
            aitrace_facts(packet, grant, route_decision, model_receipt, projections),
          {:ok, scanner_receipts} <-
-           scanner_receipts(
-             packet,
-             compile_receipt,
-             grant,
-             admission_receipt,
-             route_decision,
-             render_result,
-             model_receipt,
-             projections,
-             aitrace_facts
-           ) do
+           scanner_receipts(%{
+             packet: packet,
+             compile_receipt: compile_receipt,
+             grant: grant,
+             admission_receipt: admission_receipt,
+             route_decision: route_decision,
+             render_result: render_result,
+             model_receipt: model_receipt,
+             projections: projections,
+             aitrace_facts: aitrace_facts
+           }) do
       {:ok,
        %Receipt{
          receipt_ref: receipt_ref(packet, model_receipt),
@@ -381,17 +381,17 @@ defmodule StackLab.Examples.ContextABIRoundtrip do
     end
   end
 
-  defp scanner_receipts(
-         packet,
-         compile_receipt,
-         grant,
-         admission_receipt,
-         route_decision,
-         render_result,
-         model_receipt,
-         projections,
-         aitrace_facts
-       ) do
+  defp scanner_receipts(%{
+         packet: packet,
+         compile_receipt: compile_receipt,
+         grant: grant,
+         admission_receipt: admission_receipt,
+         route_decision: route_decision,
+         render_result: render_result,
+         model_receipt: model_receipt,
+         projections: projections,
+         aitrace_facts: aitrace_facts
+       }) do
     with {:ok, context_scan} <-
            ContextABIScanner.scan(%{
              owner_repo: "stack_lab",

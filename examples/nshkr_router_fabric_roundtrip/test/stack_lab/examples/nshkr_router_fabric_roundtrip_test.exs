@@ -14,6 +14,11 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtripTest do
     assert receipt.selected_route_kind == :trinity_coordinated
     assert receipt.selected_model_profile_ref == "model-profile://fixture/worker"
     assert receipt.trinity_selected_role_ref == "role://router-fabric/worker"
+
+    assert [%{failure_family: :eval, safe_action: :review_eval_evidence}] =
+             receipt.failure_receipts
+
+    assert ["failure://mezzanine/" <> _] = receipt.failure_projection_refs
     assert receipt.scanner_receipts.context_abi.status == :pass
     assert receipt.scanner_receipts.router_fabric.status == :pass
     assert receipt.scanner_receipts.coordination_fabric.status == :pass
@@ -27,6 +32,9 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtripTest do
 
     assert json =~ "\"status\": \"pass\""
     assert json =~ "\"selected_route_kind\": \"trinity_coordinated\""
+    assert json =~ "\"failure_family\": \"eval\""
+    assert json =~ "\"failure_projection_refs\""
+    assert json =~ "\"retryable?\": false"
     assert json =~ "Trinity.MezzanineRouterAdapter" or json =~ "router_fabric"
     refute json =~ "raw_prompt"
     refute json =~ "provider_payload\":"

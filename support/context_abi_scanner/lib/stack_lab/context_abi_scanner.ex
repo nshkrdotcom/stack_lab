@@ -43,6 +43,7 @@ defmodule StackLab.ContextABIScanner do
     :route_decision_contract,
     :render_handoff_contract,
     :model_invocation_contract,
+    :failure_receipt_contract,
     :appkit_projection_contract,
     :aitrace_linkage_contract,
     :tenant_consistency,
@@ -162,6 +163,23 @@ defmodule StackLab.ContextABIScanner do
       :idempotency_key
     ]
   }
+  @failure_receipt_fields [
+    :failure_receipt_ref,
+    :failure_ref,
+    :tenant_ref,
+    :workflow_ref,
+    :stage,
+    :owner,
+    :reason_code,
+    :failure_family,
+    :safe_message,
+    :product_summary,
+    :operator_summary,
+    :safe_action,
+    :status,
+    :trace_ref,
+    :evidence_refs
+  ]
 
   @spec scan(map()) :: {:ok, Receipt.t()} | {:error, term()}
   def scan(attrs) when is_map(attrs) do
@@ -171,6 +189,7 @@ defmodule StackLab.ContextABIScanner do
     findings =
       attrs
       |> group_findings()
+      |> Kernel.++(failure_receipt_findings(attrs))
       |> Kernel.++(appkit_projection_findings(attrs))
       |> Kernel.++(aitrace_linkage_findings(attrs))
       |> Kernel.++(raw_payload_findings(attrs))
@@ -192,6 +211,69 @@ defmodule StackLab.ContextABIScanner do
 
   def scan(_attrs), do: {:error, :invalid_context_abi_scan}
 
+  defp failure_receipt_findings(attrs) do
+    attrs
+    |> facts(:failure_receipts)
+    |> Enum.with_index(1)
+    |> Enum.flat_map(fn {receipt, index} ->
+      path = "failure_receipts:#{index}"
+
+      required_failure_receipt_findings(receipt, path) ++
+        reason_code_findings(receipt, path) ++
+        failure_summary_findings(receipt, path)
+    end)
+  end
+
+  defp required_failure_receipt_findings(receipt, path) do
+    Enum.flat_map(@failure_receipt_fields, fn field ->
+      value = value(receipt, field)
+
+      cond do
+        field in [:stage, :owner, :failure_family, :safe_action, :status] and is_nil(value) ->
+          [finding(:failure_receipt_contract, {:missing_required_field, field}, path, %{})]
+
+        field == :evidence_refs and not non_empty_strings?(value) ->
+          [finding(:failure_receipt_contract, {:missing_required_refs, field}, path, %{})]
+
+        field not in [:stage, :owner, :failure_family, :safe_action, :status, :evidence_refs] and
+            not present_string?(value) ->
+          [finding(:failure_receipt_contract, {:missing_required_ref, field}, path, %{})]
+
+        true ->
+          []
+      end
+    end)
+  end
+
+  defp reason_code_findings(receipt, path) do
+    reason_code = value(receipt, :reason_code)
+    owner = value(receipt, :owner)
+    owner_prefix = owner |> to_string() |> Kernel.<>(".")
+
+    cond do
+      not present_string?(reason_code) ->
+        []
+
+      not String.starts_with?(reason_code, owner_prefix) ->
+        [finding(:failure_receipt_contract, :reason_code_owner_mismatch, path, %{})]
+
+      not String.match?(reason_code, ~r/\.v[0-9]+$/) ->
+        [finding(:failure_receipt_contract, :unversioned_reason_code, path, %{})]
+
+      true ->
+        []
+    end
+  end
+
+  defp failure_summary_findings(receipt, path) do
+    if present_string?(value(receipt, :product_summary)) and
+         present_string?(value(receipt, :operator_summary)) do
+      []
+    else
+      [finding(:failure_receipt_contract, :missing_safe_summary, path, %{})]
+    end
+  end
+
   defp group_findings(attrs) do
     @fact_groups
     |> Enum.flat_map(fn {group, required_fields} ->
@@ -206,38 +288,57 @@ defmodule StackLab.ContextABIScanner do
   end
 
   defp required_group_findings(facts, group, required_fields) do
+    rule = rule_for_group(group)
+
     facts
     |> Enum.with_index(1)
     |> Enum.flat_map(fn {fact, index} ->
-      path = "#{group}:#{index}"
-
-      Enum.flat_map(required_fields, fn field ->
-        cond do
-          field in [:model_class_allowlist, :allowed_model_classes] and
-              not non_empty_strings?(value(fact, field)) ->
-            [finding(rule_for_group(group), {:missing_required_refs, field}, path, %{})]
-
-          field in [:runtime_kind, :selected_route_kind, :status] and is_nil(value(fact, field)) ->
-            [finding(rule_for_group(group), {:missing_required_field, field}, path, %{})]
-
-          field not in [
-            :model_class_allowlist,
-            :allowed_model_classes,
-            :runtime_kind,
-            :selected_route_kind,
-            :status
-          ] and
-              not present_string?(value(fact, field)) ->
-            [finding(rule_for_group(group), {:missing_required_ref, field}, path, %{})]
-
-          field in [:packet_hash, :payload_hash] and not sha256?(value(fact, field)) ->
-            [finding(rule_for_group(group), {:invalid_sha256_ref, field}, path, %{})]
-
-          true ->
-            []
-        end
-      end)
+      required_fact_findings(fact, group, rule, index, required_fields)
     end)
+  end
+
+  defp required_fact_findings(fact, group, rule, index, required_fields) do
+    path = "#{group}:#{index}"
+    Enum.flat_map(required_fields, &required_field_findings(fact, &1, rule, path))
+  end
+
+  defp required_field_findings(fact, field, rule, path)
+       when field in [:model_class_allowlist, :allowed_model_classes] do
+    if non_empty_strings?(value(fact, field)) do
+      []
+    else
+      [finding(rule, {:missing_required_refs, field}, path, %{})]
+    end
+  end
+
+  defp required_field_findings(fact, field, rule, path)
+       when field in [:runtime_kind, :selected_route_kind, :status] do
+    if is_nil(value(fact, field)) do
+      [finding(rule, {:missing_required_field, field}, path, %{})]
+    else
+      []
+    end
+  end
+
+  defp required_field_findings(fact, field, rule, path)
+       when field in [:packet_hash, :payload_hash] do
+    digest_ref_findings(value(fact, field), field, rule, path)
+  end
+
+  defp required_field_findings(fact, field, rule, path) do
+    if present_string?(value(fact, field)) do
+      []
+    else
+      [finding(rule, {:missing_required_ref, field}, path, %{})]
+    end
+  end
+
+  defp digest_ref_findings(value, field, rule, path) do
+    cond do
+      not present_string?(value) -> [finding(rule, {:missing_required_ref, field}, path, %{})]
+      not sha256?(value) -> [finding(rule, {:invalid_sha256_ref, field}, path, %{})]
+      true -> []
+    end
   end
 
   defp appkit_projection_findings(attrs) do
@@ -256,19 +357,23 @@ defmodule StackLab.ContextABIScanner do
         projections
         |> Enum.with_index(1)
         |> Enum.flat_map(fn {projection, index} ->
-          if projection_ref?(projection) do
-            []
-          else
-            [
-              finding(
-                :appkit_projection_contract,
-                :missing_projection_ref,
-                "appkit_projections:#{index}",
-                %{}
-              )
-            ]
-          end
+          appkit_projection_ref_findings(projection, index)
         end)
+    end
+  end
+
+  defp appkit_projection_ref_findings(projection, index) do
+    if projection_ref?(projection) do
+      []
+    else
+      [
+        finding(
+          :appkit_projection_contract,
+          :missing_projection_ref,
+          "appkit_projections:#{index}",
+          %{}
+        )
+      ]
     end
   end
 
@@ -280,20 +385,22 @@ defmodule StackLab.ContextABIScanner do
       trace_facts ->
         trace_facts
         |> Enum.with_index(1)
-        |> Enum.flat_map(fn {fact, index} ->
-          if present_string?(value(fact, :trace_ref)) do
-            []
-          else
-            [
-              finding(
-                :aitrace_linkage_contract,
-                {:missing_required_ref, :trace_ref},
-                "aitrace_facts:#{index}",
-                %{}
-              )
-            ]
-          end
-        end)
+        |> Enum.flat_map(fn {fact, index} -> aitrace_trace_ref_findings(fact, index) end)
+    end
+  end
+
+  defp aitrace_trace_ref_findings(fact, index) do
+    if present_string?(value(fact, :trace_ref)) do
+      []
+    else
+      [
+        finding(
+          :aitrace_linkage_contract,
+          {:missing_required_ref, :trace_ref},
+          "aitrace_facts:#{index}",
+          %{}
+        )
+      ]
     end
   end
 
@@ -358,7 +465,7 @@ defmodule StackLab.ContextABIScanner do
   defp first_fact(attrs, group), do: attrs |> facts(group) |> List.first()
 
   defp all_facts(attrs) do
-    groups = Map.keys(@fact_groups) ++ [:appkit_projections, :aitrace_facts]
+    groups = Map.keys(@fact_groups) ++ [:failure_receipts, :appkit_projections, :aitrace_facts]
     Enum.flat_map(groups, &facts(attrs, &1))
   end
 
@@ -369,6 +476,7 @@ defmodule StackLab.ContextABIScanner do
         :route_decision_ref,
         :model_invocation_ref,
         :eval_verdict_ref,
+        :failure_ref,
         :review_ref
       ],
       &present_string?(value(projection, &1))

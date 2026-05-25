@@ -451,6 +451,7 @@ proofs:
       - admitted Context ABI packet is routed through the concrete TRINITY Mezzanine router adapter
       - Mezzanine route decision carries route policy, authority, selected model profile, verifier, fallback plan, and TRINITY route-plan refs
       - OuterBrain render refs are carried into Jido Integration fake model invocation without raw prompt or provider payload leakage
+      - Mezzanine eval failure reasons are mapped to bounded owner-local failure receipts and AppKit safe projections
       - AppKit projects context packet, route decision, model invocation, and eval verdict refs through product-safe DTOs
       - AITrace emits bounded context, route, model, and eval facts
       - StackLab context ABI, router fabric, coordination fabric, and model inference scanners pass on the assembled receipt

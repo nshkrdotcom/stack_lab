@@ -27,6 +27,7 @@ defmodule StackLab.NSHKRRouterFabricRoundtrip.MixProject do
   defp deps do
     [
       {:app_kit_context_surface, path: "../../../app_kit/core/context_surface"},
+      {:app_kit_eval_surface, path: "../../../app_kit/core/eval_surface"},
       {:outer_brain_context_abi, path: "../../../outer_brain/core/context_abi", override: true},
       {:outer_brain_prompting,
        path: "../../../outer_brain/core/outer_brain_prompting", override: true},
@@ -36,6 +37,7 @@ defmodule StackLab.NSHKRRouterFabricRoundtrip.MixProject do
        path: "../../../mezzanine/core/context_packet_engine", override: true},
       {:mezzanine_ai_execution_engine,
        path: "../../../mezzanine/core/ai_execution_engine", override: true},
+      {:mezzanine_eval_engine, path: "../../../mezzanine/core/eval_engine"},
       {:jido_model_invocation_contracts,
        path: "../../../jido_integration/core/model_invocation_contracts", override: true},
       {:jido_inference_runtime, path: "../../../jido_integration/core/inference_runtime"},
