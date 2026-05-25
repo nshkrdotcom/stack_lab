@@ -45,6 +45,17 @@ defmodule StackLab.GnTenNodeLab.Peer do
     end
   end
 
+  @spec start(keyword()) :: {:ok, t()} | {:error, map()}
+  def start(opts \\ []) when is_list(opts) do
+    with {:ok, _epmd} <- ensure_epmd_started(),
+         {:ok, _distribution} <- ensure_distribution_started() do
+      start_peer(opts)
+    end
+  end
+
+  @spec stop(t()) :: map()
+  def stop(%__MODULE__{} = peer), do: cleanup(peer)
+
   @spec remote_call(t() | node(), module(), atom(), [term()], timeout()) ::
           {:ok, term()} | {:error, term()}
   def remote_call(target, module, function, args),

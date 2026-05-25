@@ -163,6 +163,7 @@ defmodule StackLab.Workspace.MixProject do
         "docs/review/shared_library_governed_adapter_review.md",
         "docs/runbooks/up_single.md",
         "docs/runbooks/up_multi.md",
+        "docs/runbooks/distributed_node_lab.md",
         "docs/runbooks/faults.md",
         "docs/runbooks/tre_lane_acceptance.md",
         "CHANGELOG.md",
@@ -187,6 +188,7 @@ defmodule StackLab.Workspace.MixProject do
         Runbooks: [
           "docs/runbooks/up_single.md",
           "docs/runbooks/up_multi.md",
+          "docs/runbooks/distributed_node_lab.md",
           "docs/runbooks/faults.md",
           "docs/runbooks/tre_lane_acceptance.md"
         ],
