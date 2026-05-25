@@ -1,0 +1,604 @@
+{
+  "default_node_cap": 32,
+  "does_not_prove": [
+    "EPMD startup",
+    "peer node lifecycle",
+    "distributed business semantics",
+    "owner facade availability",
+    "monolith/distributed parity",
+    "49-node scale feasibility"
+  ],
+  "owner_group_posture": "owner_defined_groups_mapped_by_stack_lab",
+  "receipt_ref": "receipt://stack_lab/gn_ten_distributed_topology_freeze/latest",
+  "schema_version": "stack_lab.gn_ten.distributed_topology_freeze.v1",
+  "status": "pass",
+  "stress_node_cap": 49,
+  "topologies": [
+    {
+      "node_cap": 32,
+      "node_count": 3,
+      "owner_groups": [
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Citadel.RemoteFacade, :authority}",
+          "profile": "citadel_authority"
+        }
+      ],
+      "profile": "control_3_node",
+      "required_profiles": [
+        "app_kit_surface",
+        "mezzanine_workflow",
+        "citadel_authority"
+      ],
+      "topology_ref": "topology://stack_lab/gn-ten/control-3-node/v1"
+    },
+    {
+      "node_cap": 32,
+      "node_count": 6,
+      "owner_groups": [
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Citadel.RemoteFacade, :authority}",
+          "profile": "citadel_authority"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{AITrace.RemoteFacade, :evidence}",
+          "profile": "aitrace_evidence"
+        }
+      ],
+      "profile": "context_6_node",
+      "required_profiles": [
+        "app_kit_surface",
+        "mezzanine_workflow",
+        "citadel_authority",
+        "outer_brain_context",
+        "aitrace_evidence"
+      ],
+      "topology_ref": "topology://stack_lab/gn-ten/context-6-node/v1"
+    },
+    {
+      "node_cap": 32,
+      "node_count": 9,
+      "owner_groups": [
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Citadel.RemoteFacade, :authority}",
+          "profile": "citadel_authority"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        },
+        {
+          "owner_group": "{GroundPlane.RemoteFacade, :projection}",
+          "profile": "ground_plane_projection"
+        },
+        {
+          "owner_group": "{AITrace.RemoteFacade, :evidence}",
+          "profile": "aitrace_evidence"
+        }
+      ],
+      "profile": "full_9_node",
+      "required_profiles": [
+        "product_probe",
+        "app_kit_surface",
+        "mezzanine_workflow",
+        "citadel_authority",
+        "outer_brain_context",
+        "jido_model_runtime",
+        "execution_plane_node",
+        "ground_plane_projection",
+        "aitrace_evidence"
+      ],
+      "topology_ref": "topology://stack_lab/gn-ten/full-9-node/v1"
+    },
+    {
+      "node_cap": 32,
+      "node_count": 6,
+      "owner_groups": [
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Citadel.RemoteFacade, :authority}",
+          "profile": "citadel_authority"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{AITrace.RemoteFacade, :evidence}",
+          "profile": "aitrace_evidence"
+        }
+      ],
+      "profile": "partition_recovery",
+      "required_profiles": [
+        "app_kit_surface",
+        "mezzanine_workflow",
+        "citadel_authority",
+        "outer_brain_context",
+        "jido_model_runtime",
+        "aitrace_evidence"
+      ],
+      "topology_ref": "topology://stack_lab/gn-ten/partition-recovery/v1"
+    },
+    {
+      "node_cap": 32,
+      "node_count": 12,
+      "owner_groups": [
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Citadel.RemoteFacade, :authority}",
+          "profile": "citadel_authority"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        },
+        {
+          "owner_group": "{AITrace.RemoteFacade, :evidence}",
+          "profile": "aitrace_evidence"
+        },
+        {
+          "owner_group": "{GroundPlane.RemoteFacade, :projection}",
+          "profile": "ground_plane_projection"
+        }
+      ],
+      "profile": "scale_12_node",
+      "required_profiles": [
+        "app_kit_surface",
+        "mezzanine_workflow",
+        "citadel_authority",
+        "outer_brain_context",
+        "jido_model_runtime",
+        "execution_plane_node",
+        "aitrace_evidence",
+        "ground_plane_projection"
+      ],
+      "topology_ref": "topology://stack_lab/gn-ten/scale-12-node/v1"
+    },
+    {
+      "node_cap": 32,
+      "node_count": 32,
+      "owner_groups": [
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Citadel.RemoteFacade, :authority}",
+          "profile": "citadel_authority"
+        },
+        {
+          "owner_group": "{Citadel.RemoteFacade, :authority}",
+          "profile": "citadel_authority"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{AITrace.RemoteFacade, :evidence}",
+          "profile": "aitrace_evidence"
+        },
+        {
+          "owner_group": "{AITrace.RemoteFacade, :evidence}",
+          "profile": "aitrace_evidence"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        }
+      ],
+      "profile": "scale_32_node",
+      "required_profiles": [
+        "app_kit_surface",
+        "mezzanine_workflow",
+        "citadel_authority",
+        "outer_brain_context",
+        "jido_model_runtime",
+        "aitrace_evidence",
+        "execution_plane_node"
+      ],
+      "topology_ref": "topology://stack_lab/gn-ten/scale-32-node/v1"
+    },
+    {
+      "node_cap": 49,
+      "node_count": 49,
+      "owner_groups": [
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{AppKit.RemoteFacade, :product_surface}",
+          "profile": "app_kit_surface"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Mezzanine.RemoteFacade, :workflow}",
+          "profile": "mezzanine_workflow"
+        },
+        {
+          "owner_group": "{Citadel.RemoteFacade, :authority}",
+          "profile": "citadel_authority"
+        },
+        {
+          "owner_group": "{Citadel.RemoteFacade, :authority}",
+          "profile": "citadel_authority"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{OuterBrain.RemoteFacade, :context}",
+          "profile": "outer_brain_context"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{JidoIntegration.RemoteFacade, :model_runtime}",
+          "profile": "jido_model_runtime"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        },
+        {
+          "owner_group": "{ExecutionPlane.RemoteFacade, :lane}",
+          "profile": "execution_plane_node"
+        },
+        {
+          "owner_group": "{AITrace.RemoteFacade, :evidence}",
+          "profile": "aitrace_evidence"
+        },
+        {
+          "owner_group": "{AITrace.RemoteFacade, :evidence}",
+          "profile": "aitrace_evidence"
+        },
+        {
+          "owner_group": "{GroundPlane.RemoteFacade, :projection}",
+          "profile": "ground_plane_projection"
+        }
+      ],
+      "profile": "scale_49_node",
+      "required_profiles": [
+        "app_kit_surface",
+        "mezzanine_workflow",
+        "citadel_authority",
+        "outer_brain_context",
+        "jido_model_runtime",
+        "execution_plane_node",
+        "aitrace_evidence",
+        "ground_plane_projection"
+      ],
+      "topology_ref": "topology://stack_lab/gn-ten/scale-49-node/v1"
+    }
+  ],
+  "topology_count": 7,
+  "topology_refs": [
+    "topology://stack_lab/gn-ten/control-3-node/v1",
+    "topology://stack_lab/gn-ten/context-6-node/v1",
+    "topology://stack_lab/gn-ten/full-9-node/v1",
+    "topology://stack_lab/gn-ten/partition-recovery/v1",
+    "topology://stack_lab/gn-ten/scale-12-node/v1",
+    "topology://stack_lab/gn-ten/scale-32-node/v1",
+    "topology://stack_lab/gn-ten/scale-49-node/v1"
+  ]
+}

@@ -119,6 +119,32 @@ proofs:
         authoritative_audit?: false
         production_deployment_proven?: false
 
+  - id: gn_ten_distributed_topology_freeze
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: local_quick
+    command: mix gn_ten.topology.freeze --json
+    fixture: lib/stack_lab/gn_ten/distributed_topology.ex
+    receipt: receipt://stack_lab/gn_ten_distributed_topology_freeze/latest
+    proves:
+      - canonical v2 distributed topology refs, node caps, owner repos, owner discovery groups, and required profiles are frozen
+      - topology validation rejects unknown repos, duplicate node ids, missing required domains, owner group mismatch, and node counts above cap
+      - scale profiles have exact reviewed node counts for 12, 32, and 49 nodes
+    does_not_prove:
+      - EPMD startup or peer lifecycle
+      - owner facade availability
+      - distributed business semantics
+      - monolith/distributed parity
+      - 49-node scale feasibility
+    next_action: implement generic node-lab preflight and peer lifecycle against the frozen topology catalog
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/gn_ten_distributed_topology_freeze/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
   - id: product_no_bypass
     owner_repo: stack_lab
     contract_family: "300 architecture"

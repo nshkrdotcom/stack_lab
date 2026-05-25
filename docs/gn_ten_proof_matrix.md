@@ -155,6 +155,14 @@ path, and run GitHub or Linear live commands by prefixing them with
   captures a local resource snapshot, provider-free cost posture, covered
   failure fixture families, Context ABI extraction deferral, router/GEPA
   next-work decisions, and the `../nshkr_v2` handoff boundary.
+- `gn_ten_distributed_topology_freeze`: records the v2 Phase 1 topology
+  freeze. It validates canonical topology refs, owner repos, owner-defined
+  discovery groups, required profiles, default and stress node caps, exact
+  12/32/49 scale counts, and negative fixtures for unknown repos, duplicate
+  node ids, missing required profiles, owner group mismatch, and node count
+  over-cap. It does not prove EPMD startup, peer lifecycle, owner facade
+  availability, distributed business semantics, monolith/distributed parity,
+  or 49-node scale feasibility.
 - `cost_budget_scanner`: verifies adaptive token, provider request,
   self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
   search, provider pool turn, role budget, promotion, failed retry, budget
