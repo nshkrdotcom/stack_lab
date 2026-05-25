@@ -51,12 +51,22 @@ Phase 13 adds monolith/distributed semantic parity:
 - record a parity receipt with deterministic fixture controls and diff
   findings.
 
+Phase 14 adds local scale posture:
+
+- boot a 12-node local topology as the default scale gate;
+- keep 32-node and 49-node profiles opt-in;
+- block the 49-node stress profile until an explicit host-feasibility receipt
+  is supplied;
+- record startup duration, resource summary, scheduler flags, peer failures,
+  and cleanup status.
+
 ## Commands
 
 ```bash
 mix stack_lab.gn_ten.distributed.prove --profile context_6_node --json
 mix stack_lab.gn_ten.distributed.prove --profile router_model_6_node --json
 mix stack_lab.gn_ten.distributed.prove --profile parity --json
+mix stack_lab.gn_ten.distributed.prove --profile scale_12_node --max-nodes 12 --json
 mix stack_lab.gn_ten.distributed.prove --profile partition_recovery --json
 ```
 

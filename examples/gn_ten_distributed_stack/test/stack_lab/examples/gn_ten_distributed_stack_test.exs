@@ -174,6 +174,56 @@ defmodule StackLab.Examples.GnTenDistributedStackTest do
            end)
   end
 
+  test "runs the default 12-node scale proof" do
+    assert {:ok, receipt} = GnTenDistributedStack.run_scale_12_node()
+
+    assert receipt.status == :pass
+    assert receipt.profile == "scale_12_node"
+    assert receipt.node_count == 12
+    assert receipt.node_cap == 12
+    assert receipt.scale_gate["status"] == "pass"
+    assert receipt.scale_gate["proof_mode"] == "default_local_gate"
+    assert receipt.cleanup_status == "pass"
+    assert receipt.resource_summary["node_count"] == 12
+    assert receipt.resource_summary["startup_duration_ms"] >= 0
+    assert receipt.resource_summary["peer_failure_count"] == 0
+    assert receipt.resource_summary["scheduler_flags"] == ["+S 1"]
+    assert is_integer(receipt.resource_summary["host_before"]["cpu"]["logical_cores"])
+    assert is_integer(receipt.resource_summary["host_before"]["limits"]["open_files_soft"])
+    assert receipt.host_feasibility["status"] == "pass"
+
+    assert receipt.parity_baseline_receipt_ref ==
+             "receipt://stack_lab/gn_ten_distributed_parity/latest"
+
+    assert receipt.node_lab_run["log_artifact"]["line_count"] >= 24
+    assert File.exists?(receipt.node_lab_run["log_artifact"]["path"])
+  end
+
+  test "scale proof enforces requested max node cap" do
+    assert {:ok, receipt} = GnTenDistributedStack.run_scale_12_node(max_nodes: 11)
+
+    assert receipt.status == :open_defect
+    assert receipt.node_count == 12
+    assert receipt.scale_gate["status"] == "open_defect"
+    assert receipt.scale_gate["reason"] == "node_count_above_requested_cap"
+    assert receipt.cleanup_status == "not_started"
+    assert is_nil(receipt.node_lab_run)
+  end
+
+  test "scale 49 proof is blocked until a host feasibility receipt is supplied" do
+    assert {:ok, receipt} = GnTenDistributedStack.run_scale_49_node()
+
+    assert receipt.status == :open_defect
+    assert receipt.profile == "scale_49_node"
+    assert receipt.node_count == 49
+    assert receipt.node_cap == 49
+    assert receipt.scale_gate["status"] == "blocked_missing_host_feasibility"
+    assert receipt.host_feasibility["status"] == "blocked_missing_host_feasibility"
+    assert "empty_peer_memory" in receipt.host_feasibility["required_fields"]
+    assert receipt.cleanup_status == "not_started"
+    assert is_nil(receipt.node_lab_run)
+  end
+
   test "records AITrace export failure posture without leaking raw evidence" do
     assert {:ok, receipt} =
              GnTenDistributedStack.run_router_model_6_node(

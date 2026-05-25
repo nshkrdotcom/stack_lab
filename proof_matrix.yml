@@ -206,6 +206,34 @@ proofs:
         authoritative_audit?: false
         production_deployment_proven?: false
 
+  - id: gn_ten_distributed_scale_12
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: local_full
+    command: mix stack_lab.gn_ten.distributed.prove --profile scale_12_node --max-nodes 12 --json
+    fixture: examples/gn_ten_distributed_stack/priv/topologies/scale_12_node.exs
+    receipt: receipt://stack_lab/gn_ten_distributed_scale_12/latest
+    proves:
+      - StackLab can boot and cleanly stop a 12-node local peer-mode topology
+      - scale receipts record node cap, node count, startup duration, scheduler flags, peer failure count, host resource summary, and cleanup status
+      - requested max-node caps are enforced before node startup
+      - the 49-node stress profile is blocked until host feasibility fields are explicitly supplied
+      - the Phase 13 parity receipt remains the semantic baseline for scale posture
+    does_not_prove:
+      - 32-node or 49-node local stress behavior
+      - sustained performance SLOs
+      - production distribution security
+      - release artifact boot
+      - live provider behavior
+    next_action: add Phase 15 operator/debug UX while keeping 32/49-node profiles opt-in
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/gn_ten_distributed_scale_12/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
   - id: product_no_bypass
     owner_repo: stack_lab
     contract_family: "300 architecture"

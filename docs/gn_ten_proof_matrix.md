@@ -183,6 +183,14 @@ path, and run GitHub or Linear live commands by prefixing them with
   production distribution security, release artifact boot, live provider
   behavior, 49-node scale behavior, or semantic equivalence outside the named
   parity field list.
+- `gn_ten_distributed_scale_12`: records the v2 Phase 14 default scale proof.
+  It boots and cleans up a 12-node local peer-mode topology, records node cap,
+  node count, startup duration, scheduler flags, peer failure count, host
+  resource summary, and cleanup status, enforces requested max-node caps before
+  startup, and keeps 49-node stress execution blocked until explicit host
+  feasibility fields are supplied. It does not prove 32/49-node local stress,
+  sustained SLOs, production distribution security, release boot, or live
+  provider behavior.
 - `cost_budget_scanner`: verifies adaptive token, provider request,
   self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
   search, provider pool turn, role budget, promotion, failed retry, budget

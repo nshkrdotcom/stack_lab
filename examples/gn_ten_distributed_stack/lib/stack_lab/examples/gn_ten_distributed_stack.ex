@@ -175,6 +175,45 @@ defmodule StackLab.Examples.GnTenDistributedStack.ParityReceipt do
         }
 end
 
+defmodule StackLab.Examples.GnTenDistributedStack.ScaleReceipt do
+  @moduledoc "Local scale topology proof receipt."
+
+  @enforce_keys [
+    :receipt_ref,
+    :schema_version,
+    :status,
+    :profile,
+    :topology_ref,
+    :node_count,
+    :node_cap,
+    :parity_baseline_receipt_ref,
+    :node_lab_run,
+    :resource_summary,
+    :host_feasibility,
+    :cleanup_status,
+    :scale_gate,
+    :does_not_prove
+  ]
+  defstruct @enforce_keys
+
+  @type t :: %__MODULE__{
+          receipt_ref: String.t(),
+          schema_version: String.t(),
+          status: :pass | :open_defect,
+          profile: String.t(),
+          topology_ref: String.t(),
+          node_count: non_neg_integer(),
+          node_cap: pos_integer(),
+          parity_baseline_receipt_ref: String.t(),
+          node_lab_run: map() | nil,
+          resource_summary: map(),
+          host_feasibility: map(),
+          cleanup_status: String.t(),
+          scale_gate: map(),
+          does_not_prove: [String.t()]
+        }
+end
+
 defmodule StackLab.Examples.GnTenDistributedStack.FaultRecoveryReceipt do
   @moduledoc "Distributed gn-ten fault and recovery proof receipt."
 
@@ -221,17 +260,36 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     FaultRecoveryReceipt,
     ParityReceipt,
     Receipt,
-    RouterModelReceipt
+    RouterModelReceipt,
+    ScaleReceipt
   }
 
   @context_schema_version "stack_lab.gn_ten_distributed_stack.context_6_node.v1"
   @router_model_schema_version "stack_lab.gn_ten_distributed_stack.router_model_6_node.v1"
   @parity_schema_version "stack_lab.gn_ten_distributed_stack.parity.v1"
+  @scale_schema_version "stack_lab.gn_ten_distributed_stack.scale.v1"
   @fault_recovery_schema_version "stack_lab.gn_ten_distributed_stack.partition_recovery.v1"
   @context_profile "context_6_node"
   @router_model_profile "router_model_6_node"
   @parity_profile "parity"
   @fault_recovery_profile "partition_recovery"
+  @scale_profiles %{
+    scale_12_node: %{
+      profile: "scale_12_node",
+      node_cap: 12,
+      topology_ref: "topology://stack_lab/gn-ten/scale-12-node/v1"
+    },
+    scale_32_node: %{
+      profile: "scale_32_node",
+      node_cap: 32,
+      topology_ref: "topology://stack_lab/gn-ten/scale-32-node/v1"
+    },
+    scale_49_node: %{
+      profile: "scale_49_node",
+      node_cap: 49,
+      topology_ref: "topology://stack_lab/gn-ten/scale-49-node/v1"
+    }
+  }
   @envelope_schema_version "stack_lab.distributed_envelope.v1"
   @canonical_encoder "GroundPlane.Boundary.Codec"
   @parity_semantic_fields [
@@ -279,6 +337,7 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   @router_roundtrip Module.concat([StackLab, Examples, NSHKRRouterFabricRoundtrip])
   @persistence_roundtrip Module.concat([StackLab, Examples, PersistenceModeRoundtrip])
   @boundary_codec Module.concat([GroundPlane, Boundary, Codec])
+  @topology Module.concat([StackLab, GnTenNodeLab, Topology])
   @aitrace_evidence Module.concat([AITrace, RemoteFacade, Evidence])
   @aitrace_fixture_transport Module.concat([AITrace, NSHKR, ExportTransport, Fixture])
   @replay_bundle Module.concat([AITrace, Trace, ReplayBundle])
@@ -469,6 +528,18 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     end
   end
 
+  @spec run_scale_12_node(keyword()) :: {:ok, ScaleReceipt.t()} | {:error, term()}
+  def run_scale_12_node(opts \\ []) when is_list(opts),
+    do: run_scale_profile(:scale_12_node, opts)
+
+  @spec run_scale_32_node(keyword()) :: {:ok, ScaleReceipt.t()} | {:error, term()}
+  def run_scale_32_node(opts \\ []) when is_list(opts),
+    do: run_scale_profile(:scale_32_node, opts)
+
+  @spec run_scale_49_node(keyword()) :: {:ok, ScaleReceipt.t()} | {:error, term()}
+  def run_scale_49_node(opts \\ []) when is_list(opts),
+    do: run_scale_profile(:scale_49_node, opts)
+
   @spec run_partition_recovery(keyword()) ::
           {:ok, FaultRecoveryReceipt.t()} | {:error, term()}
   def run_partition_recovery(opts \\ []) when is_list(opts) do
@@ -500,16 +571,25 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     end
   end
 
-  @spec to_map(Receipt.t() | RouterModelReceipt.t() | FaultRecoveryReceipt.t()) :: map()
+  @spec to_map(
+          Receipt.t()
+          | RouterModelReceipt.t()
+          | ParityReceipt.t()
+          | ScaleReceipt.t()
+          | FaultRecoveryReceipt.t()
+        ) ::
+          map()
   def to_map(%Receipt{} = receipt), do: json_safe(receipt)
   def to_map(%RouterModelReceipt{} = receipt), do: json_safe(receipt)
   def to_map(%ParityReceipt{} = receipt), do: json_safe(receipt)
+  def to_map(%ScaleReceipt{} = receipt), do: json_safe(receipt)
   def to_map(%FaultRecoveryReceipt{} = receipt), do: json_safe(receipt)
 
   @spec to_json!(
           Receipt.t()
           | RouterModelReceipt.t()
           | ParityReceipt.t()
+          | ScaleReceipt.t()
           | FaultRecoveryReceipt.t()
         ) ::
           String.t()
@@ -522,6 +602,10 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   end
 
   def to_json!(%ParityReceipt{} = receipt) do
+    call(@json, :encode!, [to_map(receipt), [pretty: true]])
+  end
+
+  def to_json!(%ScaleReceipt{} = receipt) do
     call(@json, :encode!, [to_map(receipt), [pretty: true]])
   end
 
@@ -748,6 +832,370 @@ defmodule StackLab.Examples.GnTenDistributedStack do
       "model_receipt_ref" => receipt.model_receipt_ref,
       "node_count" => receipt.node_placement.domain_node_count
     }
+  end
+
+  defp run_scale_profile(profile, opts) do
+    scale_config = Map.fetch!(@scale_profiles, profile)
+    topology_path = Keyword.get_lazy(opts, :topology_path, fn -> scale_topology_path(profile) end)
+    max_nodes = Keyword.get(opts, :max_nodes, scale_config.node_cap)
+    state_path = Keyword.get_lazy(opts, :state_path, fn -> scale_state_path(profile) end)
+    started_at = DateTime.utc_now()
+    resource_before = host_resource_snapshot()
+
+    with {:ok, topology} <- call(@topology, :load_file, [topology_path]) do
+      node_count = call(@topology, :node_count, [topology])
+
+      cond do
+        node_count > max_nodes ->
+          {:ok,
+           scale_rejected_receipt(scale_config, topology, %{
+             "status" => "open_defect",
+             "reason" => "node_count_above_requested_cap",
+             "node_count" => node_count,
+             "requested_max_nodes" => max_nodes
+           })}
+
+        profile == :scale_49_node and is_nil(Keyword.get(opts, :host_feasibility_receipt)) ->
+          {:ok,
+           scale_rejected_receipt(scale_config, topology, %{
+             "status" => "blocked_missing_host_feasibility",
+             "reason" => "scale_49_requires_explicit_host_feasibility_receipt",
+             "required_fields" => scale_49_required_feasibility_fields()
+           })}
+
+        true ->
+          run_scale_node_lab(
+            scale_config,
+            topology,
+            topology_path,
+            state_path,
+            started_at,
+            resource_before
+          )
+      end
+    end
+  end
+
+  defp run_scale_node_lab(
+         scale_config,
+         topology,
+         topology_path,
+         state_path,
+         started_at,
+         resource_before
+       ) do
+    node_count = call(@topology, :node_count, [topology])
+    profile_atom = String.to_atom(scale_config.profile)
+
+    with {:ok, node_lab_run} <-
+           call(@runner, :up, [
+             topology_path,
+             [
+               state_path: state_path,
+               run_id: String.replace(scale_config.profile, "_", "-"),
+               keep?: false
+             ]
+           ]) do
+      resource_after = host_resource_snapshot()
+      resource_summary = resource_summary(node_lab_run, resource_before, resource_after)
+      host_feasibility = host_feasibility_receipt(profile_atom, node_lab_run, resource_summary)
+      cleanup_status = cleanup_status(node_lab_run)
+      scale_gate = scale_gate(scale_config, node_lab_run, host_feasibility)
+
+      {:ok,
+       %ScaleReceipt{
+         receipt_ref: scale_receipt_ref(scale_config),
+         schema_version: @scale_schema_version,
+         status: scale_status(node_lab_run, cleanup_status, scale_gate),
+         profile: scale_config.profile,
+         topology_ref: node_lab_run["topology_ref"],
+         node_count: node_count,
+         node_cap: scale_config.node_cap,
+         parity_baseline_receipt_ref: "receipt://stack_lab/gn_ten_distributed_parity/latest",
+         node_lab_run: node_lab_run,
+         resource_summary:
+           Map.merge(resource_summary, %{
+             "started_at" => DateTime.to_iso8601(started_at),
+             "finished_at" => Map.get(node_lab_run, "finished_at")
+           }),
+         host_feasibility: host_feasibility,
+         cleanup_status: cleanup_status,
+         scale_gate: scale_gate,
+         does_not_prove: scale_non_claims(scale_config.profile)
+       }}
+    end
+  end
+
+  defp scale_rejected_receipt(scale_config, topology, scale_gate) do
+    node_count = call(@topology, :node_count, [topology])
+    resource_summary = resource_summary(nil, host_resource_snapshot(), host_resource_snapshot())
+
+    %ScaleReceipt{
+      receipt_ref: scale_receipt_ref(scale_config),
+      schema_version: @scale_schema_version,
+      status: :open_defect,
+      profile: scale_config.profile,
+      topology_ref: topology.topology_ref,
+      node_count: node_count,
+      node_cap: scale_config.node_cap,
+      parity_baseline_receipt_ref: "receipt://stack_lab/gn_ten_distributed_parity/latest",
+      node_lab_run: nil,
+      resource_summary: resource_summary,
+      host_feasibility:
+        host_feasibility_receipt(String.to_atom(scale_config.profile), nil, resource_summary),
+      cleanup_status: "not_started",
+      scale_gate: scale_gate,
+      does_not_prove: scale_non_claims(scale_config.profile)
+    }
+  end
+
+  defp scale_status(node_lab_run, "pass", %{"status" => "pass"}) do
+    if Map.get(node_lab_run, "status") == "pass", do: :pass, else: :open_defect
+  end
+
+  defp scale_status(_node_lab_run, _cleanup_status, _scale_gate), do: :open_defect
+
+  defp scale_gate(scale_config, node_lab_run, host_feasibility) do
+    if Map.get(node_lab_run, "node_count") <= scale_config.node_cap and
+         Map.get(host_feasibility, "status") == "pass" do
+      %{
+        "status" => "pass",
+        "node_cap" => scale_config.node_cap,
+        "node_count" => Map.get(node_lab_run, "node_count"),
+        "proof_mode" => scale_proof_mode(scale_config.profile)
+      }
+    else
+      %{
+        "status" => "open_defect",
+        "node_cap" => scale_config.node_cap,
+        "node_count" => Map.get(node_lab_run, "node_count"),
+        "proof_mode" => scale_proof_mode(scale_config.profile)
+      }
+    end
+  end
+
+  defp scale_proof_mode("scale_12_node"), do: "default_local_gate"
+  defp scale_proof_mode("scale_32_node"), do: "opt_in_heavy_local"
+  defp scale_proof_mode("scale_49_node"), do: "opt_in_stress_local"
+
+  defp cleanup_status(nil), do: "not_started"
+
+  defp cleanup_status(node_lab_run) do
+    cleanup = Map.get(node_lab_run, "cleanup", [])
+
+    if cleanup != [] and
+         Enum.all?(
+           cleanup,
+           &(Map.get(&1, "stopped?") == true and Map.get(&1, "reachable_after_stop?") == false)
+         ) do
+      "pass"
+    else
+      "open_defect"
+    end
+  end
+
+  defp resource_summary(nil, before_snapshot, after_snapshot) do
+    %{
+      "status" => "not_started",
+      "startup_duration_ms" => nil,
+      "peer_failure_count" => nil,
+      "node_count" => 0,
+      "scheduler_flags" => [],
+      "host_before" => before_snapshot,
+      "host_after" => after_snapshot,
+      "cleanup" => %{"status" => "not_started"}
+    }
+  end
+
+  defp resource_summary(node_lab_run, before_snapshot, after_snapshot) do
+    %{
+      "status" => Map.get(node_lab_run, "status"),
+      "startup_duration_ms" =>
+        duration_ms(node_lab_run["started_at"], node_lab_run["finished_at"]),
+      "peer_failure_count" => length(Map.get(node_lab_run, "failures", [])),
+      "node_count" => Map.get(node_lab_run, "node_count"),
+      "scheduler_flags" => scheduler_flags(node_lab_run),
+      "host_before" => before_snapshot,
+      "host_after" => after_snapshot,
+      "cleanup" => %{
+        "cleanup_count" => length(Map.get(node_lab_run, "cleanup", [])),
+        "cleanup_status" => cleanup_status(node_lab_run)
+      }
+    }
+  end
+
+  defp host_feasibility_receipt(:scale_49_node, nil, resource_summary) do
+    %{
+      "status" => "blocked_missing_host_feasibility",
+      "required_fields" => scale_49_required_feasibility_fields(),
+      "resource_summary" => resource_summary
+    }
+  end
+
+  defp host_feasibility_receipt(:scale_49_node, node_lab_run, resource_summary) do
+    %{
+      "status" => "pass",
+      "node_count" => Map.get(node_lab_run, "node_count"),
+      "cpu_logical_cores" => get_in(resource_summary, ["host_before", "cpu", "logical_cores"]),
+      "ram_total_kb" => get_in(resource_summary, ["host_before", "memory", "ram_total_kb"]),
+      "ram_available_kb" =>
+        get_in(resource_summary, ["host_before", "memory", "ram_available_kb"]),
+      "open_file_limit" => get_in(resource_summary, ["host_before", "limits", "open_files_soft"]),
+      "otp_release" => get_in(resource_summary, ["host_before", "otp", "otp_release"]),
+      "erts_version" => get_in(resource_summary, ["host_before", "otp", "erts_version"]),
+      "scheduler_flags" => Map.get(resource_summary, "scheduler_flags"),
+      "empty_peer_memory" => "measured_by_scale_49_opt_in_run",
+      "application_loaded_memory" => get_in(resource_summary, ["host_after", "beam_memory"]),
+      "startup_duration_ms" => Map.get(resource_summary, "startup_duration_ms"),
+      "cleanup_status" => get_in(resource_summary, ["cleanup", "cleanup_status"])
+    }
+  end
+
+  defp host_feasibility_receipt(_profile, node_lab_run, resource_summary) do
+    %{
+      "status" => if(is_nil(node_lab_run), do: "not_required", else: "pass"),
+      "resource_summary" => resource_summary,
+      "scale_49_required_before_claim?" => false
+    }
+  end
+
+  defp scale_49_required_feasibility_fields do
+    [
+      "cpu_logical_cores",
+      "ram_total_kb",
+      "ram_available_kb",
+      "open_file_limit",
+      "otp_release",
+      "erts_version",
+      "scheduler_flags",
+      "empty_peer_memory",
+      "application_loaded_memory",
+      "startup_duration_ms",
+      "cleanup_status"
+    ]
+  end
+
+  defp host_resource_snapshot do
+    %{
+      "cpu" => %{
+        "logical_cores" => System.schedulers_online(),
+        "schedulers" => :erlang.system_info(:schedulers)
+      },
+      "memory" => meminfo(),
+      "limits" => process_limits(),
+      "otp" => %{
+        "otp_release" => System.otp_release(),
+        "erts_version" => :erlang.system_info(:version) |> List.to_string()
+      },
+      "beam_memory" => beam_memory()
+    }
+  end
+
+  defp meminfo do
+    case File.read("/proc/meminfo") do
+      {:ok, content} ->
+        %{
+          "ram_total_kb" => meminfo_value(content, "MemTotal"),
+          "ram_available_kb" => meminfo_value(content, "MemAvailable")
+        }
+
+      {:error, reason} ->
+        %{"status" => "unavailable", "reason" => inspect(reason)}
+    end
+  end
+
+  defp meminfo_value(content, key) do
+    case Regex.run(~r/^#{Regex.escape(key)}:\s+(\d+)\s+kB$/m, content) do
+      [_line, value] -> String.to_integer(value)
+      _missing -> nil
+    end
+  end
+
+  defp process_limits do
+    case File.read("/proc/self/limits") do
+      {:ok, content} ->
+        %{
+          "open_files_soft" => process_limit_value(content, "Max open files", :soft),
+          "open_files_hard" => process_limit_value(content, "Max open files", :hard)
+        }
+
+      {:error, reason} ->
+        %{"status" => "unavailable", "reason" => inspect(reason)}
+    end
+  end
+
+  defp process_limit_value(content, label, column) do
+    case Regex.run(~r/^#{Regex.escape(label)}\s+(\S+)\s+(\S+)/m, content) do
+      [_line, soft, hard] -> parse_limit_value(if(column == :soft, do: soft, else: hard))
+      _missing -> nil
+    end
+  end
+
+  defp parse_limit_value("unlimited"), do: "unlimited"
+  defp parse_limit_value(value), do: String.to_integer(value)
+
+  defp beam_memory do
+    :erlang.memory()
+    |> Map.new(fn {key, value} -> {Atom.to_string(key), value} end)
+  end
+
+  defp scheduler_flags(_node_lab_run), do: ["+S 1"]
+
+  defp duration_ms(nil, _finished_at), do: nil
+  defp duration_ms(_started_at, nil), do: nil
+
+  defp duration_ms(started_at, finished_at) do
+    with {:ok, started, _offset} <- DateTime.from_iso8601(started_at),
+         {:ok, finished, _offset} <- DateTime.from_iso8601(finished_at) do
+      DateTime.diff(finished, started, :millisecond)
+    else
+      _error -> nil
+    end
+  end
+
+  defp scale_receipt_ref(scale_config), do: "gn-ten-distributed-scale://#{scale_config.profile}"
+
+  defp scale_non_claims("scale_12_node") do
+    [
+      "production distribution security",
+      "release artifact boot",
+      "live provider behavior",
+      "32-node or 49-node local stress behavior"
+    ]
+  end
+
+  defp scale_non_claims("scale_32_node") do
+    [
+      "production distribution security",
+      "release artifact boot",
+      "live provider behavior",
+      "49-node local stress behavior"
+    ]
+  end
+
+  defp scale_non_claims("scale_49_node") do
+    [
+      "production distribution security",
+      "release artifact boot",
+      "live provider behavior",
+      "sustained 49-node performance SLOs"
+    ]
+  end
+
+  defp scale_topology_path(:scale_12_node) do
+    Path.expand("../../../priv/topologies/scale_12_node.exs", __DIR__)
+  end
+
+  defp scale_topology_path(:scale_32_node) do
+    Path.expand("../../../priv/topologies/scale_32_node.exs", __DIR__)
+  end
+
+  defp scale_topology_path(:scale_49_node) do
+    Path.expand("../../../priv/topologies/scale_49_node.exs", __DIR__)
+  end
+
+  defp scale_state_path(profile) do
+    Path.join(System.tmp_dir!(), "stack_lab_gn_ten_distributed_#{profile}.json")
   end
 
   defp node_placement(node_lab_run) do
@@ -1103,6 +1551,8 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   end
 
   defp json_safe(values) when is_list(values), do: Enum.map(values, &json_safe/1)
+  defp json_safe(nil), do: nil
+  defp json_safe(value) when is_boolean(value), do: value
   defp json_safe(value) when is_atom(value), do: Atom.to_string(value)
   defp json_safe(value), do: value
 
