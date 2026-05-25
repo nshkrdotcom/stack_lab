@@ -299,6 +299,7 @@ secret wrapper:
 
 ```bash
 mix stack_lab.fugu.readiness_handoff --json
+mix stack_lab.fugu.release_closeout --json
 ~/scripts/with_bash_secrets mix stack_lab.fugu.live_provider_smoke --allow-live --secrets-loaded -- --linear-api-key-stdin
 ```
 

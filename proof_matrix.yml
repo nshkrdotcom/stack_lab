@@ -496,3 +496,31 @@ proofs:
       posture:
         authoritative_audit?: false
         production_deployment_proven?: false
+
+  - id: fugu_release_claim_closeout
+    owner_repo: stack_lab
+    contract_family: "600 deployment"
+    status: implemented
+    profile: local_full
+    command: mix stack_lab.fugu.release_closeout --json
+    fixture: docs/receipts/gn_ten_phase17/fugu_release_closeout.json
+    receipt: receipt://stack_lab/fugu_release_claim_closeout/latest
+    proves:
+      - every fugu public claim is mapped to source refs, tests, docs, scanners, QC commands, and receipt refs
+      - hidden defects are not allowed in the release claim policy
+      - live provider behavior, distributed BEAM placement, production persistence, credential rotation, billing correctness, and 49-node scale remain explicit non-claims
+      - open non-release claims point to their required future owner or receipt
+      - StackLab root CI remains the release-closeout QC gate for this proof owner
+    does_not_prove:
+      - live provider behavior
+      - distributed BEAM placement
+      - production deployment
+      - production audit authority
+      - artifact source SHA freshness for stale-warning rows
+    next_action: use this release closeout as the fugu handoff boundary and start the nshkr_v2 distributed StackLab proof only after the single-node readiness gate is green
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/fugu_release_claim_closeout/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false

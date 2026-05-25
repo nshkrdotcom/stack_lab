@@ -145,6 +145,12 @@ path, and run GitHub or Linear live commands by prefixing them with
   external acceptance as required upstream proofs, records that live provider
   checks are opt-in through explicit flags plus `~/scripts/with_bash_secrets`,
   and leaves distributed BEAM placement to v2.
+- `fugu_release_claim_closeout`: records the Phase 17 fugu release claim
+  closeout receipt. It maps each public fugu claim to source refs, tests, docs,
+  scanners, QC commands, and receipts, while keeping live provider behavior,
+  distributed BEAM placement, production persistence, credential rotation,
+  provider billing, 49-node scale, and artifact freshness warnings outside the
+  release claim until separately proven.
 - `cost_budget_scanner`: verifies adaptive token, provider request,
   self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
   search, provider pool turn, role budget, promotion, failed retry, budget
