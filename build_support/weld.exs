@@ -36,6 +36,7 @@ defmodule StackLab.Build.WeldContract do
     "examples/replay_roundtrip",
     "examples/cost_roundtrip",
     "examples/context_abi_roundtrip",
+    "examples/gn_ten_distributed_stack",
     "examples/nshkr_router_fabric_roundtrip",
     "examples/gepa_platform_roundtrip",
     "examples/trinity_platform_roundtrip",

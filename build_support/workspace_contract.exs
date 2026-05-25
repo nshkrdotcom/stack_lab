@@ -41,6 +41,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/replay_roundtrip",
     "examples/cost_roundtrip",
     "examples/context_abi_roundtrip",
+    "examples/gn_ten_distributed_stack",
     "examples/nshkr_router_fabric_roundtrip",
     "examples/toy_document_review",
     "examples/synapse_product_acceptance",
