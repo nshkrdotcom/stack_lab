@@ -267,6 +267,68 @@ defmodule StackLab.Examples.GnTenDistributedStackTest do
     refute json =~ "DATABASE_URL"
   end
 
+  test "runs the release-peer prototype against Execution Plane" do
+    assert {:ok, receipt} = GnTenDistributedStack.run_release_peer()
+
+    assert receipt.status == :pass
+    assert receipt.profile == "execution_plane_node"
+    assert receipt.release_mode == "test_only_release_wrapper"
+    assert receipt.owner_repo == "execution_plane"
+    assert receipt.otp_app == "execution_plane"
+    assert receipt.release_startup["status"] == "pass"
+    assert receipt.facade_ping["status"] == "pass"
+    assert receipt.receipt_shape_parity["status"] == "pass"
+    assert receipt.receipt_ref =~ "gn-ten-release-path://stack_lab-test-only-execution-plane-node"
+    assert "production release packaging" in receipt.does_not_prove
+  end
+
+  test "release-peer prototype records missing release manifest as open defect" do
+    missing_path =
+      Path.join(System.tmp_dir!(), "missing-release-#{System.unique_integer([:positive])}.exs")
+
+    assert {:ok, receipt} = GnTenDistributedStack.run_release_peer(manifest_path: missing_path)
+
+    assert receipt.status == :open_defect
+    assert receipt.release_startup["status"] == "not_started"
+    assert receipt.release_startup["failure"]["code"] == "release_manifest_missing"
+  end
+
+  test "release-peer prototype records version mismatch" do
+    assert {:ok, receipt} = GnTenDistributedStack.run_release_peer(expected_version: "999.0.0")
+
+    assert receipt.status == :open_defect
+    assert receipt.release_startup["status"] == "open_defect"
+    assert receipt.release_startup["code"] == "version_mismatch"
+  end
+
+  test "release-peer prototype records unavailable facade" do
+    missing_facade = Module.concat([Missing, ReleasePeerFacade])
+
+    manifest =
+      release_manifest(%{
+        facade_module: missing_facade,
+        owner_group: {missing_facade, :lane}
+      })
+
+    assert {:ok, receipt} = GnTenDistributedStack.run_release_peer(manifest: manifest)
+
+    assert receipt.status == :open_defect
+    assert receipt.release_startup["status"] == "pass"
+    assert receipt.facade_ping["status"] == "open_defect"
+    assert receipt.facade_ping["code"] == "facade_unavailable_or_owner_group_mismatch"
+  end
+
+  test "release-peer prototype records receipt shape mismatch against peer mode" do
+    manifest = release_manifest(%{peer_mode_receipt_shape: ["node_id", "missing_peer_field"]})
+
+    assert {:ok, receipt} = GnTenDistributedStack.run_release_peer(manifest: manifest)
+
+    assert receipt.status == :open_defect
+    assert receipt.facade_ping["status"] == "pass"
+    assert receipt.receipt_shape_parity["status"] == "open_defect"
+    assert receipt.receipt_shape_parity["missing_fields"] == ["missing_peer_field"]
+  end
+
   defp deterministic_profile?(receipt, profile_id, restart_claim) do
     Enum.any?(receipt.persistence_profiles["deterministic_profiles"], fn profile ->
       profile["profile_id"] == profile_id and profile["restart_claim"] == restart_claim and
@@ -280,5 +342,32 @@ defmodule StackLab.Examples.GnTenDistributedStackTest do
         profile["durable_opt_in?"] == true and
         profile["substrate_started_by_stack_lab?"] == false
     end)
+  end
+
+  defp release_manifest(overrides) do
+    Map.merge(
+      %{
+        release_ref: "release://stack_lab/test-only/execution-plane-node/v1",
+        release_mode: "test_only_release_wrapper",
+        profile: :execution_plane_node,
+        owner_repo: "execution_plane",
+        owner_package: "core/execution_plane",
+        otp_app: :execution_plane,
+        expected_version: "0.1.0",
+        facade_module: ExecutionPlane.RemoteFacade.Lane,
+        owner_group: {ExecutionPlane.RemoteFacade.Lane, :lane},
+        peer_mode_shape_ref: "receipt-shape://stack_lab/node-lab/peer-mode/v1",
+        peer_mode_receipt_shape: [
+          "facade_hosts",
+          "node",
+          "node_id",
+          "owner_group_membership",
+          "profile",
+          "ready?",
+          "started_apps"
+        ]
+      },
+      overrides
+    )
   end
 end

@@ -15,6 +15,8 @@ defmodule Mix.Tasks.StackLab.GnTen.Distributed.Prove do
         strict: [
           profile: :string,
           topology: :string,
+          manifest: :string,
+          expected_version: :string,
           max_nodes: :integer,
           json: :boolean
         ]
@@ -32,6 +34,7 @@ defmodule Mix.Tasks.StackLab.GnTen.Distributed.Prove do
   defp dispatch_profile("scale_32_node", opts), do: run_scale(opts, :scale_32_node)
   defp dispatch_profile("scale_49_node", opts), do: run_scale(opts, :scale_49_node)
   defp dispatch_profile("partition_recovery", opts), do: run_partition_recovery(opts)
+  defp dispatch_profile("release_peer", opts), do: run_release_peer(opts)
 
   defp dispatch_profile(other, _opts) do
     Mix.raise("unsupported distributed proof profile: #{other}")
@@ -157,6 +160,28 @@ defmodule Mix.Tasks.StackLab.GnTen.Distributed.Prove do
 
       {:error, reason} ->
         Mix.raise("distributed proof failed: #{inspect(reason)}")
+    end
+  end
+
+  defp run_release_peer(opts) do
+    json? = Keyword.get(opts, :json, false)
+
+    proof_opts =
+      opts
+      |> Keyword.take([:manifest, :expected_version])
+      |> Enum.map(fn
+        {:manifest, path} -> {:manifest_path, path}
+        {:expected_version, version} -> {:expected_version, version}
+      end)
+
+    case GnTenDistributedStack.run_release_peer(proof_opts) do
+      {:ok, receipt} when json? ->
+        Mix.shell().info(GnTenDistributedStack.to_json!(receipt))
+
+      {:ok, receipt} ->
+        Mix.shell().info("status=#{receipt.status}")
+        Mix.shell().info("receipt_ref=#{receipt.receipt_ref}")
+        Mix.shell().info("release_ref=#{receipt.release_ref}")
     end
   end
 end

@@ -60,6 +60,17 @@ Phase 14 adds local scale posture:
 - record startup duration, resource summary, scheduler flags, peer failures,
   and cleanup status.
 
+Phase 16 adds a release-path parity prototype:
+
+- use the allowed StackLab test-only release wrapper pattern, not a production
+  all-domain release;
+- choose the `execution_plane_node` profile first;
+- verify the owner app starts, the owner-defined `ExecutionPlane.RemoteFacade.Lane`
+  group can be hosted and probed, and the release receipt contains the
+  peer-mode required shape;
+- record missing manifest, version mismatch, unavailable facade, and receipt
+  shape mismatch as bounded `open_defect` receipts.
+
 ## Commands
 
 ```bash
@@ -68,6 +79,8 @@ mix stack_lab.gn_ten.distributed.prove --profile router_model_6_node --json
 mix stack_lab.gn_ten.distributed.prove --profile parity --json
 mix stack_lab.gn_ten.distributed.prove --profile scale_12_node --max-nodes 12 --json
 mix stack_lab.gn_ten.distributed.prove --profile partition_recovery --json
+mix stack_lab.gn_ten.distributed.prove --profile release_peer --json
+mix stack_lab.gn_ten.node_lab.release.verify --json
 ```
 
 ## QC

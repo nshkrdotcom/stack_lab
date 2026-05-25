@@ -251,6 +251,49 @@ defmodule StackLab.Examples.GnTenDistributedStack.FaultRecoveryReceipt do
         }
 end
 
+defmodule StackLab.Examples.GnTenDistributedStack.ReleasePathReceipt do
+  @moduledoc "Release-path parity prototype receipt."
+
+  @enforce_keys [
+    :receipt_ref,
+    :schema_version,
+    :status,
+    :profile,
+    :release_ref,
+    :release_mode,
+    :owner_repo,
+    :owner_package,
+    :otp_app,
+    :application_version,
+    :expected_version,
+    :release_startup,
+    :facade_ping,
+    :peer_mode_shape_ref,
+    :receipt_shape_parity,
+    :does_not_prove
+  ]
+  defstruct @enforce_keys
+
+  @type t :: %__MODULE__{
+          receipt_ref: String.t(),
+          schema_version: String.t(),
+          status: :pass | :open_defect,
+          profile: String.t(),
+          release_ref: String.t(),
+          release_mode: String.t(),
+          owner_repo: String.t(),
+          owner_package: String.t(),
+          otp_app: String.t(),
+          application_version: String.t() | nil,
+          expected_version: String.t(),
+          release_startup: map(),
+          facade_ping: map(),
+          peer_mode_shape_ref: String.t(),
+          receipt_shape_parity: map(),
+          does_not_prove: [String.t()]
+        }
+end
+
 defmodule StackLab.Examples.GnTenDistributedStack do
   @moduledoc """
   Local distributed gn-ten proof scenarios.
@@ -260,6 +303,7 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     FaultRecoveryReceipt,
     ParityReceipt,
     Receipt,
+    ReleasePathReceipt,
     RouterModelReceipt,
     ScaleReceipt
   }
@@ -269,10 +313,12 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   @parity_schema_version "stack_lab.gn_ten_distributed_stack.parity.v1"
   @scale_schema_version "stack_lab.gn_ten_distributed_stack.scale.v1"
   @fault_recovery_schema_version "stack_lab.gn_ten_distributed_stack.partition_recovery.v1"
+  @release_path_schema_version "stack_lab.gn_ten_distributed_stack.release_path.v1"
   @context_profile "context_6_node"
   @router_model_profile "router_model_6_node"
   @parity_profile "parity"
   @fault_recovery_profile "partition_recovery"
+  @release_peer_profile "release_peer"
   @scale_profiles %{
     scale_12_node: %{
       profile: "scale_12_node",
@@ -344,6 +390,7 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   @envelope_scanner Module.concat([StackLab, GnTenNodeLab, EnvelopeScanner])
   @fault_drill Module.concat([StackLab, GnTenNodeLab, FaultDrill])
   @runner Module.concat([StackLab, GnTenNodeLab, Runner])
+  @facade_host Module.concat([StackLab, GnTenNodeLab, FacadeHost])
   @json Module.concat([Jason])
 
   @spec run_context_6_node(keyword()) :: {:ok, Receipt.t()} | {:error, term()}
@@ -571,12 +618,33 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     end
   end
 
+  @spec run_release_peer(keyword()) :: {:ok, ReleasePathReceipt.t()}
+  def run_release_peer(opts \\ []) when is_list(opts) do
+    manifest_result =
+      if Keyword.has_key?(opts, :manifest) do
+        {:ok, Keyword.fetch!(opts, :manifest)}
+      else
+        opts
+        |> Keyword.get_lazy(:manifest_path, &default_release_manifest_path/0)
+        |> read_release_manifest()
+      end
+
+    receipt =
+      case manifest_result do
+        {:ok, manifest} -> build_release_receipt(manifest, opts)
+        {:error, failure} -> release_failure_receipt(failure, opts)
+      end
+
+    {:ok, receipt}
+  end
+
   @spec to_map(
           Receipt.t()
           | RouterModelReceipt.t()
           | ParityReceipt.t()
           | ScaleReceipt.t()
           | FaultRecoveryReceipt.t()
+          | ReleasePathReceipt.t()
         ) ::
           map()
   def to_map(%Receipt{} = receipt), do: json_safe(receipt)
@@ -584,6 +652,7 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   def to_map(%ParityReceipt{} = receipt), do: json_safe(receipt)
   def to_map(%ScaleReceipt{} = receipt), do: json_safe(receipt)
   def to_map(%FaultRecoveryReceipt{} = receipt), do: json_safe(receipt)
+  def to_map(%ReleasePathReceipt{} = receipt), do: json_safe(receipt)
 
   @spec to_json!(
           Receipt.t()
@@ -591,6 +660,7 @@ defmodule StackLab.Examples.GnTenDistributedStack do
           | ParityReceipt.t()
           | ScaleReceipt.t()
           | FaultRecoveryReceipt.t()
+          | ReleasePathReceipt.t()
         ) ::
           String.t()
   def to_json!(%Receipt{} = receipt) do
@@ -610,6 +680,10 @@ defmodule StackLab.Examples.GnTenDistributedStack do
   end
 
   def to_json!(%FaultRecoveryReceipt{} = receipt) do
+    call(@json, :encode!, [to_map(receipt), [pretty: true]])
+  end
+
+  def to_json!(%ReleasePathReceipt{} = receipt) do
     call(@json, :encode!, [to_map(receipt), [pretty: true]])
   end
 
@@ -1284,6 +1358,10 @@ defmodule StackLab.Examples.GnTenDistributedStack do
     Path.expand("../../../priv/topologies/router_model_6_node.exs", __DIR__)
   end
 
+  defp default_release_manifest_path do
+    Path.expand("../../../priv/releases/execution_plane_node_release_peer.exs", __DIR__)
+  end
+
   defp default_state_path do
     Path.join(System.tmp_dir!(), "stack_lab_gn_ten_distributed_context_6_node.json")
   end
@@ -1480,6 +1558,7 @@ defmodule StackLab.Examples.GnTenDistributedStack do
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
+  defp field(map, key), do: Map.get(map, key, Map.get(map, Atom.to_string(key)))
 
   defp fault_receipts(baseline) do
     run = baseline.node_lab_run
@@ -1541,6 +1620,258 @@ defmodule StackLab.Examples.GnTenDistributedStack do
         "evidence_ref" => "AITrace.RemoteFacade.Evidence",
         "safe_action" => "export unavailable posture remains bounded"
       }
+    ]
+  end
+
+  defp read_release_manifest(path) when is_binary(path) do
+    if File.exists?(path) do
+      {manifest, _binding} = Code.eval_file(path)
+      {:ok, manifest}
+    else
+      {:error,
+       %{
+         "code" => "release_manifest_missing",
+         "manifest_path" => path,
+         "safe_action" => "document_gap_without_release_claim"
+       }}
+    end
+  rescue
+    error ->
+      {:error,
+       %{
+         "code" => "release_manifest_eval_failed",
+         "manifest_path" => path,
+         "reason" => Exception.message(error),
+         "safe_action" => "document_gap_without_release_claim"
+       }}
+  end
+
+  defp build_release_receipt(manifest, opts) when is_map(manifest) do
+    expected_version = Keyword.get(opts, :expected_version, field(manifest, :expected_version))
+    release_startup = release_startup(manifest, expected_version)
+    facade_ping = release_facade_ping(manifest, release_startup)
+    release_shape = release_node_receipt(manifest, release_startup, facade_ping)
+
+    peer_shape =
+      Keyword.get(opts, :peer_mode_receipt_shape, field(manifest, :peer_mode_receipt_shape))
+
+    receipt_shape_parity = receipt_shape_parity(peer_shape, release_shape)
+
+    %ReleasePathReceipt{
+      receipt_ref: release_receipt_ref(manifest),
+      schema_version: @release_path_schema_version,
+      status: release_path_status(release_startup, facade_ping, receipt_shape_parity),
+      profile: to_string(field(manifest, :profile) || @release_peer_profile),
+      release_ref: field(manifest, :release_ref),
+      release_mode: field(manifest, :release_mode),
+      owner_repo: field(manifest, :owner_repo),
+      owner_package: field(manifest, :owner_package),
+      otp_app: manifest |> field(:otp_app) |> to_string(),
+      application_version: Map.get(release_startup, "application_version"),
+      expected_version: to_string(expected_version),
+      release_startup: release_startup,
+      facade_ping: facade_ping,
+      peer_mode_shape_ref: field(manifest, :peer_mode_shape_ref),
+      receipt_shape_parity: receipt_shape_parity,
+      does_not_prove: release_path_non_claims()
+    }
+  end
+
+  defp release_failure_receipt(failure, opts) do
+    %ReleasePathReceipt{
+      receipt_ref: "gn-ten-release-path://missing",
+      schema_version: @release_path_schema_version,
+      status: :open_defect,
+      profile: @release_peer_profile,
+      release_ref: Keyword.get(opts, :release_ref, "release://missing"),
+      release_mode: "test_only_release_wrapper",
+      owner_repo: "unknown",
+      owner_package: "unknown",
+      otp_app: "unknown",
+      application_version: nil,
+      expected_version: to_string(Keyword.get(opts, :expected_version, "unknown")),
+      release_startup: %{"status" => "not_started", "failure" => failure},
+      facade_ping: %{"status" => "not_started"},
+      peer_mode_shape_ref: "receipt-shape://stack_lab/node-lab/peer-mode/v1",
+      receipt_shape_parity: %{"status" => "not_started"},
+      does_not_prove: release_path_non_claims()
+    }
+  end
+
+  defp release_startup(manifest, expected_version) do
+    otp_app = field(manifest, :otp_app)
+
+    with true <- is_atom(otp_app),
+         {:ok, started_apps} <- Application.ensure_all_started(otp_app),
+         {:ok, application_version} <- application_version(otp_app),
+         :ok <- ensure_version(application_version, expected_version) do
+      %{
+        "status" => "pass",
+        "otp_app" => Atom.to_string(otp_app),
+        "started_apps" => Enum.map(started_apps, &Atom.to_string/1),
+        "application_version" => application_version,
+        "expected_version" => to_string(expected_version),
+        "startup_mode" => field(manifest, :release_mode)
+      }
+    else
+      false ->
+        %{"status" => "open_defect", "code" => "invalid_otp_app", "otp_app" => inspect(otp_app)}
+
+      {:error, {:version_mismatch, application_version, expected}} ->
+        %{
+          "status" => "open_defect",
+          "code" => "version_mismatch",
+          "application_version" => application_version,
+          "expected_version" => expected
+        }
+
+      {:error, reason} ->
+        %{
+          "status" => "open_defect",
+          "code" => "release_startup_failed",
+          "reason" => inspect(reason)
+        }
+    end
+  end
+
+  defp application_version(otp_app) do
+    case Application.spec(otp_app, :vsn) do
+      nil -> {:error, :application_spec_unavailable}
+      version -> {:ok, List.to_string(version)}
+    end
+  end
+
+  defp ensure_version(application_version, expected_version) do
+    expected = to_string(expected_version)
+
+    if application_version == expected,
+      do: :ok,
+      else: {:error, {:version_mismatch, application_version, expected}}
+  end
+
+  defp release_facade_ping(manifest, %{"status" => "pass"}) do
+    facade_module = field(manifest, :facade_module)
+    owner_group = field(manifest, :owner_group)
+
+    with {:module, ^facade_module} <- Code.ensure_loaded(facade_module),
+         true <- function_exported?(facade_module, :owner_group, 0),
+         true <- facade_module.owner_group() == owner_group,
+         {:ok, pid} <-
+           call(@facade_host, :start, [[facade_module: facade_module, owner_group: owner_group]]),
+         members <- :pg.get_members(owner_group),
+         true <- pid in members do
+      stop_facade_host(pid)
+
+      %{
+        "status" => "pass",
+        "facade_module" => inspect(facade_module),
+        "owner_group" => inspect(owner_group),
+        "member_count" => length(members),
+        "facade_ping_mode" => "owner_group_probe"
+      }
+    else
+      {:module, _other} ->
+        %{
+          "status" => "open_defect",
+          "code" => "facade_module_mismatch",
+          "facade_module" => inspect(facade_module)
+        }
+
+      {:error, reason} when reason in [:nofile, :badfile] ->
+        %{
+          "status" => "open_defect",
+          "code" => "facade_unavailable_or_owner_group_mismatch",
+          "facade_module" => inspect(facade_module),
+          "owner_group" => inspect(owner_group)
+        }
+
+      false ->
+        %{
+          "status" => "open_defect",
+          "code" => "facade_unavailable_or_owner_group_mismatch",
+          "facade_module" => inspect(facade_module),
+          "owner_group" => inspect(owner_group)
+        }
+
+      {:error, reason} ->
+        %{
+          "status" => "open_defect",
+          "code" => "facade_host_start_failed",
+          "reason" => inspect(reason)
+        }
+    end
+  end
+
+  defp release_facade_ping(_manifest, _startup) do
+    %{"status" => "not_started", "reason" => "release_startup_not_passed"}
+  end
+
+  defp stop_facade_host(pid) when is_pid(pid) do
+    if Process.alive?(pid), do: GenServer.stop(pid), else: :ok
+  end
+
+  defp release_node_receipt(manifest, release_startup, facade_ping) do
+    %{
+      "node_id" => "execution_plane_node_release_0",
+      "profile" => to_string(field(manifest, :profile)),
+      "node" => field(manifest, :release_ref),
+      "started_apps" => Map.get(release_startup, "started_apps", []),
+      "facade_hosts" => [facade_ping],
+      "owner_group_membership" => [
+        %{
+          "owner_group" => Map.get(facade_ping, "owner_group"),
+          "member_count" => Map.get(facade_ping, "member_count", 0)
+        }
+      ],
+      "ready?" =>
+        Map.get(release_startup, "status") == "pass" and Map.get(facade_ping, "status") == "pass"
+    }
+  end
+
+  defp receipt_shape_parity(expected_shape, release_node_receipt) when is_list(expected_shape) do
+    actual_shape = release_node_receipt |> Map.keys() |> Enum.sort()
+    missing = expected_shape -- actual_shape
+    extra = actual_shape -- expected_shape
+
+    %{
+      "status" => if(missing == [], do: "pass", else: "open_defect"),
+      "expected_shape" => expected_shape,
+      "actual_shape" => actual_shape,
+      "missing_fields" => missing,
+      "extra_release_fields" => extra,
+      "comparison" => "release_receipt_contains_peer_mode_required_fields"
+    }
+  end
+
+  defp receipt_shape_parity(_expected_shape, _release_node_receipt) do
+    %{
+      "status" => "open_defect",
+      "code" => "invalid_peer_mode_receipt_shape"
+    }
+  end
+
+  defp release_path_status(%{"status" => "pass"}, %{"status" => "pass"}, %{"status" => "pass"}),
+    do: :pass
+
+  defp release_path_status(_startup, _facade_ping, _shape_parity), do: :open_defect
+
+  defp release_receipt_ref(manifest) do
+    manifest
+    |> field(:release_ref)
+    |> to_string()
+    |> String.replace_prefix("release://", "")
+    |> String.replace("/", "-")
+    |> then(&"gn-ten-release-path://#{&1}")
+  end
+
+  defp release_path_non_claims do
+    [
+      "production release packaging",
+      "release artifact minimality",
+      "production distribution security",
+      "container or VM networking",
+      "live provider behavior",
+      "all-domain production release"
     ]
   end
 
