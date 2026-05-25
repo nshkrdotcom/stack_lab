@@ -25,7 +25,8 @@ defmodule StackLab.GEPAPlatformRoundtrip.MixProject do
   defp deps do
     [
       {:gepa_framework, path: "../../../gepa_framework"},
-      {:gepa_buildout, path: "../../../gepa_buildout"},
+      {:mezzanine_optimization_engine, path: "../../../mezzanine/core/optimization_engine"},
+      {:app_kit_optimization_surface, path: "../../../app_kit/core/optimization_surface"},
       {:stack_lab_model_inference_scanner, path: "../../support/model_inference_scanner"},
       {:stack_lab_optimization_fabric_scanner, path: "../../support/optimization_fabric_scanner"},
       {:stack_lab_ai_run_lineage_scanner, path: "../../support/ai_run_lineage_scanner"},

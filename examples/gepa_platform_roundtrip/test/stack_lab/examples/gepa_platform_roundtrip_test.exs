@@ -14,7 +14,14 @@ defmodule StackLab.Examples.GEPAPlatformRoundtripTest do
     assert receipt.ai_run_lineage_scan.status == :pass
 
     assert receipt.framework_projection.best_candidate_ref ==
-             "candidate:component:buildout:instruction:v1"
+             "candidate:component:gepa:mezzanine:1"
+
+    assert receipt.candidate_receipt.candidate_ref ==
+             receipt.framework_projection.best_candidate_ref
+
+    assert receipt.candidate_receipt.context_packet_ref == "context-packet://gepa/phase-13"
+    assert receipt.candidate_receipt.route_decision_ref == "target://gepa/role-worker"
+    assert receipt.appkit_projection.candidate_ref == receipt.candidate_receipt.candidate_ref
 
     assert receipt.promotion_ref == "promotion://gepa/candidate"
     assert receipt.rollback_ref == "rollback://gepa/candidate"

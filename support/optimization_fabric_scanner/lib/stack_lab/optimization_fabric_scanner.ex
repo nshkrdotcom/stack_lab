@@ -32,10 +32,15 @@ defmodule StackLab.OptimizationFabricScanner do
   @scanner_ref "stack-lab.optimization-fabric-scanner.v1"
   @rules [
     :candidate_lineage_refs,
+    :context_packet_refs,
+    :route_decision_refs,
     :eval_dataset_refs,
     :proposer_model_ref,
     :promotion_gate_refs,
+    :citadel_authority_refs,
+    :appkit_projection_refs,
     :budget_refs,
+    :cost_refs,
     :trace_refs,
     :promotion_refs,
     :rollback_refs,
