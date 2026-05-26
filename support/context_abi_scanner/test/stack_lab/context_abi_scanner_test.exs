@@ -54,7 +54,9 @@ defmodule StackLab.ContextABIScannerTest do
   test "rejects non-hex sha256 refs" do
     assert {:ok, receipt} =
              ContextABIScanner.scan(%{
-               context_packets: [%{packet() | packet_hash: "sha256:" <> String.duplicate("z", 64)}],
+               context_packets: [
+                 %{packet() | packet_hash: "sha256:" <> String.duplicate("z", 64)}
+               ],
                context_compile_receipts: [compile_receipt()],
                authority_grants: [grant()],
                admission_receipts: [admission_receipt()],

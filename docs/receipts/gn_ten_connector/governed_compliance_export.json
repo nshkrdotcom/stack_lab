@@ -61,7 +61,7 @@
     "evidence_anchor_ref": "evidence://stack-lab/gn-ten/governed-export/v1"
   },
   "redaction_summary": {
-    "raw_secrets_public": false,
+    "secret_material_public": false,
     "native_auth_public": false,
     "prompt_bodies_public": false,
     "provider_bodies_public": false,
@@ -84,6 +84,6 @@
       "untrusted_content_body"
     ]
   },
-  "bundle_hash": "sha256:619b44136054db484bb3f61a63c4dfd92f1ac6d6bdbaf5d565428e9dc8986cf7",
-  "spill_hash": "sha256:8035ce7ffe5bb32aaa63f538dc56d82a6e50df703ec897b7a3b2ab0286e73eda"
+  "bundle_hash": "sha256:3f8b2b5f9a13cb4b7e9cc51a60b652e34c279d1b7e26e1c09c583757979e6249",
+  "spill_hash": "sha256:d50bcbfd35288b0170d8bcae2cc3a2a3413532bc46cef1c889dd00c4b2a3c181"
 }

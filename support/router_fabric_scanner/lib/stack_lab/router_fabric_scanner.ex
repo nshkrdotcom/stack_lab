@@ -86,6 +86,8 @@ defmodule StackLab.RouterFabricScanner do
     :reason_codes,
     :trace_ref
   ]
+  @list_ref_fields [:model_class_allowlist, :reason_codes]
+  @literal_required_fields [:selected_route_kind, :confidence_band]
 
   @spec scan(map()) :: {:ok, Receipt.t()} | {:error, term()}
   def scan(attrs) when is_map(attrs) do
@@ -209,36 +211,46 @@ defmodule StackLab.RouterFabricScanner do
 
   defp required_findings(fact, fields, rule, path) when is_map(fact) do
     Enum.flat_map(fields, fn field ->
-      value = fetch(fact, field)
-
-      cond do
-        field in [:model_class_allowlist, :reason_codes] and not non_empty_strings?(value) ->
-          [finding(rule, {:missing_required_refs, field}, path, %{})]
-
-        field == :model_class_profile_map and not model_class_profile_map?(value) ->
-          [finding(rule, {:invalid_model_class_profile_map, field}, path, %{})]
-
-        field in [:selected_route_kind, :confidence_band] and is_nil(value) ->
-          [finding(rule, {:missing_required_field, field}, path, %{})]
-
-        field not in [
-          :model_class_allowlist,
-          :reason_codes,
-          :model_class_profile_map,
-          :selected_route_kind,
-          :confidence_band
-        ] and
-            not present_string?(value) ->
-          [finding(rule, {:missing_required_ref, field}, path, %{})]
-
-        true ->
-          []
-      end
+      required_field_findings(fact, field, rule, path)
     end)
   end
 
   defp required_findings(_fact, _fields, rule, path),
     do: [finding(rule, :invalid_fact, path, %{})]
+
+  defp required_field_findings(fact, field, rule, path) when field in @list_ref_fields do
+    fact
+    |> fetch(field)
+    |> non_empty_strings?()
+    |> required_field_result(rule, {:missing_required_refs, field}, path)
+  end
+
+  defp required_field_findings(fact, :model_class_profile_map = field, rule, path) do
+    fact
+    |> fetch(field)
+    |> model_class_profile_map?()
+    |> required_field_result(rule, {:invalid_model_class_profile_map, field}, path)
+  end
+
+  defp required_field_findings(fact, field, rule, path) when field in @literal_required_fields do
+    fact
+    |> fetch(field)
+    |> is_nil()
+    |> Kernel.not()
+    |> required_field_result(rule, {:missing_required_field, field}, path)
+  end
+
+  defp required_field_findings(fact, field, rule, path) do
+    fact
+    |> fetch(field)
+    |> present_string?()
+    |> required_field_result(rule, {:missing_required_ref, field}, path)
+  end
+
+  defp required_field_result(true, _rule, _reason, _path), do: []
+
+  defp required_field_result(false, rule, reason, path),
+    do: [finding(rule, reason, path, %{})]
 
   defp sha_findings(decision, path) do
     if sha256?(fetch(decision, :packet_hash)) do

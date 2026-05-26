@@ -190,7 +190,7 @@ defmodule StackLab.GnTen.GovernedConnectorExport do
 
   defp redaction_summary do
     %{
-      "raw_secrets_public" => false,
+      "secret_material_public" => false,
       "native_auth_public" => false,
       "prompt_bodies_public" => false,
       "provider_bodies_public" => false,

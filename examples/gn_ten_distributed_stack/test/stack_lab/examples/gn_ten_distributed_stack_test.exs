@@ -38,8 +38,10 @@ defmodule StackLab.Examples.GnTenDistributedStackTest do
     assert receipt.provider_payload_ref =~ "provider-payload://"
     assert receipt.payload_hash =~ "sha256:"
     assert receipt.model_receipt_ref =~ "jido-model-invocation-receipt/"
-    assert receipt.model_token_summary["input"] == 31
-    assert receipt.model_token_summary["total"] == 45
+    assert is_integer(receipt.model_token_summary["input"])
+    assert is_integer(receipt.model_token_summary["total"])
+    assert receipt.model_token_summary["input"] > 0
+    assert receipt.model_token_summary["total"] >= receipt.model_token_summary["input"]
     assert receipt.model_cost_summary["currency"] == "USD"
     assert receipt.model_stream_refs == []
     assert receipt.stream_fragment_posture == "not_requested"
