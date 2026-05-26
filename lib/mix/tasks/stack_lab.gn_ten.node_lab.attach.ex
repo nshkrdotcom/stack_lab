@@ -3,7 +3,7 @@ defmodule Mix.Tasks.StackLab.GnTen.NodeLab.Attach do
 
   use Mix.Task
 
-  alias StackLab.GnTenNodeLab.{RunState, Runner}
+  alias StackLab.GnTenNodeLab.{Runner, RunState}
 
   @shortdoc "Prints a redacted gn-ten node-lab attach recipe"
 

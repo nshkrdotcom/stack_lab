@@ -3,7 +3,7 @@ defmodule Mix.Tasks.StackLab.GnTen.NodeLab.Down do
 
   use Mix.Task
 
-  alias StackLab.GnTenNodeLab.{RunState, Runner}
+  alias StackLab.GnTenNodeLab.{Runner, RunState}
 
   @shortdoc "Clears gn-ten node-lab run state"
 

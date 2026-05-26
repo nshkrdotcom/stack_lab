@@ -132,10 +132,16 @@ defmodule StackLab.Workspace.MixProject do
         compile: [args: ["compile", "--warnings-as-errors"]],
         test: [args: ["test"], mix_env: "test", color: true],
         credo: [args: ["credo"]],
-        docs: [args: ["docs"]]
+        docs: [
+          args: ["do", "deps.get", "+", "docs"],
+          env: {__MODULE__, :docs_task_env},
+          mix_env: "dev"
+        ]
       ]
     ]
   end
+
+  def docs_task_env(_context), do: [{"MIX_ENV", "dev"}]
 
   defp docs do
     [

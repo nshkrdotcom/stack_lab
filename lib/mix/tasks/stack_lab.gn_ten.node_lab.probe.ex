@@ -3,7 +3,7 @@ defmodule Mix.Tasks.StackLab.GnTen.NodeLab.Probe do
 
   use Mix.Task
 
-  alias StackLab.GnTenNodeLab.{RunState, Runner}
+  alias StackLab.GnTenNodeLab.{Runner, RunState}
 
   @shortdoc "Probes a gn-ten node-lab logical node"
 

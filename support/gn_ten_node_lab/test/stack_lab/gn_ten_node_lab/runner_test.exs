@@ -97,7 +97,7 @@ defmodule StackLab.GnTenNodeLab.RunnerTest do
   defp temp_state_path do
     Path.join(
       System.tmp_dir!(),
-      "stack_lab_node_lab_state_#{System.unique_integer([:positive])}.json"
+      "stack_lab_node_lab_state_#{System.system_time(:nanosecond)}_#{System.unique_integer([:positive, :monotonic])}.json"
     )
   end
 

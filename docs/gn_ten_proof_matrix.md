@@ -174,6 +174,30 @@ path, and run GitHub or Linear live commands by prefixing them with
   CI until node-lab migration. It does not prove owner facades, domain
   semantics, parity, production security, per-run cookie application to peers,
   or release boot.
+- `gn_ten_distributed_context_roundtrip`: records the v2 Phase 8 context
+  distributed proof. It runs the fugu Context ABI baseline and distributed
+  context scenario from `examples/gn_ten_distributed_stack`, represents
+  AppKit, Mezzanine, Citadel, OuterBrain, and AITrace as distinct peer-node
+  owner profiles, and records context packet hash, authority refs, render
+  handoff refs, trace refs, evidence posture, owner `:pg` groups, and
+  envelope scanner facts. It does not prove router/model invocation,
+  Execution Plane lower lanes, production security, release boot, live
+  provider behavior, or fault recovery.
+- `gn_ten_distributed_router_model_roundtrip`: records the v2 Phase 9
+  router/model distributed proof. It extends the context proof through the
+  deterministic TRINITY router adapter, Mezzanine render handoff, Jido
+  Integration fake/local model invocation, token/cost facts, stream fragment
+  posture, and terminal AppKit projection. It does not prove the unbuilt
+  `full_9_node` lower-lane proof, live provider behavior, production
+  security, release boot, GEPA candidate generation, or TRINITY long-loop
+  feedback behavior beyond the deterministic route fixture.
+- `gn_ten_distributed_partition_recovery`: records the v2 Phase 11 fault and
+  recovery proof. It starts from the implemented `router_model_6_node` proof
+  and records bounded receipts for peer crash, node disconnect/heal, facade
+  timeout, stale DTO, duplicate delivery, and AITrace exporter failure. It
+  does not prove WAN partition behavior, Kubernetes/container discovery,
+  production Erlang distribution security, live provider retry/billing,
+  Execution Plane lower-lane partition behavior, or release boot.
 - `gn_ten_distributed_parity`: records the v2 Phase 13 semantic parity proof.
   It runs the fugu router/model monolith baseline and distributed router/model
   proof from one command, hashes deterministic semantic fields with
@@ -191,6 +215,15 @@ path, and run GitHub or Linear live commands by prefixing them with
   feasibility fields are supplied. It does not prove 32/49-node local stress,
   sustained SLOs, production distribution security, release boot, or live
   provider behavior.
+- `gn_ten_distributed_release_peer`: records the v2 Phase 16 release-path
+  parity prototype. It verifies a test-only release-wrapper manifest for the
+  `execution_plane_node` profile, records owner app start, expected app
+  version, facade ping, code-path mode, and receipt-shape parity with peer
+  mode, and emits bounded open-defect receipts for missing manifest, version
+  mismatch, unavailable facade, and receipt-shape mismatch. It does not prove
+  production release packaging, release artifact minimality, an all-domain
+  production release, production distribution security, container/VM
+  networking, or live provider behavior.
 - `cost_budget_scanner`: verifies adaptive token, provider request,
   self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
   search, provider pool turn, role budget, promotion, failed retry, budget

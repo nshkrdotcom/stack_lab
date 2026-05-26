@@ -178,6 +178,89 @@ proofs:
         authoritative_audit?: false
         production_deployment_proven?: false
 
+  - id: gn_ten_distributed_context_roundtrip
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: local_full
+    command: cd examples/gn_ten_distributed_stack && mix stack_lab.gn_ten.distributed.prove --profile context_6_node --json
+    fixture: examples/gn_ten_distributed_stack/priv/topologies/context_6_node.exs
+    receipt: receipt://stack_lab/gn_ten_distributed_context_roundtrip/latest
+    proves:
+      - the fugu Context ABI baseline and distributed context proof run from one StackLab proof package
+      - AppKit, Mezzanine, Citadel, OuterBrain, and AITrace are represented as distinct owner-profile peer nodes
+      - context packet hash, authority refs, render handoff refs, trace refs, evidence posture, owner pg groups, and envelope scanner facts are present
+      - proof receipts exclude Erlang cookies, raw prompts, raw memory, provider payloads, credentials, local PIDs, and private tool output
+    does_not_prove:
+      - router or model invocation behavior
+      - Execution Plane lower-lane behavior
+      - production distribution security
+      - release artifact boot
+      - live provider behavior
+      - fault recovery
+    next_action: keep this as the required context prerequisite for router/model and parity proofs
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/gn_ten_distributed_context_roundtrip/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
+  - id: gn_ten_distributed_router_model_roundtrip
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: local_full
+    command: cd examples/gn_ten_distributed_stack && mix stack_lab.gn_ten.distributed.prove --profile router_model_6_node --json
+    fixture: examples/gn_ten_distributed_stack/priv/topologies/router_model_6_node.exs
+    receipt: receipt://stack_lab/gn_ten_distributed_router_model_roundtrip/latest
+    proves:
+      - the fugu router/model baseline and distributed router/model proof run from one StackLab proof package
+      - route decision refs, render handoff refs, model invocation refs, token and cost facts, stream fragment posture, and terminal AppKit projection facts are present
+      - Jido Integration model invocation stays behind owner DTOs and fake/local inference by default
+      - router/model receipts reject raw provider payloads and preserve deterministic receipt hashes for parity
+    does_not_prove:
+      - full 9-node Execution Plane lower-lane proof
+      - live provider behavior
+      - production distribution security
+      - release artifact boot
+      - GEPA candidate generation
+      - TRINITY long-loop feedback behavior beyond the deterministic route adapter fixture
+    next_action: use this proof as the semantic input to parity and partition-recovery proofs; leave full_9_node open until lower-lane runtime is implemented
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/gn_ten_distributed_router_model_roundtrip/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
+  - id: gn_ten_distributed_partition_recovery
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: local_full
+    command: cd examples/gn_ten_distributed_stack && mix stack_lab.gn_ten.distributed.prove --profile partition_recovery --json
+    fixture: examples/gn_ten_distributed_stack
+    receipt: receipt://stack_lab/gn_ten_distributed_partition_recovery/latest
+    proves:
+      - StackLab records bounded fault receipts for peer crash, node disconnect and heal, facade timeout, stale DTO, duplicate delivery, and AITrace exporter failure
+      - recovery receipts preserve owner safe actions, idempotency posture, outbox or deny posture, trace refs, and cleanup state
+      - partition recovery starts from the implemented router_model_6_node proof rather than a separate untracked harness path
+    does_not_prove:
+      - WAN partition behavior
+      - Kubernetes or container discovery
+      - production Erlang distribution security
+      - live provider retry or billing behavior
+      - Execution Plane lower-lane partition behavior
+      - release artifact boot
+    next_action: keep fault fixtures as regression inputs for Phase 18 hardening
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/gn_ten_distributed_partition_recovery/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
   - id: gn_ten_distributed_parity
     owner_repo: stack_lab
     contract_family: "300 architecture"
@@ -230,6 +313,33 @@ proofs:
     trace_receipt:
       schema: aitrace.single_node_proof_trace.v1
       ref: trace://stack_lab/gn_ten_distributed_scale_12/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
+  - id: gn_ten_distributed_release_peer
+    owner_repo: stack_lab
+    contract_family: "300 architecture"
+    status: implemented
+    profile: local_full
+    command: cd examples/gn_ten_distributed_stack && mix stack_lab.gn_ten.node_lab.release.verify --json
+    fixture: examples/gn_ten_distributed_stack/priv/releases/execution_plane_node_release_peer.exs
+    receipt: receipt://stack_lab/gn_ten_distributed_release_peer/latest
+    proves:
+      - one test-only release-wrapper manifest can boot the execution_plane_node profile and return a peer-mode-compatible node receipt shape
+      - release-path verification records owner app start, expected app version, facade ping, code-path mode, and receipt-shape parity with peer mode
+      - missing manifest, version mismatch, unavailable facade, and receipt-shape mismatch produce bounded open-defect receipts
+    does_not_prove:
+      - production release packaging
+      - release artifact minimality
+      - a single all-domain production release
+      - production distribution security
+      - container or VM networking
+      - live provider behavior
+    next_action: keep release mode as an opt-in parity prototype until peer-mode distributed semantics stay green under Phase 18 regressions
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/gn_ten_distributed_release_peer/latest
       posture:
         authoritative_audit?: false
         production_deployment_proven?: false

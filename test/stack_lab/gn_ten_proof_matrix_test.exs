@@ -86,11 +86,30 @@ defmodule StackLab.GnTen.ProofMatrixTest do
     assert report.schema_version == "gn_ten_proof_matrix_v1"
     assert report.workspace_ref == "workspace://nshkrdotcom/gn-ten"
     assert report.branch_policy == "main_only"
-    assert report.proof_count == 24
-    assert report.implemented_count == 24
+    assert report.proof_count == 30
+    assert report.implemented_count == 30
     assert report.partial_count == 0
     assert report.missing_proof_count == 0
     assert report.highest_risk_missing_proof == nil
+  end
+
+  test "checked-in proof matrix closes implemented distributed StackLab claims" do
+    assert {:ok, report} = ProofMatrix.validate()
+    proof_ids = MapSet.new(Enum.map(report.proofs, & &1.id))
+
+    required_ids =
+      MapSet.new(~w(
+        gn_ten_distributed_topology_freeze
+        gn_ten_distributed_preflight
+        gn_ten_distributed_context_roundtrip
+        gn_ten_distributed_router_model_roundtrip
+        gn_ten_distributed_partition_recovery
+        gn_ten_distributed_parity
+        gn_ten_distributed_scale_12
+        gn_ten_distributed_release_peer
+      ))
+
+    assert MapSet.subset?(required_ids, proof_ids)
   end
 
   defp failure_code?(report, code) do

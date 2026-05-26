@@ -76,4 +76,13 @@ defmodule StackLab.WorkspaceTest do
     assert get_in(workspace, [:parallelism, :overrides]) == []
     assert Blitz.MixWorkspace.max_concurrency(workspace, :test) == 3
   end
+
+  test "runs workspace docs fanout in dev environment" do
+    workspace = MixProject.project()[:blitz_workspace]
+
+    assert get_in(workspace, [:tasks, :docs, :args]) == ["do", "deps.get", "+", "docs"]
+    assert get_in(workspace, [:tasks, :docs, :env]) == {MixProject, :docs_task_env}
+    assert get_in(workspace, [:tasks, :docs, :mix_env]) == "dev"
+    assert {"MIX_ENV", "dev"} in Blitz.MixWorkspace.command_env(workspace, ".", :docs)
+  end
 end
