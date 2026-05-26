@@ -71,6 +71,7 @@ defmodule StackLab.RouterFabricScanner do
     :authority_ref,
     :route_policy_ref,
     :model_class_allowlist,
+    :model_class_profile_map,
     :trace_ref
   ]
   @decision_fields [
@@ -199,11 +200,7 @@ defmodule StackLab.RouterFabricScanner do
         :packet_ref_mismatch
       )
       |> maybe_consistency_finding(
-        fetch(decision, :selected_model_profile_ref) in fetch(
-          request,
-          :model_class_allowlist,
-          []
-        ),
+        selected_model_allowed?(request, decision),
         :selected_model_allowlist,
         :selected_model_not_allowed
       )
@@ -218,12 +215,16 @@ defmodule StackLab.RouterFabricScanner do
         field in [:model_class_allowlist, :reason_codes] and not non_empty_strings?(value) ->
           [finding(rule, {:missing_required_refs, field}, path, %{})]
 
+        field == :model_class_profile_map and not model_class_profile_map?(value) ->
+          [finding(rule, {:invalid_model_class_profile_map, field}, path, %{})]
+
         field in [:selected_route_kind, :confidence_band] and is_nil(value) ->
           [finding(rule, {:missing_required_field, field}, path, %{})]
 
         field not in [
           :model_class_allowlist,
           :reason_codes,
+          :model_class_profile_map,
           :selected_route_kind,
           :confidence_band
         ] and
@@ -251,6 +252,16 @@ defmodule StackLab.RouterFabricScanner do
 
   defp maybe_consistency_finding(findings, false, rule, reason) do
     [finding(rule, reason, "route_request->route_decision", %{}) | findings]
+  end
+
+  defp selected_model_allowed?(request, decision) do
+    selected_profile_ref = fetch(decision, :selected_model_profile_ref)
+    model_classes = fetch(request, :model_class_allowlist, [])
+    profile_map = fetch(request, :model_class_profile_map, %{})
+
+    model_classes
+    |> Enum.flat_map(fn class_ref -> List.wrap(Map.get(profile_map, class_ref, [])) end)
+    |> Enum.any?(&(&1 == selected_profile_ref))
   end
 
   defp facts(attrs, key) do
@@ -288,6 +299,14 @@ defmodule StackLab.RouterFabricScanner do
     do: Enum.all?(values, &present_string?/1)
 
   defp non_empty_strings?(_values), do: false
+
+  defp model_class_profile_map?(value) when is_map(value) and map_size(value) > 0 do
+    Enum.all?(value, fn {class_ref, profile_refs} ->
+      present_string?(class_ref) and non_empty_strings?(List.wrap(profile_refs))
+    end)
+  end
+
+  defp model_class_profile_map?(_value), do: false
   defp present_string?(value), do: is_binary(value) and String.trim(value) != ""
   defp sha256?(value), do: is_binary(value) and String.match?(value, ~r/^sha256:[0-9a-f]{64}$/)
 

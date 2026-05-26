@@ -34,6 +34,19 @@ defmodule StackLab.RouterFabricScannerTest do
     assert has_finding?(receipt, :route_policy_consistency, :route_policy_mismatch)
   end
 
+  test "requires selected model profiles to be allowed by class mapping, not class string equality" do
+    bad_decision = Map.put(route_decision(), :selected_model_profile_ref, "model-profile://other")
+
+    assert {:ok, receipt} =
+             RouterFabricScanner.scan(%{
+               route_requests: [route_request()],
+               route_decisions: [bad_decision]
+             })
+
+    assert receipt.status == :open_defect
+    assert has_finding?(receipt, :selected_model_allowlist, :selected_model_not_allowed)
+  end
+
   test "rejects raw prompt fields anywhere in router proof facts" do
     assert {:ok, receipt} =
              RouterFabricScanner.scan(%{
@@ -58,7 +71,10 @@ defmodule StackLab.RouterFabricScannerTest do
       packet_hash: sha("a"),
       authority_ref: "authority://router/demo",
       route_policy_ref: "route-policy://router/demo",
-      model_class_allowlist: ["model-profile://fixture/worker"],
+      model_class_allowlist: ["model-class://fixture"],
+      model_class_profile_map: %{
+        "model-class://fixture" => ["model-profile://fixture/worker"]
+      },
       trace_ref: "trace://router/demo"
     }
   end

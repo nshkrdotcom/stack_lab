@@ -154,7 +154,7 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
       system_instruction_ref: "artifact://router-fabric/demo/system-instruction",
       memory_refs: ["memory://router-fabric/demo/promoted/a"],
       budget_ref: "budget://router-fabric/demo/run",
-      model_class_allowlist: ["model-profile://fixture/worker"],
+      model_class_allowlist: ["model-class://fixture"],
       route_policy_ref: "route-policy://router-fabric/demo/trinity",
       trace_ref: @trace_ref,
       idempotency_key: "idem://router-fabric/demo/compile",
@@ -227,6 +227,9 @@ defmodule StackLab.Examples.NSHKRRouterFabricRoundtrip do
       authority_ref: grant.authority_ref,
       route_policy_ref: packet.route_policy_ref,
       model_class_allowlist: packet.model_class_allowlist,
+      model_class_profile_map: %{
+        "model-class://fixture" => ["model-profile://fixture/worker"]
+      },
       trace_ref: packet.trace_ref
     }
   end
