@@ -93,10 +93,16 @@ defmodule StackLab.GnTenNodeLabTaskTest do
   end
 
   defp temp_state_path do
-    Path.join(
-      System.tmp_dir!(),
-      "stack_lab_node_lab_task_state_#{System.unique_integer([:positive])}.json"
-    )
+    tmp_dir =
+      Path.join(
+        System.tmp_dir!(),
+        "stack_lab_node_lab_task_#{System.system_time(:nanosecond)}_#{random_suffix()}"
+      )
+
+    File.mkdir_p!(tmp_dir)
+    on_exit(fn -> File.rm_rf(tmp_dir) end)
+
+    Path.join(tmp_dir, "current_run.json")
   end
 
   defp write_fixture_state(state_path) do
@@ -136,5 +142,11 @@ defmodule StackLab.GnTenNodeLabTaskTest do
       },
       state_path
     )
+  end
+
+  defp random_suffix do
+    8
+    |> :crypto.strong_rand_bytes()
+    |> Base.encode16(case: :lower)
   end
 end

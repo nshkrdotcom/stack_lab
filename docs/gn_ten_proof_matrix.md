@@ -224,6 +224,15 @@ path, and run GitHub or Linear live commands by prefixing them with
   production release packaging, release artifact minimality, an all-domain
   production release, production distribution security, container/VM
   networking, or live provider behavior.
+- `gn_ten_distributed_hardening`: records the v2 Phase 18 hardening closeout.
+  It validates that the distributed proof matrix closes with no missing
+  implemented proof rows or open distributed defects, maps topology, preflight,
+  context, router/model, partition recovery, parity, scale_12, and release_peer
+  receipts as local peer-mode regression families, defers any public
+  `crucible_cluster` extraction until node-lab APIs are domain-free, and keeps
+  full 9-node lower-lane runtime, 32/49-node stress, production security,
+  production release packaging, and live-provider behavior as explicit
+  non-release claims.
 - `cost_budget_scanner`: verifies adaptive token, provider request,
   self-hosted GPU minute, endpoint startup, eval batch, replay, optimization
   search, provider pool turn, role budget, promotion, failed retry, budget

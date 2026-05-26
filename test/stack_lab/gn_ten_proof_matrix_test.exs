@@ -86,8 +86,8 @@ defmodule StackLab.GnTen.ProofMatrixTest do
     assert report.schema_version == "gn_ten_proof_matrix_v1"
     assert report.workspace_ref == "workspace://nshkrdotcom/gn-ten"
     assert report.branch_policy == "main_only"
-    assert report.proof_count == 30
-    assert report.implemented_count == 30
+    assert report.proof_count == 31
+    assert report.implemented_count == 31
     assert report.partial_count == 0
     assert report.missing_proof_count == 0
     assert report.highest_risk_missing_proof == nil
@@ -107,6 +107,7 @@ defmodule StackLab.GnTen.ProofMatrixTest do
         gn_ten_distributed_parity
         gn_ten_distributed_scale_12
         gn_ten_distributed_release_peer
+        gn_ten_distributed_hardening
       ))
 
     assert MapSet.subset?(required_ids, proof_ids)

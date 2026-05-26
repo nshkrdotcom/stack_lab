@@ -344,6 +344,34 @@ proofs:
         authoritative_audit?: false
         production_deployment_proven?: false
 
+  - id: gn_ten_distributed_hardening
+    owner_repo: stack_lab
+    contract_family: "600 deployment"
+    status: implemented
+    profile: local_full
+    command: mix stack_lab.gn_ten.distributed.hardening --json
+    fixture: docs/receipts/gn_ten_distributed_phase18/hardening.json
+    receipt: receipt://stack_lab/gn_ten_distributed_hardening/latest
+    proves:
+      - distributed proof matrix closes with no missing implemented proof rows or open distributed defects
+      - topology, preflight, context, router/model, partition recovery, parity, scale_12, and release_peer receipts remain the local peer-mode regression families
+      - support/gn_ten_node_lab remains internal StackLab proof infrastructure and North-Shore-AI/crucible_cluster extraction is deferred until the API is domain-free
+      - full_9_node lower-lane runtime, 32/49-node stress, production security, production release packaging, and live-provider behavior remain explicit non-release claims
+    does_not_prove:
+      - full 9-node lower-lane runtime behavior
+      - 32-node or 49-node stress behavior
+      - production distribution security
+      - production release packaging
+      - live provider behavior
+      - public crucible_cluster extraction readiness
+    next_action: keep the distributed hardening receipt green while future lower-lane, scale, production-security, and extraction proofs are implemented explicitly
+    trace_receipt:
+      schema: aitrace.single_node_proof_trace.v1
+      ref: trace://stack_lab/gn_ten_distributed_hardening/latest
+      posture:
+        authoritative_audit?: false
+        production_deployment_proven?: false
+
   - id: product_no_bypass
     owner_repo: stack_lab
     contract_family: "300 architecture"
