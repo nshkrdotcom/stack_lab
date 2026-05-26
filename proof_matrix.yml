@@ -697,7 +697,7 @@ proofs:
     contract_family: "300 architecture"
     status: implemented
     profile: assembled_offline
-    command: cd examples/nshkr_router_fabric_roundtrip && mix stack_lab.nshkr.router_fabric.roundtrip --json
+    command: cd examples/nshkr_router_fabric_roundtrip && MIX_ENV=test mix compile --quiet && MIX_ENV=test mix stack_lab.nshkr.router_fabric.roundtrip --json
     fixture: examples/nshkr_router_fabric_roundtrip
     receipt: receipt://stack_lab/nshkr_router_fabric_roundtrip/latest
     proves:

@@ -22,3 +22,9 @@ mix gn_ten.proofs.validate --json
 mix gn_ten.artifacts.validate --json
 mix weld.verify
 ```
+
+`mix gn_ten.artifacts.validate --json` must have zero failures before a release
+claim closes. Bootstrap artifact rows may report stale-source warnings while
+their owner packages are still pre-release; those warnings are evidence to
+carry forward, not release blockers. Stable or deprecated artifacts must be
+refreshed or demoted before closeout.
