@@ -535,7 +535,7 @@ defmodule StackLab.ContextABIScanner do
 
   defp non_empty_strings?(_values), do: false
 
-  defp sha256?("sha256:" <> digest), do: String.length(digest) == 64
+  defp sha256?("sha256:" <> digest), do: String.match?(digest, ~r/^[0-9a-f]{64}$/)
   defp sha256?(_value), do: false
 
   defp status([]), do: :pass

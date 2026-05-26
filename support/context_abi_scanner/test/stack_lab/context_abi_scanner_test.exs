@@ -51,6 +51,24 @@ defmodule StackLab.ContextABIScannerTest do
            )
   end
 
+  test "rejects non-hex sha256 refs" do
+    assert {:ok, receipt} =
+             ContextABIScanner.scan(%{
+               context_packets: [%{packet() | packet_hash: "sha256:" <> String.duplicate("z", 64)}],
+               context_compile_receipts: [compile_receipt()],
+               authority_grants: [grant()],
+               admission_receipts: [admission_receipt()],
+               route_decisions: [route_decision()],
+               render_results: [render_result()],
+               model_invocation_receipts: [model_receipt()],
+               appkit_projections: [%{context_packet_ref: packet().context_packet_ref}],
+               aitrace_facts: [%{trace_ref: packet().trace_ref}]
+             })
+
+    assert receipt.status == :open_defect
+    assert has_finding?(receipt, :context_packet_contract, {:invalid_sha256_ref, :packet_hash})
+  end
+
   test "rejects raw prompt and provider payload fields anywhere in the scan" do
     assert {:ok, receipt} =
              ContextABIScanner.scan(%{
