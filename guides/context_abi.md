@@ -21,6 +21,11 @@ A green context proof records packet hash, authority ref, render refs, trace
 ref, redaction posture, and no-bypass scanner results. Monolith and distributed
 proofs compare semantic receipt fields, not placement or timing facts.
 
+Scanner fixtures reject malformed packet hashes such as non-hex
+`sha256:...` values and any raw prompt/memory/provider payload leakage. The
+hash evidence is expected to come from owner canonical encoding rather than
+from ad hoc `inspect/1`, JSON, or Erlang term binary output.
+
 ## Local QC
 
 ```bash

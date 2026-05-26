@@ -68,6 +68,9 @@ The current harness covers:
   restart-claim fields
 - GEPA, TRINITY, cost/budget, and adaptive-control prior-fabric proofs
 - fugu single-node readiness handoff for the distributed `nshkr_v2` proof plan
+- cleanup hardening for strict Context ABI hashes, raw-payload rejection,
+  model class-to-profile routing, GEPA optimizer boundaries, authority
+  evidence verification, and proof artifact ledger posture
 - AITrace-backed receipt collection and release-proof mapping
 
 This makes StackLab the answer to "does the stack claim have executable proof?"

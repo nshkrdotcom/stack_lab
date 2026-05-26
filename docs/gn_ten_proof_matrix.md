@@ -138,7 +138,10 @@ path, and run GitHub or Linear live commands by prefixing them with
   proof from admitted Context ABI packet through
   `Trinity.MezzanineRouterAdapter`, Mezzanine render handoff, Jido fake model
   invocation, AITrace bounded route/model/eval facts, AppKit projections, and
-  StackLab context/router/coordination/model scanner receipts.
+  StackLab context/router/coordination/model scanner receipts. Automation
+  should precompile `examples/nshkr_router_fabric_roundtrip` before redirecting
+  `--json` output so Mix dependency compilation logs cannot pollute the JSON
+  receipt.
 - `fugu_single_node_readiness_handoff`: records the Phase 16 single-node
   provider-free handoff receipt that unblocks the `../nshkr_v2` distributed
   StackLab checklist. It names Context ABI, router fabric, and Extravaganza
