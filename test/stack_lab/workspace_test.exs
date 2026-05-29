@@ -4,7 +4,12 @@ defmodule StackLab.WorkspaceTest do
   alias StackLab.Workspace.MixProject
 
   test "workspace exposes the expected project globs" do
-    assert StackLab.Workspace.active_project_globs() == [".", "support/*", "examples/*"]
+    assert StackLab.Workspace.active_project_globs() == [
+             ".",
+             "support/*",
+             "examples/*",
+             "bridges/*"
+           ]
   end
 
   test "workspace package paths cover support and examples" do
@@ -43,6 +48,7 @@ defmodule StackLab.WorkspaceTest do
     assert "examples/skill_roundtrip" in package_paths
     assert "examples/hive_roundtrip" in package_paths
     assert "examples/agent_foundation_roundtrip" in package_paths
+    assert "bridges/stacklab_chassis_bridge" in package_paths
   end
 
   test "uses the released Weld 0.8.2 line directly" do

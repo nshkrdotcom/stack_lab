@@ -22,6 +22,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "support/drift_detector",
     "support/citadel_spine_harness",
     "support/memsim_harness",
+    "bridges/stacklab_chassis_bridge",
     "examples/single_node_roundtrip",
     "examples/lower_facts_roundtrip",
     "examples/outer_brain_restart_durability",
@@ -56,7 +57,7 @@ defmodule StackLab.Build.WorkspaceContract do
     "examples/agent_foundation_roundtrip"
   ]
 
-  @active_project_globs [".", "support/*", "examples/*"]
+  @active_project_globs [".", "support/*", "examples/*", "bridges/*"]
 
   @spec package_paths() :: [String.t()]
   def package_paths, do: @package_paths

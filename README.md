@@ -466,3 +466,7 @@ Operational rules:
   scanner tasks, and receipt validation.
 - Evidence is emitted through StackLab tests, proof matrix validation,
   `docs/receipts/**`, AITrace fixture exports, and phase evidence files.
+
+## Chassis Proofs
+
+StackLab includes a stacklab_chassis_bridge package and stack_lab.run smoke task for baseline, evolution, and model asset proof tags. Proofs assert boundary posture, authority fail-closed behavior, deployment cycles, tenant residency, and model/tensor lifecycle invariants.
