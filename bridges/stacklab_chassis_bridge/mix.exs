@@ -19,6 +19,7 @@ defmodule StackLab.ChassisBridge.MixProject do
 
   defp deps do
     [
+      {:chassis_stacklab_bridge, path: "../../../chassis/proof/chassis_stacklab_bridge"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
