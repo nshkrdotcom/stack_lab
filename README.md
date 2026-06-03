@@ -102,6 +102,71 @@ Maintainers should read
 command execution, app-env sandboxing, structural scanners, proof apps,
 Citadel spine scenarios, or harness timing.
 
+## Chassis Proofs
+
+StackLab owns certification for Chassis. The baseline Chassis catalog keeps the
+12 proof cells from the Chassis verification plan:
+
+- `chassis.boundary.local_adapter_equivalence.v1`
+- `chassis.boundary.no_pid_payloads.v1`
+- `chassis.boundary.no_raw_secret_payloads.v1`
+- `chassis.boundary.codec_digest_stability.v1`
+- `chassis.boundary.idempotency_required_for_mutations.v1`
+- `chassis.boundary.citadel_fail_closed.v1`
+- `chassis.deployment.profile_monolith_local`
+- `chassis.deployment.profile_ternary_split_3_local`
+- `chassis.deployment.profile_maximal_decoupled_local`
+- `chassis.secrets.no_plaintext_in_receipts`
+- `chassis.tenant.residency_enforcement`
+- `chassis.metabolic.auto_rollback_on_pressure`
+
+Chassis emits fixtures and receipts; StackLab binds them into the canonical
+proof catalog and reports pass/fail evidence.
+
+## Chassis Evolution Proofs
+
+The Chassis Evolution catalog includes the lifecycle scenarios proven by
+`mix stack_lab.run --tag chassis_evolution`, including:
+
+- `chassis.evolution.source_level_patch_success.v1`
+- `chassis.evolution.model_weight_patch_success.v1`
+- `chassis.evolution.hybrid_patch_success.v1`
+- `chassis.evolution.test_regression_blocks_promotion.v1`
+- `chassis.evolution.coding_agent_failure.v1`
+- `chassis.evolution.trial_sandbox_denies_mount.v1`
+- `chassis.evolution.missing_operator_consent_blocks_swap.v1`
+- `chassis.evolution.health_probe_failure_rolls_back.v1`
+- `chassis.evolution.rollback_failure_escalates.v1`
+- `chassis.evolution.diff_redaction.v1`
+- `chassis.evolution.receipt_redaction.v1`
+- `chassis.evolution.mezzanine_projections_reduced.v1`
+
+The active catalog currently reports 21 evolution proofs with scenario evidence
+from the Chassis proof package.
+
+## Chassis Model Asset Proofs
+
+The model asset catalog covers model weights, hardware admission, and tensor
+reload lifecycle proofs:
+
+- `chassis.model.weight_materialization.v1` (canonical README alias for the HF
+  fixture proof)
+- `chassis.model.hf_weight_materialization.v1`
+- `chassis.model.model_weight_hash_mismatch.v1`
+- `chassis.model.gpu_guard_rejects_missing_cuda.v1`
+- `chassis.model.cuda_version_out_of_range.v1`
+- `chassis.model.insufficient_vram.v1`
+- `chassis.model.metal_required_on_x86.v1`
+- `chassis.model.happy_path_cuda.v1`
+- `chassis.model.happy_path_apple_metal.v1`
+- `chassis.model.tensor_patch_reload_and_rollback.v1`
+- `chassis.model.tensor_reload_unsupported_fallback_restart.v1`
+- `chassis.model.tensor_reload_blocked_missing_rollback.v1`
+- `chassis.model.tensor_reload_digest_mismatch.v1`
+
+StackLab owns certification. Chassis emits model, hardware, and tensor
+fixtures; StackLab binds them into the canonical proof catalog.
+
 ## Proof Diagrams
 
 ```mermaid
