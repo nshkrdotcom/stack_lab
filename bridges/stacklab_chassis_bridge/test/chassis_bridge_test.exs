@@ -29,6 +29,27 @@ defmodule StackLab.ChassisBridgeTest do
     assert Enum.all?(report.proofs, &(is_map(&1.evidence) and map_size(&1.evidence) > 0))
   end
 
+  test "runs chassis evolution proof catalog with scenario evidence" do
+    assert {:ok, report} = StackLab.ChassisBridge.run(:chassis_evolution)
+
+    assert report.tag == :chassis_evolution
+    assert report.passed == 21
+    assert report.failed == 0
+    assert report.skipped == 0
+
+    names = Enum.map(report.proofs, & &1.name)
+    assert "chassis.evolution.source_level_patch_success.v1" in names
+    assert "chassis.evolution.receipt_redaction.v1" in names
+    assert "chassis.evolution.mezzanine_projections_reduced.v1" in names
+
+    source =
+      Enum.find(report.proofs, &(&1.name == "chassis.evolution.source_level_patch_success.v1"))
+
+    assert source.status == :pass
+    assert source.evidence.final_state == :committed
+    assert length(source.evidence.spans) == 16
+  end
+
   test "unknown tags fail closed instead of returning a zero-success report" do
     assert {:error, {:unknown_tag, :missing}} = StackLab.ChassisBridge.run(:missing)
   end

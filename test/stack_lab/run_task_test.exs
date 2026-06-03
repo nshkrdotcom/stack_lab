@@ -30,4 +30,21 @@ defmodule StackLab.RunTaskTest do
     assert decoded["skipped"] == 0
     assert Enum.map(decoded["proofs"], & &1["name"]) == @proof_names
   end
+
+  test "stack_lab.run emits structural JSON for chassis evolution tag" do
+    output =
+      capture_io(fn ->
+        Mix.Tasks.StackLab.Run.run(["--tag", "chassis_evolution", "--json"])
+      end)
+
+    assert {:ok, decoded} = Jason.decode(output)
+    assert decoded["tag"] == "chassis_evolution"
+    assert decoded["passed"] == 21
+    assert decoded["failed"] == 0
+
+    assert Enum.any?(
+             decoded["proofs"],
+             &(&1["name"] == "chassis.evolution.source_level_patch_success.v1")
+           )
+  end
 end
