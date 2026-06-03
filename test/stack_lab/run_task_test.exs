@@ -47,4 +47,21 @@ defmodule StackLab.RunTaskTest do
              &(&1["name"] == "chassis.evolution.source_level_patch_success.v1")
            )
   end
+
+  test "stack_lab.run emits structural JSON for chassis model asset tag" do
+    output =
+      capture_io(fn ->
+        Mix.Tasks.StackLab.Run.run(["--tag", "chassis_model_asset", "--json"])
+      end)
+
+    assert {:ok, decoded} = Jason.decode(output)
+    assert decoded["tag"] == "chassis_model_asset"
+    assert decoded["passed"] == 12
+    assert decoded["failed"] == 0
+
+    assert Enum.any?(
+             decoded["proofs"],
+             &(&1["name"] == "chassis.model.hf_weight_materialization.v1")
+           )
+  end
 end

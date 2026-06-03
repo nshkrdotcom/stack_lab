@@ -21,6 +21,8 @@ defmodule StackLab.ChassisBridge.MixProject do
     [
       {:chassis_evolution_conformance,
        path: "../../../chassis/proof/chassis_evolution_conformance"},
+      {:chassis_model_asset_conformance,
+       path: "../../../chassis/proof/chassis_model_asset_conformance"},
       {:chassis_stacklab_bridge, path: "../../../chassis/proof/chassis_stacklab_bridge"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

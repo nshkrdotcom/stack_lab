@@ -50,6 +50,26 @@ defmodule StackLab.ChassisBridgeTest do
     assert length(source.evidence.spans) == 16
   end
 
+  test "runs chassis model asset proof catalog with scenario evidence" do
+    assert {:ok, report} = StackLab.ChassisBridge.run(:chassis_model_asset)
+
+    assert report.tag == :chassis_model_asset
+    assert report.passed == 12
+    assert report.failed == 0
+    assert report.skipped == 0
+
+    names = Enum.map(report.proofs, & &1.name)
+    assert "chassis.model.hf_weight_materialization.v1" in names
+    assert "chassis.model.tensor_reload_digest_mismatch.v1" in names
+
+    materialized =
+      Enum.find(report.proofs, &(&1.name == "chassis.model.hf_weight_materialization.v1"))
+
+    assert materialized.status == :pass
+    assert materialized.evidence.digest_verified == true
+    assert materialized.evidence.bytes_via_beam_control? == false
+  end
+
   test "unknown tags fail closed instead of returning a zero-success report" do
     assert {:error, {:unknown_tag, :missing}} = StackLab.ChassisBridge.run(:missing)
   end
