@@ -64,4 +64,27 @@ defmodule StackLab.RunTaskTest do
              &(&1["name"] == "chassis.model.hf_weight_materialization.v1")
            )
   end
+
+  test "stack_lab.run emits structural JSON for Chassis single-node monolith link receipt" do
+    output =
+      capture_io(fn ->
+        Mix.Tasks.StackLab.Run.run(["--tag", "chassis_single_node_monolith", "--json"])
+      end)
+
+    assert {:ok, decoded} = Jason.decode(output)
+
+    assert decoded["schema_version"] ==
+             "stack_lab.chassis_single_node_monolith_deploy_receipt.v1"
+
+    assert decoded["status"] == "pass"
+    assert decoded["classification"] == "local_single_node"
+    assert decoded["chassis"]["profile_ref"] == "profile:monolith"
+    assert decoded["chassis"]["node_count"] == 1
+
+    assert decoded["product_proofs"]["extravaganza"]["command"] =~
+             "stack_lab.extravaganza.external_acceptance"
+
+    assert decoded["product_proofs"]["synapse_staged_live"]["command"] =~
+             "stack_lab.synapse.staged_live.v1"
+  end
 end

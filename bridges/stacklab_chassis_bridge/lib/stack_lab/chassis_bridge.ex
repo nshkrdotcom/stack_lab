@@ -16,6 +16,9 @@ defmodule StackLab.ChassisBridge do
   def run(tag) when tag in ["chassis_model_asset", :chassis_model_asset],
     do: Chassis.ModelAsset.Conformance.stacklab_report()
 
+  def run(tag) when tag in ["chassis_single_node_monolith", :chassis_single_node_monolith],
+    do: StackLab.ChassisSingleNodeMonolithDeployReceipt.run()
+
   def run(tag), do: {:error, {:unknown_tag, tag}}
 
   @spec jsonable_report(map()) :: map()
@@ -23,6 +26,11 @@ defmodule StackLab.ChassisBridge do
 
   def jsonable_report(%{tag: :chassis_model_asset} = report),
     do: ModelAssetEvidence.jsonable(report)
+
+  def jsonable_report(
+        %{schema_version: "stack_lab.chassis_single_node_monolith_deploy_receipt.v1"} = receipt
+      ),
+      do: StackLab.ChassisSingleNodeMonolithDeployReceipt.jsonable(receipt)
 
   def jsonable_report(report), do: RunConformance.jsonable_report(report)
 end

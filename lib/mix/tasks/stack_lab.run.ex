@@ -24,6 +24,7 @@ defmodule Mix.Tasks.StackLab.Run do
   defp tag([]), do: "all"
 
   defp normalize_tag("chassis"), do: :chassis
+  defp normalize_tag("chassis_single_node_monolith"), do: :chassis_single_node_monolith
   defp normalize_tag(tag), do: tag
 
   defp emit(report, true) do
@@ -34,8 +35,14 @@ defmodule Mix.Tasks.StackLab.Run do
   end
 
   defp emit(report, false) do
-    Enum.each(report.proofs, fn proof ->
-      Mix.shell().info("#{proof.name}: #{String.upcase(to_string(proof.status))}")
-    end)
+    case report do
+      %{proofs: proofs} when is_list(proofs) ->
+        Enum.each(proofs, fn proof ->
+          Mix.shell().info("#{proof.name}: #{String.upcase(to_string(proof.status))}")
+        end)
+
+      %{schema_version: schema_version, status: status} ->
+        Mix.shell().info("#{schema_version}: #{String.upcase(to_string(status))}")
+    end
   end
 end
