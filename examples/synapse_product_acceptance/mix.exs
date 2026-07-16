@@ -55,7 +55,7 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
       {:stack_lab_no_bypass_scanner, path: "../../support/no_bypass_scanner"},
       {:jason, "~> 1.4"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_doc, "0.40.1", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.40.3", only: :dev, runtime: false}
     ]
   end
 
