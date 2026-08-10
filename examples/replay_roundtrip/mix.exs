@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.ReplayRoundtrip.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -25,11 +31,10 @@ defmodule StackLab.ReplayRoundtrip.MixProject do
 
   defp deps do
     [
-      {:aitrace, path: "../../../AITrace"},
-      {:ai_trace_replay_contracts,
-       path: "../../../AITrace/core/replay_contracts", override: true},
-      {:ai_trace_replay_engine, path: "../../../AITrace/core/replay_engine"},
-      {:app_kit_replay_surface, path: "../../../app_kit/core/replay_surface"},
+      DependencySources.dep(:aitrace, @dependency_sources_root),
+      DependencySources.dep(:ai_trace_replay_contracts, @dependency_sources_root, override: true),
+      DependencySources.dep(:ai_trace_replay_engine, @dependency_sources_root),
+      DependencySources.dep(:app_kit_replay_surface, @dependency_sources_root),
       {:stack_lab_drift_detector, path: "../../support/drift_detector"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

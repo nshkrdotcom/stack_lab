@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.TRINITYPlatformRoundtrip.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -26,10 +32,9 @@ defmodule StackLab.TRINITYPlatformRoundtrip.MixProject do
 
   defp deps do
     [
-      {:trinity_framework, path: "../../../trinity_framework"},
-      {:trinity_contracts,
-       path: "../../../trinity_framework/core/trinity_contracts", override: true},
-      {:app_kit_coordination_surface, path: "../../../app_kit/core/coordination_surface"},
+      DependencySources.dep(:trinity_framework, @dependency_sources_root),
+      DependencySources.dep(:trinity_contracts, @dependency_sources_root, override: true),
+      DependencySources.dep(:app_kit_coordination_surface, @dependency_sources_root),
       {:stack_lab_coordination_fabric_scanner, path: "../../support/coordination_fabric_scanner"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

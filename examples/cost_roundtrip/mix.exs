@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.CostRoundtrip.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -25,14 +31,12 @@ defmodule StackLab.CostRoundtrip.MixProject do
 
   defp deps do
     [
-      {:aitrace, path: "../../../AITrace"},
-      {:outer_brain_token_meter, path: "../../../outer_brain/core/token_meter"},
-      {:mezzanine_cost_attribution_engine,
-       path: "../../../mezzanine/core/cost_attribution_engine"},
-      {:mezzanine_budget_enforcement_engine,
-       path: "../../../mezzanine/core/budget_enforcement_engine"},
-      {:app_kit_cost_surface, path: "../../../app_kit/core/cost_surface"},
-      {:app_kit_budget_surface, path: "../../../app_kit/core/budget_surface"},
+      DependencySources.dep(:aitrace, @dependency_sources_root),
+      DependencySources.dep(:outer_brain_token_meter, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_cost_attribution_engine, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_budget_enforcement_engine, @dependency_sources_root),
+      DependencySources.dep(:app_kit_cost_surface, @dependency_sources_root),
+      DependencySources.dep(:app_kit_budget_surface, @dependency_sources_root),
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}

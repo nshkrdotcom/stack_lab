@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.ToyDocumentReview.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   @repo_root "/home/home/p/g/n"
 
@@ -64,25 +70,24 @@ defmodule StackLab.ToyDocumentReview.MixProject do
 
   defp deps do
     [
-      {:app_kit_core, path: "#{@repo_root}/app_kit/core/app_kit_core"},
-      {:app_kit_runtime_gateway, path: "#{@repo_root}/app_kit/core/runtime_gateway"},
-      {:mezzanine_pack_model, path: "#{@repo_root}/mezzanine/core/pack_model"},
-      {:mezzanine_pack_compiler, path: "#{@repo_root}/mezzanine/core/pack_compiler"},
-      {:mezzanine_config_registry, path: "#{@repo_root}/mezzanine/core/config_registry"},
-      {:mezzanine_substrate_model, path: "#{@repo_root}/mezzanine/core/substrate_model"},
-      {:mezzanine_projection_engine, path: "#{@repo_root}/mezzanine/core/projection_engine"},
-      {:mezzanine_workflow_runtime, path: "#{@repo_root}/mezzanine/core/workflow_runtime"},
-      {:jido_integration_contracts,
-       path: "#{@repo_root}/jido_integration/core/contracts", override: true},
-      {:jido_integration_v2_connector_registry,
-       path: "#{@repo_root}/jido_integration/core/connector_registry"},
-      {:execution_plane,
-       path: "#{@repo_root}/execution_plane/core/execution_plane", override: true},
-      {:citadel_governance, path: "#{@repo_root}/citadel/core/citadel_governance"},
-      {:citadel_connector_binding, path: "#{@repo_root}/citadel/core/connector_binding"},
-      {:aitrace, path: "#{@repo_root}/AITrace", override: true},
-      {:ai_trace_replay_contracts, path: "#{@repo_root}/AITrace/core/replay_contracts"},
-      {:ai_trace_replay_engine, path: "#{@repo_root}/AITrace/core/replay_engine"},
+      DependencySources.dep(:app_kit_core, @dependency_sources_root),
+      DependencySources.dep(:app_kit_runtime_gateway, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_pack_model, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_pack_compiler, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_config_registry, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_substrate_model, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_projection_engine, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_workflow_runtime, @dependency_sources_root),
+      DependencySources.dep(:jido_integration_contracts, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(:jido_integration_v2_connector_registry, @dependency_sources_root),
+      DependencySources.dep(:execution_plane, @dependency_sources_root, override: true),
+      DependencySources.dep(:citadel_governance, @dependency_sources_root),
+      DependencySources.dep(:citadel_connector_binding, @dependency_sources_root),
+      DependencySources.dep(:aitrace, @dependency_sources_root, override: true),
+      DependencySources.dep(:ai_trace_replay_contracts, @dependency_sources_root),
+      DependencySources.dep(:ai_trace_replay_engine, @dependency_sources_root),
       {:ecto_sql, "~> 3.13"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}

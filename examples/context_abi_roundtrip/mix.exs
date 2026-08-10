@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.ContextABIRoundtrip.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -26,19 +32,19 @@ defmodule StackLab.ContextABIRoundtrip.MixProject do
 
   defp deps do
     [
-      {:app_kit_context_surface, path: "../../../app_kit/core/context_surface"},
-      {:outer_brain_context_abi, path: "../../../outer_brain/core/context_abi", override: true},
-      {:outer_brain_prompting,
-       path: "../../../outer_brain/core/outer_brain_prompting", override: true},
-      {:citadel_context_authority_contract,
-       path: "../../../citadel/core/context_authority_contract"},
-      {:mezzanine_context_packet_engine,
-       path: "../../../mezzanine/core/context_packet_engine", override: true},
-      {:mezzanine_ai_execution_engine, path: "../../../mezzanine/core/ai_execution_engine"},
-      {:jido_model_invocation_contracts,
-       path: "../../../jido_integration/core/model_invocation_contracts", override: true},
-      {:jido_inference_runtime, path: "../../../jido_integration/core/inference_runtime"},
-      {:aitrace, path: "../../../AITrace"},
+      DependencySources.dep(:app_kit_context_surface, @dependency_sources_root),
+      DependencySources.dep(:outer_brain_context_abi, @dependency_sources_root, override: true),
+      DependencySources.dep(:outer_brain_prompting, @dependency_sources_root, override: true),
+      DependencySources.dep(:citadel_context_authority_contract, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_context_packet_engine, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(:mezzanine_ai_execution_engine, @dependency_sources_root),
+      DependencySources.dep(:jido_model_invocation_contracts, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(:jido_inference_runtime, @dependency_sources_root),
+      DependencySources.dep(:aitrace, @dependency_sources_root),
       {:stack_lab_context_abi_scanner, path: "../../support/context_abi_scanner"},
       {:stack_lab_model_inference_scanner, path: "../../support/model_inference_scanner"},
       {:stack_lab_cost_budget_scanner, path: "../../support/cost_budget_scanner"},

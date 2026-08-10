@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.AgentFoundationRoundtrip.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -26,18 +32,21 @@ defmodule StackLab.AgentFoundationRoundtrip.MixProject do
 
   defp deps do
     [
-      {:app_kit_core, path: "../../../app_kit/core/app_kit_core"},
-      {:mezzanine_agent_turn_engine, path: "../../../mezzanine/core/agent_turn_engine"},
-      {:citadel_execution_governance_contract,
-       path: "../../../citadel/core/execution_governance_contract"},
-      {:jido_integration_agent_interop_contracts,
-       path: "../../../jido_integration/core/agent_interop_contracts", override: true},
-      {:jido_integration_v2_tool_contracts,
-       path: "../../../jido_integration/core/tool_contracts", override: true},
-      {:jido_integration_connector_admission_engine,
-       path: "../../../jido_integration/core/connector_admission_engine"},
-      {:execution_plane, path: "../../../execution_plane/core/execution_plane"},
-      {:ai_trace_replay_contracts, path: "../../../AITrace/core/replay_contracts"},
+      DependencySources.dep(:app_kit_core, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_agent_turn_engine, @dependency_sources_root),
+      DependencySources.dep(:citadel_execution_governance_contract, @dependency_sources_root),
+      DependencySources.dep(:jido_integration_agent_interop_contracts, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(:jido_integration_v2_tool_contracts, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(
+        :jido_integration_connector_admission_engine,
+        @dependency_sources_root
+      ),
+      DependencySources.dep(:execution_plane, @dependency_sources_root),
+      DependencySources.dep(:ai_trace_replay_contracts, @dependency_sources_root),
       {:stack_lab_no_bypass_scanner, path: "../../support/no_bypass_scanner"},
       {:jason, "~> 1.4"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

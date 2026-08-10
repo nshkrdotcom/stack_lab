@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.GnTenDistributedStack.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -32,21 +38,24 @@ defmodule StackLab.GnTenDistributedStack.MixProject do
        path: "../nshkr_router_fabric_roundtrip", runtime: false},
       {:stack_lab_persistence_mode_roundtrip,
        path: "../persistence_mode_roundtrip", runtime: false},
-      {:ground_plane_contracts,
-       path: "../../../ground_plane/core/ground_plane_contracts", runtime: false},
-      {:app_kit_mezzanine_bridge,
-       path: "../../../app_kit/bridges/mezzanine_bridge", runtime: false},
-      {:mezzanine_execution_engine,
-       path: "../../../mezzanine/core/execution_engine", runtime: false},
-      {:citadel_context_authority_contract,
-       path: "../../../citadel/core/context_authority_contract", runtime: false},
-      {:outer_brain_context_abi,
-       path: "../../../outer_brain/core/context_abi", override: true, runtime: false},
-      {:jido_inference_runtime,
-       path: "../../../jido_integration/core/inference_runtime", runtime: false},
-      {:execution_plane,
-       path: "../../../execution_plane/core/execution_plane", override: true, runtime: false},
-      {:aitrace, path: "../../../AITrace", override: true, runtime: false},
+      DependencySources.dep(:ground_plane_contracts, @dependency_sources_root, runtime: false),
+      DependencySources.dep(:app_kit_mezzanine_bridge, @dependency_sources_root, runtime: false),
+      DependencySources.dep(:mezzanine_execution_engine, @dependency_sources_root,
+        runtime: false
+      ),
+      DependencySources.dep(:citadel_context_authority_contract, @dependency_sources_root,
+        runtime: false
+      ),
+      DependencySources.dep(:outer_brain_context_abi, @dependency_sources_root,
+        override: true,
+        runtime: false
+      ),
+      DependencySources.dep(:jido_inference_runtime, @dependency_sources_root, runtime: false),
+      DependencySources.dep(:execution_plane, @dependency_sources_root,
+        override: true,
+        runtime: false
+      ),
+      DependencySources.dep(:aitrace, @dependency_sources_root, override: true, runtime: false),
       {:jason, "~> 1.4", runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: :dev, runtime: false},

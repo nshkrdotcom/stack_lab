@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.AdaptiveControlRoundtrip.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -25,7 +31,7 @@ defmodule StackLab.AdaptiveControlRoundtrip.MixProject do
 
   defp deps do
     [
-      {:app_kit_adaptive_control_surface, path: "../../../app_kit/core/adaptive_control_surface"},
+      DependencySources.dep(:app_kit_adaptive_control_surface, @dependency_sources_root),
       {:stack_lab_adaptive_control_scanner, path: "../../support/adaptive_control_scanner"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.SynapseProductAcceptance.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   @repo_root "/home/home/p/g/n"
 
@@ -36,22 +42,24 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
 
   defp deps do
     [
-      {:synapse_core, path: "#{@repo_root}/synapse/apps/synapse_core"},
-      {:execution_plane,
-       path: "#{@repo_root}/execution_plane/core/execution_plane", override: true},
-      {:ground_plane_contracts,
-       path: "#{@repo_root}/ground_plane/core/ground_plane_contracts", override: true},
-      {:ground_plane_persistence_policy,
-       path: "#{@repo_root}/ground_plane/core/persistence_policy", override: true},
-      {:app_kit_mezzanine_bridge, path: "#{@repo_root}/app_kit/bridges/mezzanine_bridge"},
-      {:mezzanine_workflow_runtime, path: "#{@repo_root}/mezzanine/core/workflow_runtime"},
-      {:mezzanine_governed_effects,
-       path: "#{@repo_root}/mezzanine/core/governed_effects", override: true},
-      {:citadel_authority_contract,
-       path: "#{@repo_root}/citadel/core/authority_contract", override: true},
-      {:jido_integration_v2_direct_runtime,
-       path: "#{@repo_root}/jido_integration/core/direct_runtime", override: true},
-      {:aitrace, path: "#{@repo_root}/AITrace", override: true},
+      DependencySources.dep(:synapse_core, @dependency_sources_root),
+      DependencySources.dep(:execution_plane, @dependency_sources_root, override: true),
+      DependencySources.dep(:ground_plane_contracts, @dependency_sources_root, override: true),
+      DependencySources.dep(:ground_plane_persistence_policy, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(:app_kit_mezzanine_bridge, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_workflow_runtime, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_governed_effects, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(:citadel_authority_contract, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(:jido_integration_v2_direct_runtime, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(:aitrace, @dependency_sources_root, override: true),
       {:stack_lab_no_bypass_scanner, path: "../../support/no_bypass_scanner"},
       {:jason, "~> 1.4"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.GuardrailRoundtrip.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -25,10 +31,10 @@ defmodule StackLab.GuardrailRoundtrip.MixProject do
 
   defp deps do
     [
-      {:outer_brain_prompt_fabric, path: "../../../outer_brain/core/prompt_fabric"},
-      {:outer_brain_guardrail_engine, path: "../../../outer_brain/core/guardrail_engine"},
-      {:app_kit_prompt_surface, path: "../../../app_kit/core/prompt_surface"},
-      {:app_kit_guardrail_surface, path: "../../../app_kit/core/guardrail_surface"},
+      DependencySources.dep(:outer_brain_prompt_fabric, @dependency_sources_root),
+      DependencySources.dep(:outer_brain_guardrail_engine, @dependency_sources_root),
+      DependencySources.dep(:app_kit_prompt_surface, @dependency_sources_root),
+      DependencySources.dep(:app_kit_guardrail_surface, @dependency_sources_root),
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}

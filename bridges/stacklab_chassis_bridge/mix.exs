@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.ChassisBridge.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -19,11 +25,9 @@ defmodule StackLab.ChassisBridge.MixProject do
 
   defp deps do
     [
-      {:chassis_evolution_conformance,
-       path: "../../../chassis/proof/chassis_evolution_conformance"},
-      {:chassis_model_asset_conformance,
-       path: "../../../chassis/proof/chassis_model_asset_conformance"},
-      {:chassis_stacklab_bridge, path: "../../../chassis/proof/chassis_stacklab_bridge"},
+      DependencySources.dep(:chassis_evolution_conformance, @dependency_sources_root),
+      DependencySources.dep(:chassis_model_asset_conformance, @dependency_sources_root),
+      DependencySources.dep(:chassis_stacklab_bridge, @dependency_sources_root),
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}

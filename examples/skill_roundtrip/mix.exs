@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.SkillRoundtrip.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -25,12 +31,15 @@ defmodule StackLab.SkillRoundtrip.MixProject do
 
   defp deps do
     [
-      {:jido_integration_v2_tool_contracts,
-       path: "../../../jido_integration/core/tool_contracts", override: true},
-      {:jido_integration_connector_admission_engine,
-       path: "../../../jido_integration/core/connector_admission_engine"},
-      {:citadel_governance, path: "../../../citadel/core/citadel_governance"},
-      {:app_kit_skill_surface, path: "../../../app_kit/core/skill_surface"},
+      DependencySources.dep(:jido_integration_v2_tool_contracts, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(
+        :jido_integration_connector_admission_engine,
+        @dependency_sources_root
+      ),
+      DependencySources.dep(:citadel_governance, @dependency_sources_root),
+      DependencySources.dep(:app_kit_skill_surface, @dependency_sources_root),
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}

@@ -1,5 +1,11 @@
+unless Code.ensure_loaded?(DependencySources) do
+  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
+end
+
 defmodule StackLab.HiveRoundtrip.MixProject do
   use Mix.Project
+
+  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -25,11 +31,11 @@ defmodule StackLab.HiveRoundtrip.MixProject do
 
   defp deps do
     [
-      {:jido_hive_agent_coordinator, path: "../../../jido_hive/core/agent_coordinator"},
-      {:jido_hive_inter_agent_messaging, path: "../../../jido_hive/core/inter_agent_messaging"},
-      {:jido_hive_shared_memory_facade, path: "../../../jido_hive/core/shared_memory_facade"},
-      {:jido_hive_coordination_patterns, path: "../../../jido_hive/core/coordination_patterns"},
-      {:app_kit_hive_surface, path: "../../../app_kit/core/hive_surface"},
+      DependencySources.dep(:jido_hive_agent_coordinator, @dependency_sources_root),
+      DependencySources.dep(:jido_hive_inter_agent_messaging, @dependency_sources_root),
+      DependencySources.dep(:jido_hive_shared_memory_facade, @dependency_sources_root),
+      DependencySources.dep(:jido_hive_coordination_patterns, @dependency_sources_root),
+      DependencySources.dep(:app_kit_hive_surface, @dependency_sources_root),
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
