@@ -181,7 +181,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
              {:missing_owner_evidence, ["P5P-014"]}
 
     assert result.negative_failures.provider_local_mock_selector ==
-             {:provider_local_mock_selector_forbidden, "GEMINI_CLI_PATH"}
+             {:provider_local_mock_selector_forbidden, "ANTIGRAVITY_CLI_PATH"}
 
     assert result.negative_failures.invalid_egress_policy ==
              {:invalid_egress_policy, :allow_real_provider_fallback}

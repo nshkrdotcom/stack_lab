@@ -770,8 +770,6 @@ defmodule StackLab.CitadelSpineHarness.Phase5BeamHotPathLoad do
     :exit, _reason -> :ok
   end
 
-  defp stop_process(_shared_supervisor_name), do: :ok
-
   defp monotonic_ms, do: System.monotonic_time(:millisecond)
   defp unique_name(prefix), do: BoundedNames.global_name(prefix)
 end

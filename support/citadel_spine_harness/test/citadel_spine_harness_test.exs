@@ -123,7 +123,12 @@ defmodule StackLab.CitadelSpineHarnessTest do
              )
 
     assert result.case == :duplicate_publication_suppressed_after_restart
-    assert String.contains?(result.durable.initial_publication_id, "publication-")
+
+    assert String.starts_with?(
+             result.durable.initial_publication_id,
+             "publication://outer-brain/"
+           )
+
     assert result.durable.replayed_publication_id == result.durable.initial_publication_id
     assert result.after_restart.publication_ids == [result.durable.initial_publication_id]
     assert result.after_restart.publication_bodies == ["Done"]

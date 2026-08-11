@@ -392,7 +392,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacket do
     roots = StackLab.CitadelSpineHarness.repo_roots()
 
     canonical_contracts = Path.join(roots.jido_integration, "core/contracts")
-    citadel_welded_slice = Path.join(roots.citadel, "core/jido_integration_contracts")
+    dependency_resolver = Path.join(roots.citadel, "lib/citadel/build/dependency_resolver.ex")
 
     retired_contract_home = Enum.join(["jido", "integration", "v2", "contracts"], "_")
 
@@ -415,9 +415,9 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacket do
     %{
       canonical_producer_ref: "jido_integration/core/contracts",
       canonical_producer_exists?: File.dir?(canonical_contracts),
-      citadel_local_slice_disposition: :welded_internal_slice,
-      citadel_welded_slice_exists?: File.dir?(citadel_welded_slice),
+      citadel_consumer_disposition: :declared_external_dependency,
       dependency_resolver_ref: "citadel/lib/citadel/build/dependency_resolver.ex",
+      dependency_resolver_exists?: File.regular?(dependency_resolver),
       retired_contracts_publishable_paths: retired_paths,
       independent_consumer_contract_fork?: false
     }

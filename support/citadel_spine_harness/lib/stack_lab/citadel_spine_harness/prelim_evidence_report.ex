@@ -355,7 +355,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimEvidenceReport do
       provider_sdk_fixture_scope_refs: [
         "fixture-scope://claude_agent_sdk/package-local-only",
         "fixture-scope://codex_sdk/package-local-only",
-        "fixture-scope://gemini_cli_sdk/package-local-only",
+        "fixture-scope://antigravity_cli_sdk/package-local-only",
         "fixture-scope://amp_sdk/package-local-only",
         "fixture-scope://agent_session_manager/common-asm-path"
       ],

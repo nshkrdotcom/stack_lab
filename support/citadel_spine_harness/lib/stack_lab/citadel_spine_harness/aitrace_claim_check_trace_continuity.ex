@@ -31,6 +31,7 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
 
   alias StackLab.CitadelSpineHarness.{
     AppKitOperationalSurface,
+    CompiledMigrations,
     PostgresContainer,
     RuntimeResourceOwner,
     Timing
@@ -626,7 +627,9 @@ defmodule StackLab.CitadelSpineHarness.AITraceClaimCheckTraceContinuity do
   defp migrate_store_postgres! do
     {:ok, _, _} =
       Migrator.with_repo(Repo, fn repo ->
-        Migrator.run(repo, StorePostgres.migrations_path(), :up, all: true, log: false)
+        StorePostgres.migrations_path()
+        |> CompiledMigrations.for_path()
+        |> then(&Migrator.run(repo, &1, :up, all: true, log: false))
       end)
 
     :ok

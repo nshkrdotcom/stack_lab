@@ -64,7 +64,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   @forbidden_provider_local_selectors [
     "ClaudeAgentSDK.Mock",
     "ClaudeAgentSDK.Mock.Process",
-    "GEMINI_CLI_PATH",
+    "ANTIGRAVITY_CLI_PATH",
     "AMP_CLI_PATH",
     "Codex fixture scripts"
   ]
@@ -590,7 +590,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
 
     forbidden_selector =
       profile
-      |> Map.put(:forbidden_selectors, ["GEMINI_CLI_PATH"])
+      |> Map.put(:forbidden_selectors, ["ANTIGRAVITY_CLI_PATH"])
       |> validate_service_profile()
       |> rejected()
 

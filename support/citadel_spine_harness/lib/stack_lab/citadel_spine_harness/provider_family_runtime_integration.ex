@@ -15,7 +15,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
   @forbidden_provider_local_selectors [
     "ClaudeAgentSDK.Mock",
     "ClaudeAgentSDK.Mock.Process",
-    "GEMINI_CLI_PATH",
+    "ANTIGRAVITY_CLI_PATH",
     "AMP_CLI_PATH",
     "Codex fixture scripts"
   ]
@@ -477,7 +477,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
   defp provider_sdk_fixture_inventory do
     with :ok <- claude_mock_quarantined?(),
          :ok <- codex_fixture_scope?(),
-         :ok <- gemini_fixture_scope?(),
+         :ok <- antigravity_fixture_scope?(),
          :ok <- amp_fixture_scope?(),
          {:ok, llama_cpp_sdk} <- llama_cpp_sdk_role() do
       {:ok,
@@ -496,13 +496,12 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
            scope: :package_fixture_only,
            inspected_paths: ["codex_sdk/docs/fixtures.md", "codex_sdk/integration/fixtures"]
          },
-         gemini_cli_sdk: %{
+         antigravity_cli_sdk: %{
            scope: :package_fixture_only,
            inspected_paths: [
-             "gemini_cli_sdk/guides/testing.md",
-             "gemini_cli_sdk/test/gemini_cli_sdk/cli_test.exs",
-             "gemini_cli_sdk/test/gemini_cli_sdk/forbidden_tokens_test.exs",
-             "gemini_cli_sdk/test/support/test_support.ex"
+             "antigravity_cli_sdk/guides/testing.md",
+             "antigravity_cli_sdk/guides/provider-behavior-manifest.md",
+             "antigravity_cli_sdk/test/antigravity_cli_sdk/cli_test.exs"
            ]
          },
          amp_sdk: %{
@@ -550,27 +549,22 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
     end
   end
 
-  defp gemini_fixture_scope? do
-    testing_doc = read_repo_file!("gemini_cli_sdk", "guides/testing.md")
-    cli_test = read_repo_file!("gemini_cli_sdk", "test/gemini_cli_sdk/cli_test.exs")
+  defp antigravity_fixture_scope? do
+    testing_doc = read_repo_file!("antigravity_cli_sdk", "guides/testing.md")
 
-    forbidden_tokens_test =
-      read_repo_file!("gemini_cli_sdk", "test/gemini_cli_sdk/forbidden_tokens_test.exs")
+    behavior_manifest =
+      read_repo_file!("antigravity_cli_sdk", "guides/provider-behavior-manifest.md")
 
-    test_support = read_repo_file!("gemini_cli_sdk", "test/support/test_support.ex")
+    cli_test =
+      read_repo_file!("antigravity_cli_sdk", "test/antigravity_cli_sdk/cli_test.exs")
 
-    if String.contains?(testing_doc, "cli_command") and
-         String.contains?(testing_doc, "JSONL Fixtures") and
-         String.contains?(cli_test, "remote execution surface") and
-         String.contains?(forbidden_tokens_test, "@sdk_env_var_tokens") and
-         String.contains?(
-           forbidden_tokens_test,
-           "SDK-owned code and docs do not expose SDK env-var controls"
-         ) and
-         String.contains?(test_support, "does not read test-control environment") do
+    if String.contains?(testing_doc, "Fake executable tests") and
+         String.contains?(behavior_manifest, "checked-in offline fixtures") and
+         String.contains?(cli_test, "executable_fixture!") and
+         String.contains?(cli_test, "credentials out of argv and in env") do
       :ok
     else
-      {:error, :gemini_fixture_scope_not_package_local}
+      {:error, :antigravity_fixture_scope_not_package_local}
     end
   end
 
@@ -721,9 +715,9 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegration do
       {:codex, "phase6://scenario-606/cli/codex",
        ~s({"type":"response.output_text.delta","delta":"codex phase6","session_id":"codex-phase6"}\n),
        "codex phase6"},
-      {:gemini, "phase6://scenario-606/cli/gemini",
-       ~s({"type":"message","role":"assistant","delta":true,"content":"gemini phase6","session_id":"gemini-phase6"}\n),
-       "gemini phase6"},
+      {:antigravity, "phase6://scenario-606/cli/antigravity",
+       ~s({"event":"step_update","step_update":{"conversation_id":"antigravity-phase6","step_index":2,"state":"ACTIVE","step_type":"agent_response","text_delta":"antigravity phase6"}}\n),
+       "antigravity phase6"},
       {:amp, "phase6://scenario-606/cli/amp",
        ~s({"type":"message_streamed","delta":"amp phase6","session_id":"amp-phase6"}\n),
        "amp phase6"}

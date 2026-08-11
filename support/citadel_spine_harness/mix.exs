@@ -56,6 +56,10 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
     [
       {:stack_lab_lab_core, path: "../lab_core"},
       {:ecto_sql, "~> 3.13"},
+      # The AppKit/Mezzanine bridge starts Jido Integration transitively. Start
+      # its configured persistence owner first so auth/control-plane cold boot
+      # never depends on a later test helper or on dependency compile env.
+      DependencySources.dep(:jido_integration_v2_store_local, @dependency_sources_root),
       DependencySources.dep(:citadel_authority_contract, @dependency_sources_root),
       DependencySources.dep(:citadel_governance, @dependency_sources_root),
       DependencySources.dep(:citadel_kernel, @dependency_sources_root),
@@ -166,7 +170,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       DependencySources.dep(:jido_integration_v2_control_plane, @dependency_sources_root,
         runtime: false
       ),
-      DependencySources.dep(:jido_integration_v2, @dependency_sources_root),
+      DependencySources.dep(:jido_integration_v2, @dependency_sources_root, runtime: false),
       DependencySources.dep(:jido_integration_v2_brain_ingress, @dependency_sources_root),
       DependencySources.dep(:jido_integration_v2_runtime_router, @dependency_sources_root,
         runtime: false
@@ -174,7 +178,6 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       DependencySources.dep(:jido_integration_v2_store_postgres, @dependency_sources_root,
         runtime: false
       ),
-      DependencySources.dep(:jido_integration_v2_store_local, @dependency_sources_root),
       DependencySources.dep(:ground_plane_contracts, @dependency_sources_root,
         runtime: false,
         override: true

@@ -89,8 +89,11 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacketTest do
     refute result.brain_ingress_source_scan.current_workflow_bound_old_shape_intake?
 
     assert result.contract_home_evidence.canonical_producer_exists?
-    assert result.contract_home_evidence.citadel_local_slice_disposition == :welded_internal_slice
-    assert result.contract_home_evidence.citadel_welded_slice_exists?
+
+    assert result.contract_home_evidence.citadel_consumer_disposition ==
+             :declared_external_dependency
+
+    assert result.contract_home_evidence.dependency_resolver_exists?
 
     assert result.contract_home_evidence.retired_contracts_publishable_paths == []
 

@@ -122,16 +122,62 @@ defmodule StackLab.CitadelSpineHarness.ExecutionPlaneNodeBoundaryTest do
   defmodule RemoteRuntimeClient do
     @behaviour ExecutionPlane.Runtime.Client
 
-    def describe(opts), do: LocalClient.describe(opts)
-    def admit(request, opts), do: LocalClient.admit(request, opts)
+    alias ExecutionPlane.ActiveExecution
+    alias ExecutionPlane.ExecutionRef
+    alias ExecutionPlane.Runtime.{Error, Status}
 
-    def execute(request, opts) do
-      send(Keyword.fetch!(opts, :test_pid), {:remote_runtime_client_execute, request})
-      LocalClient.execute(request, opts)
+    @impl true
+    def start(request, opts) do
+      attestation_class = List.first(request.acceptable_attestation.classes)
+      send(Keyword.fetch!(opts, :test_pid), {:remote_runtime_client_start, request})
+
+      if attestation_class == Keyword.fetch!(opts, :succeed_on) do
+        {:ok,
+         ActiveExecution.new!(
+           execution_ref: "execution://stack-lab/#{attestation_class}",
+           session_ref: "session://stack-lab/node-boundary",
+           admission_decision_ref: "admission://stack-lab/#{attestation_class}",
+           node_id: "remote-runtime-client-stub",
+           lane_id: request.lane_id,
+           state: "running",
+           started_at: DateTime.utc_now(),
+           fence: 1
+         )}
+      else
+        {:error,
+         Error.new!(
+           category: "rejected",
+           message: "no target for acceptable attestation",
+           retryable: false,
+           ambiguous: false
+         )}
+      end
     end
 
-    def stream(request, opts), do: LocalClient.stream(request, opts)
-    def cancel(execution_ref, opts), do: LocalClient.cancel(execution_ref, opts)
+    @impl true
+    def subscribe(%ExecutionRef{}, _subscriber, _opts), do: :ok
+
+    @impl true
+    def send_input(%ExecutionRef{}, _input, _opts), do: :ok
+
+    @impl true
+    def end_input(%ExecutionRef{}, _opts), do: :ok
+
+    @impl true
+    def status(%ExecutionRef{} = execution_ref, _opts) do
+      {:ok,
+       Status.new!(
+         execution_ref: execution_ref,
+         state: "completed",
+         sequence: 1,
+         input_open: false,
+         output_open: false,
+         receipt_ref: "receipt://stack-lab/node-boundary"
+       )}
+    end
+
+    @impl true
+    def cancel(%ExecutionRef{}, _opts), do: :ok
   end
 
   setup do
@@ -199,30 +245,26 @@ defmodule StackLab.CitadelSpineHarness.ExecutionPlaneNodeBoundaryTest do
   end
 
   test "proves JidoIntegration owns fallback and a remote runtime-client stub can replace local client" do
-    server = start_node!()
-    register_common!(server)
-    register_target!(server, "local-process", "process", ["local-erlexec-weak"])
-    :ok = ExecutionPlane.Node.complete_registration(server: server)
-
-    assert {:ok, result, attempts} =
-             ExecutionPlaneBoundary.execute_fallback_ladder(
+    assert {:ok, active, attempts} =
+             ExecutionPlaneBoundary.start_fallback_ladder(
                process_projection(["spiffe://prod/microvm-strict@v1", "local-erlexec-weak"]),
                %{"command" => "echo ok"},
                RemoteRuntimeClient,
-               runtime_client_opts: [server: server, test_pid: self()]
+               runtime_client_opts: [test_pid: self(), succeed_on: "local-erlexec-weak"]
              )
 
-    assert result.status == "succeeded"
+    assert active.state == "running"
+    assert active.node_id == "remote-runtime-client-stub"
 
     assert Enum.map(attempts, &{&1.rung, &1.attestation_class, &1.status}) == [
              {1, "spiffe://prod/microvm-strict@v1", :rejected},
              {2, "local-erlexec-weak", :succeeded}
            ]
 
-    assert_receive {:remote_runtime_client_execute, first_request}
+    assert_receive {:remote_runtime_client_start, first_request}
     assert first_request.acceptable_attestation.classes == ["spiffe://prod/microvm-strict@v1"]
 
-    assert_receive {:remote_runtime_client_execute, second_request}
+    assert_receive {:remote_runtime_client_start, second_request}
     assert second_request.acceptable_attestation.classes == ["local-erlexec-weak"]
   end
 

@@ -22,7 +22,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegrationTest do
 
     assert scenario.provider_sdk_repos == [
              :codex_sdk,
-             :gemini_cli_sdk,
+             :antigravity_cli_sdk,
              :claude_agent_sdk,
              :amp_sdk,
              :notion_sdk,
@@ -66,7 +66,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegrationTest do
     assert result.cli_family.asm_policy.selection_surface == "provider_registry"
 
     assert Enum.map(result.cli_family.providers, & &1.provider) ==
-             [:claude, :codex, :gemini, :amp]
+             [:claude, :codex, :antigravity, :amp]
 
     assert Enum.all?(result.cli_family.providers, fn provider_evidence ->
              provider_evidence.public_call == "ASM.query/3" and
@@ -93,7 +93,7 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegrationTest do
     assert result.scenario_606_boundary.forbidden_selectors == [
              "ClaudeAgentSDK.Mock",
              "ClaudeAgentSDK.Mock.Process",
-             "GEMINI_CLI_PATH",
+             "ANTIGRAVITY_CLI_PATH",
              "AMP_CLI_PATH",
              "Codex fixture scripts"
            ]
@@ -101,8 +101,8 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegrationTest do
     assert result.scenario_606_boundary.negative_failures["ClaudeAgentSDK.Mock"] ==
              {:provider_local_mock_selector_forbidden, "ClaudeAgentSDK.Mock"}
 
-    assert result.scenario_606_boundary.negative_failures["GEMINI_CLI_PATH"] ==
-             {:provider_local_mock_selector_forbidden, "GEMINI_CLI_PATH"}
+    assert result.scenario_606_boundary.negative_failures["ANTIGRAVITY_CLI_PATH"] ==
+             {:provider_local_mock_selector_forbidden, "ANTIGRAVITY_CLI_PATH"}
 
     assert result.rest_graphql.rest.owner_repo == "pristine"
     assert result.rest_graphql.rest.consumer_sdks == [:notion_sdk, :github_ex]
@@ -164,7 +164,10 @@ defmodule StackLab.CitadelSpineHarness.ProviderFamilyRuntimeIntegrationTest do
              false
 
     assert result.provider_sdk_fixture_inventory.codex_sdk.scope == :package_fixture_only
-    assert result.provider_sdk_fixture_inventory.gemini_cli_sdk.scope == :package_fixture_only
+
+    assert result.provider_sdk_fixture_inventory.antigravity_cli_sdk.scope ==
+             :package_fixture_only
+
     assert result.provider_sdk_fixture_inventory.amp_sdk.scope == :package_fixture_only
     assert result.provider_sdk_fixture_inventory.llama_cpp_sdk.scope == :real_backend_consumer
 

@@ -314,7 +314,7 @@ defmodule StackLab.CitadelSpineHarness do
       ],
       provider_sdk_repos: [
         :codex_sdk,
-        :gemini_cli_sdk,
+        :antigravity_cli_sdk,
         :claude_agent_sdk,
         :amp_sdk,
         :notion_sdk,

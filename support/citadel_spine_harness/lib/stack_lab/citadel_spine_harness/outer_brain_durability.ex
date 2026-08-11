@@ -12,6 +12,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
   alias OuterBrain.Prompting.SemanticTurnArtifacts
   alias OuterBrain.RestartAuthority.RestartScan
   alias OuterBrain.Runtime.{LeaseRegistry, SessionOwner}
+  alias StackLab.CitadelSpineHarness.CompiledMigrations
   alias StackLab.CitadelSpineHarness.PostgresContainer
   alias StackLab.CitadelSpineHarness.RuntimeResourceOwner
 
@@ -255,7 +256,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
 
   defp ensure_schema! do
     migrations_path = Application.app_dir(:outer_brain_persistence, "priv/repo/migrations")
-    Ecto.Migrator.run(Repo, migrations_path, :up, all: true)
+    Ecto.Migrator.run(Repo, CompiledMigrations.for_path(migrations_path), :up, all: true)
   end
 
   defp journal_entry_record(case_name, session_id, causal_unit_id) do
@@ -331,6 +332,11 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
         producing_operation_ref: "operation://stack-lab/#{causal_unit_id}",
         system_actor_ref: "actor://stack-lab/outer-brain-durability",
         source_artifacts: [
+          %{
+            artifact_ref: "artifact://stack-lab/#{causal_unit_id}/system",
+            content_digest: "sha256:" <> String.duplicate("0", 64),
+            role: "system_instruction"
+          },
           %{
             artifact_ref: "artifact://stack-lab/#{causal_unit_id}/input",
             content_digest: "sha256:" <> String.duplicate("1", 64),
