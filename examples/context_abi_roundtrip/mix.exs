@@ -40,6 +40,7 @@ defmodule StackLab.ContextABIRoundtrip.MixProject do
         override: true
       ),
       DependencySources.dep(:mezzanine_ai_execution_engine, @dependency_sources_root),
+      DependencySources.dep(:ground_plane_contracts, @dependency_sources_root, override: true),
       DependencySources.dep(:jido_model_invocation_contracts, @dependency_sources_root,
         override: true
       ),

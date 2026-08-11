@@ -14,7 +14,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacket do
   alias Citadel.StalenessRequirements
   alias Citadel.TopologyIntent
   alias Jido.Integration.V2.SubmissionAcceptance
-  alias Mezzanine.WorkflowRuntime.OperatorSignalControl
+  alias Mezzanine.WorkflowRuntime.ControlSignalProtocol
   alias Mezzanine.Workflows.DecisionReview
 
   @scenario 209
@@ -57,8 +57,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacket do
     envelope = ExecutionIntentAdapter.project!(request, entry)
 
     {:ok, ordered_signal_state} =
-      OperatorSignalControl.apply_ordered_signal(
-        OperatorSignalControl.initial_ordering_state(),
+      ControlSignalProtocol.reduce_signal(
+        ControlSignalProtocol.initial_workflow_state(),
         signal_attrs()
       )
 
@@ -152,7 +152,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacket do
   end
 
   defp accepted_signal_versions do
-    OperatorSignalControl.signal_registry()
+    ControlSignalProtocol.registry()
     |> Enum.map(& &1.signal_version)
     |> Enum.sort()
   end
@@ -311,7 +311,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacket do
       |> Map.delete(:signal_name)
       |> Map.delete(:signal_version)
 
-    state = OperatorSignalControl.initial_ordering_state()
+    state = ControlSignalProtocol.initial_workflow_state()
     {:noreply, next_state} = DecisionReview.handle_signal("operator.cancel", payload, state)
 
     %{
@@ -325,8 +325,8 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacket do
 
   defp unregistered_or_stale_signal_version do
     {:error, reason} =
-      OperatorSignalControl.apply_ordered_signal(
-        OperatorSignalControl.initial_ordering_state(),
+      ControlSignalProtocol.reduce_signal(
+        ControlSignalProtocol.initial_workflow_state(),
         %{signal_attrs() | signal_version: "operator-cancel.v0"}
       )
 

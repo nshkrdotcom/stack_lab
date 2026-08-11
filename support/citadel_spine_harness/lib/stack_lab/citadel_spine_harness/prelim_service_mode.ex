@@ -18,8 +18,8 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
   }
 
   alias Mezzanine.WorkflowRuntime.{
+    DurableOrchestrationDecision,
     ExecutionLifecycleWorkflow,
-    FinalTemporalCutover,
     TemporalSupervisor
   }
 
@@ -261,7 +261,7 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
     {:ok, scenario_201} =
       TemporalPostgresProjectionDrift.run_case(:temporal_postgres_projection_drift)
 
-    cutover = FinalTemporalCutover.manifest()
+    retained_oban_roles = DurableOrchestrationDecision.retained_oban_roles()
     workflow = ExecutionLifecycleWorkflow.contract()
     hazmat = hazmat_worker_spec!()
 
@@ -277,15 +277,14 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceMode do
          temporal_boundary: Mezzanine.WorkflowRuntime
        },
        oban_cutover: %{
-         retained_queues: cutover.retained_oban_queues,
-         retained_workers: cutover.retained_oban_workers,
-         retired_saga_workers: Enum.map(cutover.retired_oban_saga_workers, & &1.worker),
-         active_worker_modules: FinalTemporalCutover.active_oban_worker_modules(@mezzanine_root),
-         invalid_queue_configs: FinalTemporalCutover.invalid_oban_queue_configs(@mezzanine_root),
-         invalid_saga_references:
-           FinalTemporalCutover.invalid_oban_saga_references(@mezzanine_root),
-         temporalex_boundary_violations:
-           FinalTemporalCutover.temporalex_boundary_violations(@mezzanine_root)
+         retained_queues: Enum.map(retained_oban_roles, & &1.queue),
+         retained_workers: Enum.map(retained_oban_roles, & &1.worker),
+         retired_saga_workers:
+           Enum.map(DurableOrchestrationDecision.retired_oban_saga_workers(), & &1.worker),
+         oban_scope: DurableOrchestrationDecision.oban_scope(),
+         cutover_classifications: DurableOrchestrationDecision.cutover_oban_classifications(),
+         source_boundary: DurableOrchestrationDecision.source_boundary(),
+         registry_complete?: DurableOrchestrationDecision.complete?()
        },
        compact_temporal: scenario_201.positive_path.compact_temporal_lookup,
        projection_drift_negatives: %{

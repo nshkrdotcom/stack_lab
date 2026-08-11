@@ -34,6 +34,10 @@ defmodule StackLab.TRINITYPlatformRoundtrip.MixProject do
     [
       DependencySources.dep(:trinity_framework, @dependency_sources_root),
       DependencySources.dep(:trinity_contracts, @dependency_sources_root, override: true),
+      DependencySources.dep(:crucible_policy, @dependency_sources_root, override: true),
+      DependencySources.dep(:crucible_signal, @dependency_sources_root, override: true),
+      DependencySources.dep(:crucible_signal_trace, @dependency_sources_root, override: true),
+      DependencySources.dep(:crucible_tap, @dependency_sources_root, override: true),
       DependencySources.dep(:app_kit_coordination_surface, @dependency_sources_root),
       {:stack_lab_coordination_fabric_scanner, path: "../../support/coordination_fabric_scanner"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

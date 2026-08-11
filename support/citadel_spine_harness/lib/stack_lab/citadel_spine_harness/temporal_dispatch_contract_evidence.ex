@@ -14,9 +14,6 @@ defmodule StackLab.CitadelSpineHarness.TemporalDispatchContractEvidence do
       send(self(), {:stack_lab_temporal_outcome_persisted, original_row, outcome_row})
       :ok
     end
-
-    @impl true
-    def record_signal_outcome(_original_row, _outcome_row), do: {:error, :not_used}
   end
 
   defmodule FailingOutboxStore do
@@ -25,9 +22,6 @@ defmodule StackLab.CitadelSpineHarness.TemporalDispatchContractEvidence do
 
     @impl true
     def record_start_outcome(_original_row, _outcome_row), do: {:error, :store_down}
-
-    @impl true
-    def record_signal_outcome(_original_row, _outcome_row), do: {:error, :not_used}
   end
 
   @spec run_case(:restart_replay_owner_evidence) :: {:ok, map()}

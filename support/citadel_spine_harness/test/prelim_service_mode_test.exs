@@ -62,14 +62,13 @@ defmodule StackLab.CitadelSpineHarness.PrelimServiceModeTest do
     assert :submit_jido_lower_run in result.temporal.workflow.activity_sequence
 
     assert result.temporal.oban_cutover.retained_queues == [
-             :claim_check_gc,
-             :workflow_signal_outbox,
-             :workflow_start_outbox
+             :workflow_start_outbox,
+             :claim_check_gc
            ]
 
-    assert result.temporal.oban_cutover.invalid_queue_configs == []
-    assert result.temporal.oban_cutover.invalid_saga_references == []
-    assert result.temporal.oban_cutover.temporalex_boundary_violations == []
+    assert result.temporal.oban_cutover.cutover_classifications == []
+    assert result.temporal.oban_cutover.registry_complete?
+    assert result.temporal.oban_cutover.source_boundary.temporalex_allowed_repos == [:mezzanine]
     refute result.temporal.projection_drift_negatives.workflow_start_outbox_bypass.accepted?
 
     assert result.workload.work_class.name == "service_operations"

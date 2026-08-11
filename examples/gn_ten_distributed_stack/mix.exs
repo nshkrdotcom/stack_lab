@@ -38,7 +38,26 @@ defmodule StackLab.GnTenDistributedStack.MixProject do
        path: "../nshkr_router_fabric_roundtrip", runtime: false},
       {:stack_lab_persistence_mode_roundtrip,
        path: "../persistence_mode_roundtrip", runtime: false},
-      DependencySources.dep(:ground_plane_contracts, @dependency_sources_root, runtime: false),
+      DependencySources.dep(:ground_plane_contracts, @dependency_sources_root,
+        override: true,
+        runtime: false
+      ),
+      DependencySources.dep(:crucible_policy, @dependency_sources_root,
+        override: true,
+        runtime: false
+      ),
+      DependencySources.dep(:crucible_signal, @dependency_sources_root,
+        override: true,
+        runtime: false
+      ),
+      DependencySources.dep(:crucible_signal_trace, @dependency_sources_root,
+        override: true,
+        runtime: false
+      ),
+      DependencySources.dep(:crucible_tap, @dependency_sources_root,
+        override: true,
+        runtime: false
+      ),
       DependencySources.dep(:app_kit_mezzanine_bridge, @dependency_sources_root, runtime: false),
       DependencySources.dep(:mezzanine_execution_engine, @dependency_sources_root,
         runtime: false

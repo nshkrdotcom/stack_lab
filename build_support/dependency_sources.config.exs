@@ -73,6 +73,41 @@ end
     citadel_kernel: dep.("citadel", "core/citadel_kernel", "~> 0.1.0"),
     citadel_trace_bridge: dep.("citadel", "bridges/trace_bridge", "~> 0.1.0"),
     cli_subprocess_core: root_dep.("cli_subprocess_core", "~> 0.4.0"),
+    crucible_policy: %{
+      path: Path.join(siblings_root, "North-Shore-AI/crucible_policy"),
+      github: %{repo: "North-Shore-AI/crucible_policy", branch: "main"},
+      hex: "~> 0.1.0",
+      default_order: [:path, :github, :hex],
+      publish_order: [:hex]
+    },
+    crucible_provider_contracts: %{
+      path: Path.join(siblings_root, "North-Shore-AI/crucible_provider_contracts"),
+      github: %{repo: "North-Shore-AI/crucible_provider_contracts", branch: "main"},
+      hex: "~> 0.1.0",
+      default_order: [:path, :github, :hex],
+      publish_order: [:hex]
+    },
+    crucible_signal: %{
+      path: Path.join(siblings_root, "North-Shore-AI/crucible_signal"),
+      github: %{repo: "North-Shore-AI/crucible_signal", branch: "main"},
+      hex: "~> 0.1.0",
+      default_order: [:path, :github, :hex],
+      publish_order: [:hex]
+    },
+    crucible_signal_trace: %{
+      path: Path.join(siblings_root, "North-Shore-AI/crucible_signal_trace"),
+      github: %{repo: "North-Shore-AI/crucible_signal_trace", branch: "main"},
+      hex: "~> 0.1.0",
+      default_order: [:path, :github, :hex],
+      publish_order: [:hex]
+    },
+    crucible_tap: %{
+      path: Path.join(siblings_root, "North-Shore-AI/crucible_tap"),
+      github: %{repo: "North-Shore-AI/crucible_tap", branch: "main"},
+      hex: "~> 0.1.0",
+      default_order: [:path, :github, :hex],
+      publish_order: [:hex]
+    },
     execution_plane: dep.("execution_plane", "core/execution_plane", "~> 0.2.0"),
     execution_plane_http: dep.("execution_plane", "protocols/execution_plane_http", "~> 0.1.0"),
     execution_plane_node: dep.("execution_plane", "runtimes/execution_plane_node", "~> 0.1.0"),

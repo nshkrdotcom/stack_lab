@@ -1,16 +1,15 @@
 defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
   @moduledoc false
 
-  alias Ecto.Adapters.SQL
-  alias OuterBrain.Contracts.{ReplyBodyBoundary, SemanticFailure}
+  alias OuterBrain.Contracts.SemanticFailure
 
   alias OuterBrain.Journal.Tables.{
     RecoveryTaskRecord,
-    ReplyPublicationRecord,
     SemanticJournalEntryRecord
   }
 
   alias OuterBrain.Persistence.{Repo, Store}
+  alias OuterBrain.Prompting.SemanticTurnArtifacts
   alias OuterBrain.RestartAuthority.RestartScan
   alias OuterBrain.Runtime.{LeaseRegistry, SessionOwner}
   alias StackLab.CitadelSpineHarness.PostgresContainer
@@ -70,7 +69,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
 
         try do
           persisted_lease = fetch_current_lease!(session_id)
-          replay_record = replay_after_restart!(case_name, causal_unit_id)
+          replay_record = replay_after_restart!(case_name, session_id, causal_unit_id)
           persisted_entries = Store.journal_entries(@tenant_id, session_id, repo: Repo)
           persisted_failures = Store.semantic_failure_entries(@tenant_id, session_id, repo: Repo)
 
@@ -120,7 +119,7 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
     end)
   end
 
-  defp persist_case_record!(:pending_recovery_after_restart, session_id, causal_unit_id) do
+  defp persist_case_record!(:pending_recovery_after_restart, session_id, _causal_unit_id) do
     {:ok, recovery_task} =
       Store.record_recovery_task(
         recovery_task_record(session_id, :ambiguous_submission),
@@ -128,27 +127,15 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
         tenant_id: @tenant_id
       )
 
-    {:ok, publication} =
-      Store.record_reply_publication(
-        reply_publication_record(causal_unit_id, :provisional, "Working"),
-        repo: Repo,
-        tenant_id: @tenant_id
-      )
-
     %{
       recovery_task_id: recovery_task.task_id,
-      publication_id: publication.publication_id,
-      publication_phase: publication.phase
+      publication_id: nil,
+      publication_phase: nil
     }
   end
 
-  defp persist_case_record!(:final_reply_after_restart, _session_id, causal_unit_id) do
-    {:ok, publication} =
-      Store.record_reply_publication(
-        reply_publication_record(causal_unit_id, :final, "Done"),
-        repo: Repo,
-        tenant_id: @tenant_id
-      )
+  defp persist_case_record!(:final_reply_after_restart, session_id, causal_unit_id) do
+    publication = publish_reply!(session_id, causal_unit_id, "Done")
 
     %{
       recovery_task_id: nil,
@@ -178,15 +165,10 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
 
   defp persist_case_record!(
          :duplicate_publication_suppressed_after_restart,
-         _session_id,
+         session_id,
          causal_unit_id
        ) do
-    {:ok, publication} =
-      Store.record_reply_publication(
-        reply_publication_record(causal_unit_id, :final, "Done"),
-        repo: Repo,
-        tenant_id: @tenant_id
-      )
+    publication = publish_reply!(session_id, causal_unit_id, "Done")
 
     %{
       initial_publication_id: publication.publication_id,
@@ -194,23 +176,17 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
     }
   end
 
-  defp replay_after_restart!(:duplicate_publication_suppressed_after_restart, causal_unit_id) do
-    {:ok, publication} =
-      Store.record_reply_publication(
-        reply_publication_record(
-          causal_unit_id,
-          :final,
-          "Done",
-          publication_id: "publication-replayed-#{causal_unit_id}-final"
-        ),
-        repo: Repo,
-        tenant_id: @tenant_id
-      )
+  defp replay_after_restart!(
+         :duplicate_publication_suppressed_after_restart,
+         session_id,
+         causal_unit_id
+       ) do
+    publication = publish_reply!(session_id, causal_unit_id, "Done")
 
     %{replayed_publication_id: publication.publication_id}
   end
 
-  defp replay_after_restart!(_case_name, _causal_unit_id), do: %{}
+  defp replay_after_restart!(_case_name, _session_id, _causal_unit_id), do: %{}
 
   defp with_store(case_name, fun) when is_function(fun, 1) do
     RuntimeResourceOwner.transaction(fn ->
@@ -278,9 +254,8 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
   end
 
   defp ensure_schema! do
-    Enum.each(schema_statements(), fn statement ->
-      SQL.query!(Repo, statement, [])
-    end)
+    migrations_path = Application.app_dir(:outer_brain_persistence, "priv/repo/migrations")
+    Ecto.Migrator.run(Repo, migrations_path, :up, all: true)
   end
 
   defp journal_entry_record(case_name, session_id, causal_unit_id) do
@@ -309,23 +284,65 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
     task
   end
 
-  defp reply_publication_record(causal_unit_id, phase, body, opts \\ []) do
-    dedupe_key = "#{causal_unit_id}:#{phase}"
-    {:ok, reply_body} = ReplyBodyBoundary.build(causal_unit_id, phase, dedupe_key, body)
+  defp publish_reply!(session_id, causal_unit_id, body) do
+    prompt = prompt_context!(session_id, causal_unit_id)
 
-    {:ok, publication} =
-      ReplyPublicationRecord.new(%{
-        publication_id:
-          Keyword.get(opts, :publication_id, "publication-#{causal_unit_id}-#{phase}"),
-        causal_unit_id: causal_unit_id,
-        phase: phase,
-        state: :published,
-        dedupe_key: dedupe_key,
-        body: reply_body.preview,
-        body_ref: reply_body.ref
+    {:ok, ^prompt} = Store.record_prompt_context(prompt, repo: Repo, tenant_id: @tenant_id)
+
+    {:ok, continuation} =
+      SemanticTurnArtifacts.prepare_reply(prompt, %{
+        attempt_ref: "attempt://stack-lab/#{causal_unit_id}",
+        assistant_reply: body,
+        dedupe_key: "#{causal_unit_id}:final",
+        published_at: DateTime.from_unix!(1_800_002_006),
+        allowed_reader_refs: ["reader://stack-lab"],
+        allowed_operation_refs: ["operation://stack-lab/read"]
       })
 
-    publication
+    {:ok, persisted} =
+      Store.publish_reply_continuation(continuation, repo: Repo, tenant_id: @tenant_id)
+
+    persisted.publication
+  end
+
+  defp prompt_context!(session_id, causal_unit_id) do
+    {:ok, prompt} =
+      SemanticTurnArtifacts.prepare_prompt(%{
+        tenant_ref: @tenant_id,
+        installation_ref: "installation://stack-lab/outer-brain-durability",
+        workspace_ref: "workspace://stack-lab/outer-brain-durability",
+        project_ref: "project://stack-lab/outer-brain-durability",
+        environment_ref: "environment://stack-lab/test",
+        authority_packet_ref: "authority-packet://stack-lab/#{causal_unit_id}",
+        permission_decision_ref: "decision://stack-lab/#{causal_unit_id}",
+        idempotency_key: "idempotency://stack-lab/#{causal_unit_id}",
+        trace_id: "trace://stack-lab/#{causal_unit_id}",
+        correlation_id: "correlation://stack-lab/#{causal_unit_id}",
+        release_manifest_ref: "release://stack-lab/outer-brain-durability-v1",
+        input_claim_check_ref: "claim-check://stack-lab/#{causal_unit_id}/input",
+        output_claim_check_ref: "claim-check://stack-lab/#{causal_unit_id}/output",
+        redaction_policy_ref: "redaction-policy://stack-lab/outer-brain-durability-v1",
+        normalizer_version: "outer-brain-normalizer-v1",
+        run_ref: session_id,
+        turn_ref: causal_unit_id,
+        model_profile_ref: "model-profile://stack-lab/durability",
+        provider_ref: "provider://stack-lab/simulation",
+        model_ref: "model://stack-lab/simulation",
+        producing_operation_ref: "operation://stack-lab/#{causal_unit_id}",
+        system_actor_ref: "actor://stack-lab/outer-brain-durability",
+        source_artifacts: [
+          %{
+            artifact_ref: "artifact://stack-lab/#{causal_unit_id}/input",
+            content_digest: "sha256:" <> String.duplicate("1", 64),
+            role: "user_input"
+          }
+        ],
+        memory_snapshot_refs: [],
+        allowed_reader_refs: ["reader://stack-lab"],
+        allowed_operation_refs: ["operation://stack-lab/read"]
+      })
+
+    prompt
   end
 
   defp semantic_failure(session_id, causal_unit_id) do
@@ -341,88 +358,5 @@ defmodule StackLab.CitadelSpineHarness.OuterBrainDurability do
       })
 
     failure
-  end
-
-  defp schema_statements do
-    [
-      """
-      CREATE TABLE IF NOT EXISTS semantic_session_leases (
-        row_id text PRIMARY KEY,
-        tenant_id text NOT NULL,
-        session_id text NOT NULL,
-        holder text NOT NULL,
-        lease_id text NOT NULL,
-        epoch bigint NOT NULL,
-        expires_at timestamptz NOT NULL,
-        inserted_at timestamptz NOT NULL,
-        updated_at timestamptz NOT NULL
-      )
-      """,
-      """
-      CREATE UNIQUE INDEX IF NOT EXISTS semantic_session_leases_tenant_session_id_index
-      ON semantic_session_leases (tenant_id, session_id)
-      """,
-      """
-      CREATE TABLE IF NOT EXISTS semantic_journal_entries (
-        entry_id text PRIMARY KEY,
-        tenant_id text NOT NULL,
-        session_id text NOT NULL,
-        causal_unit_id text NOT NULL,
-        entry_type text NOT NULL,
-        payload jsonb NOT NULL DEFAULT '{}'::jsonb,
-        recorded_at timestamptz NOT NULL,
-        inserted_at timestamptz NOT NULL
-      )
-      """,
-      """
-      CREATE INDEX IF NOT EXISTS semantic_journal_entries_tenant_session_recorded_at_index
-      ON semantic_journal_entries (tenant_id, session_id, recorded_at)
-      """,
-      """
-      CREATE INDEX IF NOT EXISTS semantic_journal_entries_tenant_causal_recorded_at_index
-      ON semantic_journal_entries (tenant_id, causal_unit_id, recorded_at)
-      """,
-      """
-      CREATE TABLE IF NOT EXISTS recovery_tasks (
-        task_id text PRIMARY KEY,
-        tenant_id text NOT NULL,
-        session_id text NOT NULL,
-        reason text NOT NULL,
-        status text NOT NULL,
-        inserted_at timestamptz NOT NULL,
-        updated_at timestamptz NOT NULL
-      )
-      """,
-      """
-      CREATE INDEX IF NOT EXISTS recovery_tasks_tenant_session_status_index
-      ON recovery_tasks (tenant_id, session_id, status)
-      """,
-      """
-      CREATE TABLE IF NOT EXISTS reply_publications (
-        publication_id text PRIMARY KEY,
-        tenant_id text NOT NULL,
-        causal_unit_id text NOT NULL,
-        phase text NOT NULL,
-        state text NOT NULL,
-        dedupe_key text NOT NULL,
-        body text NOT NULL,
-        body_ref jsonb NOT NULL DEFAULT '{}'::jsonb,
-        inserted_at timestamptz NOT NULL,
-        updated_at timestamptz NOT NULL
-      )
-      """,
-      """
-      ALTER TABLE reply_publications
-      ADD COLUMN IF NOT EXISTS body_ref jsonb NOT NULL DEFAULT '{}'::jsonb
-      """,
-      """
-      CREATE UNIQUE INDEX IF NOT EXISTS reply_publications_tenant_dedupe_key_index
-      ON reply_publications (tenant_id, dedupe_key)
-      """,
-      """
-      CREATE INDEX IF NOT EXISTS reply_publications_tenant_causal_phase_index
-      ON reply_publications (tenant_id, causal_unit_id, phase)
-      """
-    ]
   end
 end

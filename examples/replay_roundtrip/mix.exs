@@ -31,7 +31,7 @@ defmodule StackLab.ReplayRoundtrip.MixProject do
 
   defp deps do
     [
-      DependencySources.dep(:aitrace, @dependency_sources_root),
+      DependencySources.dep(:aitrace, @dependency_sources_root, override: true),
       DependencySources.dep(:ai_trace_replay_contracts, @dependency_sources_root, override: true),
       DependencySources.dep(:ai_trace_replay_engine, @dependency_sources_root),
       DependencySources.dep(:app_kit_replay_surface, @dependency_sources_root),

@@ -32,6 +32,10 @@ defmodule StackLab.GEPAPlatformRoundtrip.MixProject do
     [
       DependencySources.dep(:gepa_framework, @dependency_sources_root),
       DependencySources.dep(:mezzanine_optimization_engine, @dependency_sources_root),
+      DependencySources.dep(:mezzanine_ai_execution_engine, @dependency_sources_root,
+        override: true
+      ),
+      DependencySources.dep(:outer_brain_context_abi, @dependency_sources_root, override: true),
       DependencySources.dep(:app_kit_optimization_surface, @dependency_sources_root),
       {:stack_lab_model_inference_scanner, path: "../../support/model_inference_scanner"},
       {:stack_lab_optimization_fabric_scanner, path: "../../support/optimization_fabric_scanner"},

@@ -1,6 +1,7 @@
 %{
   "abacus": {:hex, :abacus, "2.2.0", "2a7a1e4d35a72d481153f5bba7790a2d30a5cedf463e5be344d6769c9b5d0cba", [:mix], [], "hexpm", "dc89ccbd711986fd10a8e2f11f532b332f8a975c6c5967e4ec6b47b4ba92ff60"},
   "abnf_parsec": {:hex, :abnf_parsec, "2.1.0", "c4e88d5d089f1698297c0daced12be1fb404e6e577ecf261313ebba5477941f9", [:mix], [{:nimble_parsec, "~> 1.4", [hex: :nimble_parsec, repo: "hexpm", optional: false]}], "hexpm", "e0ed6290c7cc7e5020c006d1003520390c9bdd20f7c3f776bd49bfe3c5cd362a"},
+  "aitrace": {:git, "https://github.com/nshkrdotcom/AITrace.git", "09ce1120122ee5b8b50f93c98b838a66fa707c6d", [branch: "main"]},
   "altar": {:hex, :altar, "0.2.0", "f7f6d6cf9d6f0fc5ca014f2e51b7a7acb5da63e20cb424b3d43840cf16b80193", [:mix], [{:jason, "~> 1.4", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm", "717c0465195d9559a9515362affca13b535412e6b0088599918a5c849dc1da82"},
   "boundary": {:hex, :boundary, "0.10.4", "5fec5d2736c12f9bfe1720c3a2bd8c48c3547c24d6002ebf8e087570afd5bd2f", [:mix], [], "hexpm", "8baf6f23987afdb1483033ed0bde75c9c703613c22ed58d5f23bf948f203247c"},
   "bunt": {:hex, :bunt, "1.0.0", "081c2c665f086849e6d57900292b3a161727ab40431219529f13c4ddcf3e7a44", [:mix], [], "hexpm", "dc5f86aa08a5f6fa6b8096f0735c4e76d54ae5c9fa2c143e5a1fc7c1cd9bb6b5"},
@@ -22,6 +23,7 @@
   "file_system": {:hex, :file_system, "1.1.1", "31864f4685b0148f25bd3fbef2b1228457c0c89024ad67f7a81a3ffbc0bbad3a", [:mix], [], "hexpm", "7a15ff97dfe526aeefb090a7a9d3d03aa907e100e262a0f8f7746b78f8f87a5d"},
   "finch": {:hex, :finch, "0.23.0", "e3f9287ac25a8832f848b144c2b57346aac65b205e2e0629a52adfe6507fd837", [:mix], [{:mime, "~> 1.0 or ~> 2.0", [hex: :mime, repo: "hexpm", optional: false]}, {:mint, "~> 1.8", [hex: :mint, repo: "hexpm", optional: false]}, {:nimble_options, "~> 0.4 or ~> 1.0", [hex: :nimble_options, repo: "hexpm", optional: false]}, {:nimble_pool, "~> 1.1", [hex: :nimble_pool, repo: "hexpm", optional: false]}, {:telemetry, "~> 0.4 or ~> 1.0", [hex: :telemetry, repo: "hexpm", optional: false]}], "hexpm", "80e58d3f936f57e3fdf404f83a3642897ae6d9fb642934e46da4d8fe761b99d5"},
   "fuse": {:hex, :fuse, "2.5.0", "71afa90be21da4e64f94abba9d36472faa2d799c67fedc3bd1752a88ea4c4753", [:rebar3], [], "hexpm", "7f52a1c84571731ad3c91d569e03131cc220ebaa7e2a11034405f0bac46a4fef"},
+  "ground_plane_contracts": {:git, "https://github.com/nshkrdotcom/ground_plane.git", "b4159d245383ca399ed9321107a28bc50d3ba4ad", [branch: "main", subdir: "core/ground_plane_contracts"]},
   "gun": {:hex, :gun, "2.5.0", "7be4c8d34a177f4213d48bb5fbffb03462ce871b4ec30b5aa3b08d2fd4fa424b", [:make, :rebar3], [{:cowlib, ">= 2.19.0 and < 3.0.0", [hex: :cowlib, repo: "hexpm", optional: false]}], "hexpm", "3839576181456f5553fc1be006fd95681576b916cc9ad68d422a287ed4a770dd"},
   "hpax": {:hex, :hpax, "1.0.4", "777de5d433b0fbdc7c418159c8055910faa8047ffdb3d6b31098d2a46cd7685c", [:mix], [], "hexpm", "afc7cb142ebcc2d01ce7816190b98ce5dd49e799111b24249f3443d730f377ca"},
   "idna": {:hex, :idna, "7.1.0", "1067a13043538129602d2f2ce6899d8713125c7d19734aa557ce2e3ea55bd4f1", [:rebar3], [], "hexpm", "6ae959a025bf36df61a8cab8508d9654891b5426a84c44d82deaffd6ddf8c71f"},

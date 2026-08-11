@@ -69,7 +69,7 @@ defmodule StackLab.CitadelSpineHarness.Phase5VersionSkewMalformedPacketTest do
              {:error, :legacy_v1_not_a_bridge_entrypoint}
 
     assert result.negative_failures.missing_signal_version_old_shape.last_signal_error ==
-             {:missing_required_fields, [:signal_version]}
+             {:unregistered_signal, "operator.cancel", nil}
 
     refute result.negative_failures.missing_signal_version_old_shape.ordered_signal_applied?
 
