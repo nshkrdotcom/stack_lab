@@ -1,11 +1,7 @@
-unless Code.ensure_loaded?(DependencySources) do
-  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
-end
+if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_file(bootstrap)
 
 defmodule StackLab.GnTenDistributedStack.MixProject do
   use Mix.Project
-
-  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -38,43 +34,18 @@ defmodule StackLab.GnTenDistributedStack.MixProject do
        path: "../nshkr_router_fabric_roundtrip", runtime: false},
       {:stack_lab_persistence_mode_roundtrip,
        path: "../persistence_mode_roundtrip", runtime: false},
-      DependencySources.dep(:ground_plane_contracts, @dependency_sources_root,
-        override: true,
-        runtime: false
-      ),
-      DependencySources.dep(:crucible_policy, @dependency_sources_root,
-        override: true,
-        runtime: false
-      ),
-      DependencySources.dep(:crucible_signal, @dependency_sources_root,
-        override: true,
-        runtime: false
-      ),
-      DependencySources.dep(:crucible_signal_trace, @dependency_sources_root,
-        override: true,
-        runtime: false
-      ),
-      DependencySources.dep(:crucible_tap, @dependency_sources_root,
-        override: true,
-        runtime: false
-      ),
-      DependencySources.dep(:app_kit_mezzanine_bridge, @dependency_sources_root, runtime: false),
-      DependencySources.dep(:mezzanine_execution_engine, @dependency_sources_root,
-        runtime: false
-      ),
-      DependencySources.dep(:citadel_context_authority_contract, @dependency_sources_root,
-        runtime: false
-      ),
-      DependencySources.dep(:outer_brain_context_abi, @dependency_sources_root,
-        override: true,
-        runtime: false
-      ),
-      DependencySources.dep(:jido_inference_runtime, @dependency_sources_root, runtime: false),
-      DependencySources.dep(:execution_plane, @dependency_sources_root,
-        override: true,
-        runtime: false
-      ),
-      DependencySources.dep(:aitrace, @dependency_sources_root, override: true, runtime: false),
+      workspace_dep({:ground_plane_contracts, "~> 0.1.0", override: true, runtime: false}),
+      workspace_dep({:crucible_policy, "~> 0.1.0", override: true, runtime: false}),
+      workspace_dep({:crucible_signal, "~> 0.1.0", override: true, runtime: false}),
+      workspace_dep({:crucible_signal_trace, "~> 0.1.0", override: true, runtime: false}),
+      workspace_dep({:crucible_tap, "~> 0.1.0", override: true, runtime: false}),
+      workspace_dep({:app_kit_mezzanine_bridge, "~> 0.1.0", runtime: false}),
+      workspace_dep({:mezzanine_execution_engine, "~> 0.1.0", runtime: false}),
+      workspace_dep({:citadel_context_authority_contract, "~> 0.1.0", runtime: false}),
+      workspace_dep({:outer_brain_context_abi, "~> 0.1.0", override: true, runtime: false}),
+      workspace_dep({:jido_inference_runtime, "~> 0.1.0", runtime: false}),
+      workspace_dep({:execution_plane, "~> 0.2.0", override: true, runtime: false}),
+      workspace_dep({:aitrace, "~> 0.1.0", override: true, runtime: false}),
       {:jason, "~> 1.4", runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: :dev, runtime: false},
@@ -93,5 +64,11 @@ defmodule StackLab.GnTenDistributedStack.MixProject do
         "docs"
       ]
     ]
+  end
+
+  defp workspace_dep(committed) do
+    if function_exported?(MixWorkspaceOpsBootstrap, :dep, 2),
+      do: apply(MixWorkspaceOpsBootstrap, :dep, [committed, __DIR__]),
+      else: committed
   end
 end

@@ -63,11 +63,16 @@ environment-variable dependency source or concurrency selection.
 
 ## Dependency Sources
 
-- Dependency source selection is handled by `build_support/dependency_sources.exs` and `build_support/dependency_sources.config.exs`.
-- Local dependency overrides use `.dependency_sources.local.exs`.
-- Dependency source selection must not use environment variables.
-- Same-repo support/example harness paths may stay in their local `mix.exs` files; cross-repo dependencies that need fallback behavior belong in the dependency-source manifest.
-- Weld checks helper drift, dependency-source manifests, clone/publish checks, and publish order for this repo; keep the committed dependency on the released Hex Weld line.
+- Each cross-repository dependency keeps an ordinary committed tuple in the consuming
+  `mix.exs`. When MWO manages the invocation, the small `workspace_dep/1` carrier lets
+  MWO replace that tuple from the portfolio registry.
+- Same-repository support/example harness dependencies remain ordinary relative `path:`
+  tuples. Dependencies that MWO does not manage remain ordinary Hex or Git tuples.
+- Do not add a repository-local resolver, dependency-source manifest, local override
+  file, or machine-specific checkout path. Source policy belongs to MWO and the
+  portfolio registry.
+- Keep the committed dependency on the released Hex Weld line. Weld's repository-local
+  manifest owns packaging metadata; it does not own dependency-source selection.
 
 ## Runtime Env
 

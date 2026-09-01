@@ -1,11 +1,7 @@
-unless Code.ensure_loaded?(DependencySources) do
-  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
-end
+if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_file(bootstrap)
 
 defmodule StackLab.TRINITYPlatformRoundtrip.MixProject do
   use Mix.Project
-
-  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -32,13 +28,13 @@ defmodule StackLab.TRINITYPlatformRoundtrip.MixProject do
 
   defp deps do
     [
-      DependencySources.dep(:trinity_framework, @dependency_sources_root),
-      DependencySources.dep(:trinity_contracts, @dependency_sources_root, override: true),
-      DependencySources.dep(:crucible_policy, @dependency_sources_root, override: true),
-      DependencySources.dep(:crucible_signal, @dependency_sources_root, override: true),
-      DependencySources.dep(:crucible_signal_trace, @dependency_sources_root, override: true),
-      DependencySources.dep(:crucible_tap, @dependency_sources_root, override: true),
-      DependencySources.dep(:app_kit_coordination_surface, @dependency_sources_root),
+      workspace_dep({:trinity_framework, "~> 0.1.0"}),
+      workspace_dep({:trinity_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:crucible_policy, "~> 0.1.0", override: true}),
+      workspace_dep({:crucible_signal, "~> 0.1.0", override: true}),
+      workspace_dep({:crucible_signal_trace, "~> 0.1.0", override: true}),
+      workspace_dep({:crucible_tap, "~> 0.1.0", override: true}),
+      workspace_dep({:app_kit_coordination_surface, "~> 0.1.0"}),
       {:stack_lab_coordination_fabric_scanner, path: "../../support/coordination_fabric_scanner"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
@@ -58,5 +54,11 @@ defmodule StackLab.TRINITYPlatformRoundtrip.MixProject do
         "docs"
       ]
     ]
+  end
+
+  defp workspace_dep(committed) do
+    if function_exported?(MixWorkspaceOpsBootstrap, :dep, 2),
+      do: apply(MixWorkspaceOpsBootstrap, :dep, [committed, __DIR__]),
+      else: committed
   end
 end

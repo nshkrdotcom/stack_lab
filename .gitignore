@@ -26,5 +26,3 @@ stack_lab-*.tar
 # Temporary files, for example, from tests.
 /tmp/
 **/tmp/
-
-/.dependency_sources.local.exs

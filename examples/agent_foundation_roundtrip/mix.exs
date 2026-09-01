@@ -1,11 +1,7 @@
-unless Code.ensure_loaded?(DependencySources) do
-  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
-end
+if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_file(bootstrap)
 
 defmodule StackLab.AgentFoundationRoundtrip.MixProject do
   use Mix.Project
-
-  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -32,21 +28,14 @@ defmodule StackLab.AgentFoundationRoundtrip.MixProject do
 
   defp deps do
     [
-      DependencySources.dep(:app_kit_core, @dependency_sources_root),
-      DependencySources.dep(:mezzanine_agent_turn_engine, @dependency_sources_root),
-      DependencySources.dep(:citadel_execution_governance_contract, @dependency_sources_root),
-      DependencySources.dep(:jido_integration_agent_interop_contracts, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:jido_integration_v2_tool_contracts, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(
-        :jido_integration_connector_admission_engine,
-        @dependency_sources_root
-      ),
-      DependencySources.dep(:execution_plane, @dependency_sources_root),
-      DependencySources.dep(:ai_trace_replay_contracts, @dependency_sources_root),
+      workspace_dep({:app_kit_core, "~> 0.1.0"}),
+      workspace_dep({:mezzanine_agent_turn_engine, "~> 0.1.0"}),
+      workspace_dep({:citadel_execution_governance_contract, "~> 0.1.0"}),
+      workspace_dep({:jido_integration_agent_interop_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:jido_integration_v2_tool_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:jido_integration_connector_admission_engine, "~> 0.1.0"}),
+      workspace_dep({:execution_plane, "~> 0.2.0"}),
+      workspace_dep({:ai_trace_replay_contracts, "~> 0.1.0"}),
       {:stack_lab_no_bypass_scanner, path: "../../support/no_bypass_scanner"},
       {:jason, "~> 1.4"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
@@ -67,5 +56,11 @@ defmodule StackLab.AgentFoundationRoundtrip.MixProject do
         "docs --warnings-as-errors"
       ]
     ]
+  end
+
+  defp workspace_dep(committed) do
+    if function_exported?(MixWorkspaceOpsBootstrap, :dep, 2),
+      do: apply(MixWorkspaceOpsBootstrap, :dep, [committed, __DIR__]),
+      else: committed
   end
 end

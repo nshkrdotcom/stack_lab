@@ -1,13 +1,7 @@
-unless Code.ensure_loaded?(DependencySources) do
-  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
-end
+if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_file(bootstrap)
 
 defmodule StackLab.SynapseProductAcceptance.MixProject do
   use Mix.Project
-
-  @dependency_sources_root Path.expand("../..", __DIR__)
-
-  @repo_root "/home/home/p/g/n"
 
   def project do
     [
@@ -42,24 +36,16 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
 
   defp deps do
     [
-      DependencySources.dep(:synapse_core, @dependency_sources_root),
-      DependencySources.dep(:execution_plane, @dependency_sources_root, override: true),
-      DependencySources.dep(:ground_plane_contracts, @dependency_sources_root, override: true),
-      DependencySources.dep(:ground_plane_persistence_policy, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:app_kit_mezzanine_bridge, @dependency_sources_root),
-      DependencySources.dep(:mezzanine_workflow_runtime, @dependency_sources_root),
-      DependencySources.dep(:mezzanine_governed_effects, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:citadel_authority_contract, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:jido_integration_v2_direct_runtime, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:aitrace, @dependency_sources_root, override: true),
+      workspace_dep({:synapse_core, "~> 0.1.0"}),
+      workspace_dep({:execution_plane, "~> 0.2.0", override: true}),
+      workspace_dep({:ground_plane_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:ground_plane_persistence_policy, "~> 0.1.0", override: true}),
+      workspace_dep({:app_kit_mezzanine_bridge, "~> 0.1.0"}),
+      workspace_dep({:mezzanine_workflow_runtime, "~> 0.1.0"}),
+      workspace_dep({:mezzanine_governed_effects, "~> 0.1.0", override: true}),
+      workspace_dep({:citadel_authority_contract, "~> 0.1.0", override: true}),
+      workspace_dep({:jido_integration_v2_direct_runtime, "~> 0.1.0", override: true}),
+      workspace_dep({:aitrace, "~> 0.1.0", override: true}),
       {:stack_lab_no_bypass_scanner, path: "../../support/no_bypass_scanner"},
       {:jason, "~> 1.4"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
@@ -104,5 +90,11 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
       main: "readme",
       extras: ["README.md"]
     ]
+  end
+
+  defp workspace_dep(committed) do
+    if function_exported?(MixWorkspaceOpsBootstrap, :dep, 2),
+      do: apply(MixWorkspaceOpsBootstrap, :dep, [committed, __DIR__]),
+      else: committed
   end
 end

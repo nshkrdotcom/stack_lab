@@ -1,6 +1,4 @@
-unless Code.ensure_loaded?(DependencySources) do
-  Code.require_file("build_support/dependency_sources.exs", __DIR__)
-end
+if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_file(bootstrap)
 
 Code.require_file("build_support/workspace_contract.exs", __DIR__)
 
@@ -49,13 +47,13 @@ defmodule StackLab.Workspace.MixProject do
 
   defp deps do
     [
-      DependencySources.dep(:blitz, __DIR__, runtime: false),
-      DependencySources.dep(:weld, __DIR__, only: [:dev, :test], runtime: false),
+      workspace_dep({:blitz, "~> 0.3.0", runtime: false}),
+      workspace_dep({:weld, "~> 0.8.2", only: [:dev, :test], runtime: false}),
       {:jason, "~> 1.4", runtime: false},
       {:stack_lab_lab_core, path: "support/lab_core"},
       {:stack_lab_gn_ten_node_lab, path: "support/gn_ten_node_lab"},
       {:stacklab_chassis_bridge, path: "bridges/stacklab_chassis_bridge"},
-      DependencySources.dep(:ground_plane_contracts, __DIR__),
+      workspace_dep({:ground_plane_contracts, "~> 0.1.0"}),
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
@@ -206,5 +204,11 @@ defmodule StackLab.Workspace.MixProject do
         Project: ["CHANGELOG.md", "LICENSE"]
       ]
     ]
+  end
+
+  defp workspace_dep(committed) do
+    if function_exported?(MixWorkspaceOpsBootstrap, :dep, 2),
+      do: apply(MixWorkspaceOpsBootstrap, :dep, [committed, __DIR__]),
+      else: committed
   end
 end

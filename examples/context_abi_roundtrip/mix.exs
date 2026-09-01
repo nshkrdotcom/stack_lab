@@ -1,11 +1,7 @@
-unless Code.ensure_loaded?(DependencySources) do
-  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
-end
+if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_file(bootstrap)
 
 defmodule StackLab.ContextABIRoundtrip.MixProject do
   use Mix.Project
-
-  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -32,20 +28,16 @@ defmodule StackLab.ContextABIRoundtrip.MixProject do
 
   defp deps do
     [
-      DependencySources.dep(:app_kit_context_surface, @dependency_sources_root),
-      DependencySources.dep(:outer_brain_context_abi, @dependency_sources_root, override: true),
-      DependencySources.dep(:outer_brain_prompting, @dependency_sources_root, override: true),
-      DependencySources.dep(:citadel_context_authority_contract, @dependency_sources_root),
-      DependencySources.dep(:mezzanine_context_packet_engine, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_ai_execution_engine, @dependency_sources_root),
-      DependencySources.dep(:ground_plane_contracts, @dependency_sources_root, override: true),
-      DependencySources.dep(:jido_model_invocation_contracts, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:jido_inference_runtime, @dependency_sources_root),
-      DependencySources.dep(:aitrace, @dependency_sources_root),
+      workspace_dep({:app_kit_context_surface, "~> 0.1.0"}),
+      workspace_dep({:outer_brain_context_abi, "~> 0.1.0", override: true}),
+      workspace_dep({:outer_brain_prompting, "~> 0.1.0", override: true}),
+      workspace_dep({:citadel_context_authority_contract, "~> 0.1.0"}),
+      workspace_dep({:mezzanine_context_packet_engine, "~> 0.1.0", override: true}),
+      workspace_dep({:mezzanine_ai_execution_engine, "~> 0.1.0"}),
+      workspace_dep({:ground_plane_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:jido_model_invocation_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:jido_inference_runtime, "~> 0.1.0"}),
+      workspace_dep({:aitrace, "~> 0.1.0"}),
       {:stack_lab_context_abi_scanner, path: "../../support/context_abi_scanner"},
       {:stack_lab_model_inference_scanner, path: "../../support/model_inference_scanner"},
       {:stack_lab_cost_budget_scanner, path: "../../support/cost_budget_scanner"},
@@ -71,5 +63,11 @@ defmodule StackLab.ContextABIRoundtrip.MixProject do
         "docs"
       ]
     ]
+  end
+
+  defp workspace_dep(committed) do
+    if function_exported?(MixWorkspaceOpsBootstrap, :dep, 2),
+      do: apply(MixWorkspaceOpsBootstrap, :dep, [committed, __DIR__]),
+      else: committed
   end
 end

@@ -1,11 +1,7 @@
-unless Code.ensure_loaded?(DependencySources) do
-  Code.require_file("../../build_support/dependency_sources.exs", __DIR__)
-end
+if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_file(bootstrap)
 
 defmodule StackLab.CitadelSpineHarness.MixProject do
   use Mix.Project
-
-  @dependency_sources_root Path.expand("../..", __DIR__)
 
   def project do
     [
@@ -59,158 +55,80 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       # The AppKit/Mezzanine bridge starts Jido Integration transitively. Start
       # its configured persistence owner first so auth/control-plane cold boot
       # never depends on a later test helper or on dependency compile env.
-      DependencySources.dep(:jido_integration_v2_store_local, @dependency_sources_root),
-      DependencySources.dep(:citadel_authority_contract, @dependency_sources_root),
-      DependencySources.dep(:citadel_governance, @dependency_sources_root),
-      DependencySources.dep(:citadel_kernel, @dependency_sources_root),
-      DependencySources.dep(:citadel_host_ingress_bridge, @dependency_sources_root),
-      DependencySources.dep(:citadel_invocation_bridge, @dependency_sources_root),
-      DependencySources.dep(:citadel_jido_integration_bridge, @dependency_sources_root),
-      DependencySources.dep(:citadel_trace_bridge, @dependency_sources_root),
-      DependencySources.dep(:citadel_domain_surface, @dependency_sources_root, override: true),
-      DependencySources.dep(:app_kit_app_config, @dependency_sources_root),
-      DependencySources.dep(:app_kit_chat_surface, @dependency_sources_root),
-      DependencySources.dep(:app_kit_domain_surface, @dependency_sources_root),
-      DependencySources.dep(:app_kit_installation_surface, @dependency_sources_root),
-      DependencySources.dep(:app_kit_mezzanine_bridge, @dependency_sources_root),
-      DependencySources.dep(:app_kit_operator_surface, @dependency_sources_root),
-      DependencySources.dep(:app_kit_review_surface, @dependency_sources_root),
-      DependencySources.dep(:app_kit_run_governance, @dependency_sources_root),
-      DependencySources.dep(:app_kit_scope_objects, @dependency_sources_root),
-      DependencySources.dep(:app_kit_work_control, @dependency_sources_root),
-      DependencySources.dep(:app_kit_work_surface, @dependency_sources_root),
-      DependencySources.dep(:mezzanine_core, @dependency_sources_root,
-        runtime: false,
-        override: true
+      workspace_dep({:jido_integration_v2_store_local, "~> 0.1.0"}),
+      workspace_dep({:citadel_authority_contract, "~> 0.1.0"}),
+      workspace_dep({:citadel_governance, "~> 0.1.0"}),
+      workspace_dep({:citadel_kernel, "~> 0.1.0"}),
+      workspace_dep({:citadel_host_ingress_bridge, "~> 0.1.0"}),
+      workspace_dep({:citadel_invocation_bridge, "~> 0.1.0"}),
+      workspace_dep({:citadel_jido_integration_bridge, "~> 0.1.0"}),
+      workspace_dep({:citadel_trace_bridge, "~> 0.1.0"}),
+      workspace_dep({:citadel_domain_surface, "~> 0.1.0", override: true}),
+      workspace_dep({:app_kit_app_config, "~> 0.1.0"}),
+      workspace_dep({:app_kit_chat_surface, "~> 0.1.0"}),
+      workspace_dep({:app_kit_domain_surface, "~> 0.1.0"}),
+      workspace_dep({:app_kit_installation_surface, "~> 0.1.0"}),
+      workspace_dep({:app_kit_mezzanine_bridge, "~> 0.1.0"}),
+      workspace_dep({:app_kit_operator_surface, "~> 0.1.0"}),
+      workspace_dep({:app_kit_review_surface, "~> 0.1.0"}),
+      workspace_dep({:app_kit_run_governance, "~> 0.1.0"}),
+      workspace_dep({:app_kit_scope_objects, "~> 0.1.0"}),
+      workspace_dep({:app_kit_work_control, "~> 0.1.0"}),
+      workspace_dep({:app_kit_work_surface, "~> 0.1.0"}),
+      workspace_dep({:mezzanine_core, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_runtime_profile, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_audit_engine, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_config_registry, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_decision_engine, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_evidence_engine, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_archival_engine, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_barriers, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_lifecycle_engine, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_object_engine, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_execution_engine, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_operator_engine, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_pack_compiler, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_pack_model, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_projection_engine, "~> 0.1.0", override: true}),
+      workspace_dep({:mezzanine_m1_m2_runtime, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_runtime_scheduler, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_source_engine, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_substrate_model, "~> 0.1.0", override: true}),
+      workspace_dep({:mezzanine_workflow_runtime, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_citadel_bridge, "~> 0.1.0", override: true}),
+      workspace_dep({:mezzanine_integration_bridge, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:mezzanine_leasing, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:jido_integration_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:jido_integration_v2_control_plane, "~> 0.1.0", runtime: false}),
+      workspace_dep({:jido_integration_v2, "~> 0.1.0", runtime: false}),
+      workspace_dep({:jido_integration_v2_brain_ingress, "~> 0.1.0"}),
+      workspace_dep({:jido_integration_v2_runtime_router, "~> 0.1.0", runtime: false}),
+      workspace_dep({:jido_integration_v2_store_postgres, "~> 0.1.0", runtime: false}),
+      workspace_dep({:ground_plane_contracts, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep(
+        {:ground_plane_persistence_policy, "~> 0.1.0", runtime: false, override: true}
       ),
-      DependencySources.dep(:mezzanine_runtime_profile, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_audit_engine, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_config_registry, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_decision_engine, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_evidence_engine, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_archival_engine, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_barriers, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_lifecycle_engine, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_object_engine, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_execution_engine, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_operator_engine, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_pack_compiler, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_pack_model, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_projection_engine, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_m1_m2_runtime, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_runtime_scheduler, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_source_engine, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_substrate_model, @dependency_sources_root, override: true),
-      DependencySources.dep(:mezzanine_workflow_runtime, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_citadel_bridge, @dependency_sources_root, override: true),
-      DependencySources.dep(:mezzanine_integration_bridge, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:mezzanine_leasing, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:jido_integration_contracts, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:jido_integration_v2_control_plane, @dependency_sources_root,
-        runtime: false
-      ),
-      DependencySources.dep(:jido_integration_v2, @dependency_sources_root, runtime: false),
-      DependencySources.dep(:jido_integration_v2_brain_ingress, @dependency_sources_root),
-      DependencySources.dep(:jido_integration_v2_runtime_router, @dependency_sources_root,
-        runtime: false
-      ),
-      DependencySources.dep(:jido_integration_v2_store_postgres, @dependency_sources_root,
-        runtime: false
-      ),
-      DependencySources.dep(:ground_plane_contracts, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:ground_plane_persistence_policy, @dependency_sources_root,
-        runtime: false,
-        override: true
-      ),
-      DependencySources.dep(:execution_plane, @dependency_sources_root, override: true),
-      DependencySources.dep(:execution_plane_node, @dependency_sources_root, override: true),
-      DependencySources.dep(:execution_plane_process, @dependency_sources_root, override: true),
-      DependencySources.dep(:execution_plane_http, @dependency_sources_root, override: true),
-      DependencySources.dep(:agent_session_manager, @dependency_sources_root, override: true),
-      DependencySources.dep(:cli_subprocess_core, @dependency_sources_root),
-      DependencySources.dep(:pristine, @dependency_sources_root, override: true),
-      DependencySources.dep(:prismatic, @dependency_sources_root, override: true),
-      DependencySources.dep(:self_hosted_inference_core, @dependency_sources_root),
-      DependencySources.dep(:crucible_provider_contracts, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:crucible_signal, @dependency_sources_root, override: true),
-      DependencySources.dep(:crucible_signal_trace, @dependency_sources_root, override: true),
-      DependencySources.dep(:crucible_tap, @dependency_sources_root, override: true),
-      DependencySources.dep(:outer_brain_contracts, @dependency_sources_root, override: true),
-      DependencySources.dep(:outer_brain_domain_bridge, @dependency_sources_root, override: true),
-      DependencySources.dep(:outer_brain_journal, @dependency_sources_root),
-      DependencySources.dep(:outer_brain_memory_contracts, @dependency_sources_root,
-        override: true
-      ),
-      DependencySources.dep(:outer_brain_prompting, @dependency_sources_root, override: true),
-      DependencySources.dep(:outer_brain_persistence, @dependency_sources_root),
-      DependencySources.dep(:outer_brain_restart_authority, @dependency_sources_root),
-      DependencySources.dep(:outer_brain_runtime, @dependency_sources_root),
+      workspace_dep({:execution_plane, "~> 0.2.0", override: true}),
+      workspace_dep({:execution_plane_node, "~> 0.1.0", override: true}),
+      workspace_dep({:execution_plane_process, "~> 0.1.0", override: true}),
+      workspace_dep({:execution_plane_http, "~> 0.1.0", override: true}),
+      workspace_dep({:agent_session_manager, "~> 0.12.0", override: true}),
+      workspace_dep({:cli_subprocess_core, "~> 0.4.0"}),
+      workspace_dep({:pristine, "~> 0.2.0", override: true}),
+      workspace_dep({:prismatic, "~> 0.2.0", override: true}),
+      workspace_dep({:self_hosted_inference_core, "~> 0.2.0"}),
+      workspace_dep({:crucible_provider_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:crucible_signal, "~> 0.1.0", override: true}),
+      workspace_dep({:crucible_signal_trace, "~> 0.1.0", override: true}),
+      workspace_dep({:crucible_tap, "~> 0.1.0", override: true}),
+      workspace_dep({:outer_brain_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:outer_brain_domain_bridge, "~> 0.1.0", override: true}),
+      workspace_dep({:outer_brain_journal, "~> 0.1.0"}),
+      workspace_dep({:outer_brain_memory_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:outer_brain_prompting, "~> 0.1.0", override: true}),
+      workspace_dep({:outer_brain_persistence, "~> 0.1.0"}),
+      workspace_dep({:outer_brain_restart_authority, "~> 0.1.0"}),
+      workspace_dep({:outer_brain_runtime, "~> 0.1.0"}),
       {:jason, "~> 1.4", runtime: false},
       {:jsv, "~> 0.18", runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
@@ -250,5 +168,11 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
         :mezzanine_workflow_runtime
       ]
     ]
+  end
+
+  defp workspace_dep(committed) do
+    if function_exported?(MixWorkspaceOpsBootstrap, :dep, 2),
+      do: apply(MixWorkspaceOpsBootstrap, :dep, [committed, __DIR__]),
+      else: committed
   end
 end

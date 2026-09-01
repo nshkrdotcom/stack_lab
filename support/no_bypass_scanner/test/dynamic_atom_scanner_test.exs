@@ -40,7 +40,7 @@ defmodule StackLab.DynamicAtomScannerTest do
           def normalize(value), do: String.to_atom(value)
         end
         """,
-        "/home/home/p/g/n/app_kit/build_support/dependency_sources.exs"
+        "/workspace/app_kit/build_support/static_manifest.exs"
       )
 
     assert %ClassifiedConversion{
