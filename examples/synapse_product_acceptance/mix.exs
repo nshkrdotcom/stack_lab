@@ -36,7 +36,7 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
 
   defp deps do
     [
-      workspace_dep({:synapse_core, "~> 0.1.0"}),
+      {:synapse_core, "~> 0.1.0"},
       workspace_dep({:execution_plane, "~> 0.2.0", override: true}),
       workspace_dep({:ground_plane_contracts, "~> 0.1.0", override: true}),
       workspace_dep({:ground_plane_persistence_policy, "~> 0.1.0", override: true}),
