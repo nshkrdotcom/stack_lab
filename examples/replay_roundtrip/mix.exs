@@ -27,14 +27,14 @@ defmodule StackLab.ReplayRoundtrip.MixProject do
 
   defp deps do
     [
-      workspace_dep({:aitrace, "~> 0.1.0", override: true}),
+      workspace_dep({:aitrace, "~> 0.2.0", override: true}),
       workspace_dep({:ai_trace_replay_contracts, "~> 0.1.0", override: true}),
       workspace_dep({:ai_trace_replay_engine, "~> 0.1.0"}),
       workspace_dep({:app_kit_replay_surface, "~> 0.1.0"}),
       {:stack_lab_drift_detector, path: "../../support/drift_detector"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4.8", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: :dev, runtime: false}
     ]
   end
 

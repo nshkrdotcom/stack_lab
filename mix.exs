@@ -47,16 +47,16 @@ defmodule StackLab.Workspace.MixProject do
 
   defp deps do
     [
-      {:blitz, "~> 0.3.0", runtime: false},
-      {:weld, "~> 0.8.2", only: [:dev, :test], runtime: false},
-      {:jason, "~> 1.4", runtime: false},
+      {:blitz, "~> 0.4.1", runtime: false},
+      {:weld, "~> 0.10.0", only: [:dev, :test], runtime: false},
+      {:jason, "~> 1.4.5", runtime: false},
       {:stack_lab_lab_core, path: "support/lab_core"},
       {:stack_lab_gn_ten_node_lab, path: "support/gn_ten_node_lab"},
       {:stacklab_chassis_bridge, path: "bridges/stacklab_chassis_bridge"},
-      workspace_dep({:ground_plane_contracts, "~> 0.1.0"}),
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
+      workspace_dep({:ground_plane_contracts, "~> 0.1.1"}),
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4.8", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: :dev, runtime: false}
     ]
   end
 

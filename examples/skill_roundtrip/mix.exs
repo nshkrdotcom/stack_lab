@@ -31,9 +31,9 @@ defmodule StackLab.SkillRoundtrip.MixProject do
       workspace_dep({:jido_integration_connector_admission_engine, "~> 0.1.0"}),
       workspace_dep({:citadel_governance, "~> 0.1.0"}),
       workspace_dep({:app_kit_skill_surface, "~> 0.1.0"}),
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4.8", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: :dev, runtime: false}
     ]
   end
 

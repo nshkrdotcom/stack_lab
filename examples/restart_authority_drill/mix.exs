@@ -24,8 +24,8 @@ defmodule StackLab.RestartAuthorityDrill.MixProject do
     [
       {:stack_lab_lab_core, path: "../../support/lab_core"},
       {:stack_lab_citadel_spine_harness, path: "../../support/citadel_spine_harness"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: :dev, runtime: false}
     ]
   end
 

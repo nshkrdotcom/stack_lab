@@ -51,7 +51,7 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
   defp deps do
     [
       {:stack_lab_lab_core, path: "../lab_core"},
-      {:ecto_sql, "~> 3.13"},
+      {:ecto_sql, "~> 3.14.0"},
       # The AppKit/Mezzanine bridge starts Jido Integration transitively. Start
       # its configured persistence owner first so auth/control-plane cold boot
       # never depends on a later test helper or on dependency compile env.
@@ -104,17 +104,17 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       workspace_dep({:jido_integration_v2_brain_ingress, "~> 0.1.0"}),
       workspace_dep({:jido_integration_v2_runtime_router, "~> 0.1.0", runtime: false}),
       workspace_dep({:jido_integration_v2_store_postgres, "~> 0.1.0", runtime: false}),
-      workspace_dep({:ground_plane_contracts, "~> 0.1.0", runtime: false, override: true}),
+      workspace_dep({:ground_plane_contracts, "~> 0.1.1", runtime: false, override: true}),
       workspace_dep(
         {:ground_plane_persistence_policy, "~> 0.1.0", runtime: false, override: true}
       ),
-      workspace_dep({:execution_plane, "~> 0.2.0", override: true}),
+      workspace_dep({:execution_plane, "~> 0.3.0", override: true}),
       workspace_dep({:execution_plane_node, "~> 0.1.0", override: true}),
-      workspace_dep({:execution_plane_process, "~> 0.1.0", override: true}),
-      workspace_dep({:execution_plane_http, "~> 0.1.0", override: true}),
-      workspace_dep({:agent_session_manager, "~> 0.12.0", override: true}),
-      workspace_dep({:cli_subprocess_core, "~> 0.4.0"}),
-      workspace_dep({:pristine, "~> 0.2.0", override: true}),
+      workspace_dep({:execution_plane_process, "~> 0.3.1", override: true}),
+      workspace_dep({:execution_plane_http, "~> 0.2.0", override: true}),
+      workspace_dep({:agent_session_manager, "~> 0.17.3", override: true}),
+      workspace_dep({:cli_subprocess_core, "~> 0.9.3"}),
+      workspace_dep({:pristine, "~> 0.4.0", override: true}),
       workspace_dep({:prismatic, "~> 0.2.0", override: true}),
       workspace_dep({:self_hosted_inference_core, "~> 0.2.0"}),
       workspace_dep({:crucible_provider_contracts, "~> 0.1.0", override: true}),
@@ -129,11 +129,11 @@ defmodule StackLab.CitadelSpineHarness.MixProject do
       workspace_dep({:outer_brain_persistence, "~> 0.1.0"}),
       workspace_dep({:outer_brain_restart_authority, "~> 0.1.0"}),
       workspace_dep({:outer_brain_runtime, "~> 0.1.0"}),
-      {:jason, "~> 1.4", runtime: false},
-      {:jsv, "~> 0.18", runtime: false},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: [:dev, :test], runtime: false}
+      {:jason, "~> 1.4.5", runtime: false},
+      {:jsv, "~> 0.25.0", runtime: false},
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4.8", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: [:dev, :test], runtime: false}
     ]
   end
 

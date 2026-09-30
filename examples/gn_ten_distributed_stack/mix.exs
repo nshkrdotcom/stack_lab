@@ -34,7 +34,7 @@ defmodule StackLab.GnTenDistributedStack.MixProject do
        path: "../nshkr_router_fabric_roundtrip", runtime: false},
       {:stack_lab_persistence_mode_roundtrip,
        path: "../persistence_mode_roundtrip", runtime: false},
-      workspace_dep({:ground_plane_contracts, "~> 0.1.0", override: true, runtime: false}),
+      workspace_dep({:ground_plane_contracts, "~> 0.1.1", override: true, runtime: false}),
       workspace_dep({:crucible_policy, "~> 0.1.0", override: true, runtime: false}),
       workspace_dep({:crucible_signal, "~> 0.1.0", override: true, runtime: false}),
       workspace_dep({:crucible_signal_trace, "~> 0.1.0", override: true, runtime: false}),
@@ -44,12 +44,12 @@ defmodule StackLab.GnTenDistributedStack.MixProject do
       workspace_dep({:citadel_context_authority_contract, "~> 0.1.0", runtime: false}),
       workspace_dep({:outer_brain_context_abi, "~> 0.1.0", override: true, runtime: false}),
       workspace_dep({:jido_inference_runtime, "~> 0.1.0", runtime: false}),
-      workspace_dep({:execution_plane, "~> 0.2.0", override: true, runtime: false}),
-      workspace_dep({:aitrace, "~> 0.1.0", override: true, runtime: false}),
-      {:jason, "~> 1.4", runtime: false},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: :dev, runtime: false},
-      {:ex_doc, "~> 0.40.1", only: [:dev, :test], runtime: false}
+      workspace_dep({:execution_plane, "~> 0.3.0", override: true, runtime: false}),
+      workspace_dep({:aitrace, "~> 0.2.0", override: true, runtime: false}),
+      {:jason, "~> 1.4.5", runtime: false},
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4.8", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.40.4", only: [:dev, :test], runtime: false}
     ]
   end
 

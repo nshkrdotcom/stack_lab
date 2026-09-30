@@ -76,16 +76,16 @@ defmodule StackLab.ToyDocumentReview.MixProject do
       workspace_dep({:mezzanine_workflow_runtime, "~> 0.1.0"}),
       workspace_dep({:jido_integration_contracts, "~> 0.1.0", override: true}),
       workspace_dep({:jido_integration_v2_connector_registry, "~> 0.1.0"}),
-      workspace_dep({:execution_plane, "~> 0.2.0", override: true}),
-      workspace_dep({:ground_plane_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:execution_plane, "~> 0.3.0", override: true}),
+      workspace_dep({:ground_plane_contracts, "~> 0.1.1", override: true}),
       workspace_dep({:citadel_governance, "~> 0.1.0"}),
       workspace_dep({:citadel_connector_binding, "~> 0.1.0"}),
-      workspace_dep({:aitrace, "~> 0.1.0", override: true}),
+      workspace_dep({:aitrace, "~> 0.2.0", override: true}),
       workspace_dep({:ai_trace_replay_contracts, "~> 0.1.0", override: true}),
       workspace_dep({:ai_trace_replay_engine, "~> 0.1.0"}),
-      {:ecto_sql, "~> 3.13"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
+      {:ecto_sql, "~> 3.14.0"},
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: :dev, runtime: false}
     ]
   end
 

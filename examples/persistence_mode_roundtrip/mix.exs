@@ -29,9 +29,9 @@ defmodule StackLab.PersistenceModeRoundtrip.MixProject do
     [
       workspace_dep({:ground_plane_persistence_policy, "~> 0.1.0"}),
       {:stack_lab_persistence_matrix_scanner, path: "../../support/persistence_matrix_scanner"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4.8", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: [:dev, :test], runtime: false}
     ]
   end
 

@@ -34,8 +34,8 @@ defmodule StackLab.GEPAPlatformRoundtrip.MixProject do
       {:stack_lab_model_inference_scanner, path: "../../support/model_inference_scanner"},
       {:stack_lab_optimization_fabric_scanner, path: "../../support/optimization_fabric_scanner"},
       {:stack_lab_ai_run_lineage_scanner, path: "../../support/ai_run_lineage_scanner"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: :dev, runtime: false}
     ]
   end
 

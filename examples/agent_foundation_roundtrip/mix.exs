@@ -34,13 +34,13 @@ defmodule StackLab.AgentFoundationRoundtrip.MixProject do
       workspace_dep({:jido_integration_agent_interop_contracts, "~> 0.1.0", override: true}),
       workspace_dep({:jido_integration_v2_tool_contracts, "~> 0.1.0", override: true}),
       workspace_dep({:jido_integration_connector_admission_engine, "~> 0.1.0"}),
-      workspace_dep({:execution_plane, "~> 0.2.0"}),
+      workspace_dep({:execution_plane, "~> 0.3.0"}),
       workspace_dep({:ai_trace_replay_contracts, "~> 0.1.0"}),
       {:stack_lab_no_bypass_scanner, path: "../../support/no_bypass_scanner"},
-      {:jason, "~> 1.4"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false}
+      {:jason, "~> 1.4.5"},
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4.8", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: :dev, runtime: false}
     ]
   end
 

@@ -37,19 +37,19 @@ defmodule StackLab.SynapseProductAcceptance.MixProject do
   defp deps do
     [
       {:synapse_core, "~> 0.1.0"},
-      workspace_dep({:execution_plane, "~> 0.2.0", override: true}),
-      workspace_dep({:ground_plane_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:execution_plane, "~> 0.3.0", override: true}),
+      workspace_dep({:ground_plane_contracts, "~> 0.1.1", override: true}),
       workspace_dep({:ground_plane_persistence_policy, "~> 0.1.0", override: true}),
       workspace_dep({:app_kit_mezzanine_bridge, "~> 0.1.0"}),
       workspace_dep({:mezzanine_workflow_runtime, "~> 0.1.0"}),
       workspace_dep({:mezzanine_governed_effects, "~> 0.1.0", override: true}),
       workspace_dep({:citadel_authority_contract, "~> 0.1.0", override: true}),
       workspace_dep({:jido_integration_v2_direct_runtime, "~> 0.1.0", override: true}),
-      workspace_dep({:aitrace, "~> 0.1.0", override: true}),
+      workspace_dep({:aitrace, "~> 0.2.0", override: true}),
       {:stack_lab_no_bypass_scanner, path: "../../support/no_bypass_scanner"},
-      {:jason, "~> 1.4"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.3", only: :dev, runtime: false}
+      {:jason, "~> 1.4.5"},
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: :dev, runtime: false}
     ]
   end
 

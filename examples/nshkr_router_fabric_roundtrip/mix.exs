@@ -38,8 +38,8 @@ defmodule StackLab.NSHKRRouterFabricRoundtrip.MixProject do
       workspace_dep({:mezzanine_eval_engine, "~> 0.1.0"}),
       workspace_dep({:jido_model_invocation_contracts, "~> 0.1.0", override: true}),
       workspace_dep({:jido_inference_runtime, "~> 0.1.0"}),
-      workspace_dep({:aitrace, "~> 0.1.0"}),
-      workspace_dep({:ground_plane_contracts, "~> 0.1.0", override: true}),
+      workspace_dep({:aitrace, "~> 0.2.0"}),
+      workspace_dep({:ground_plane_contracts, "~> 0.1.1", override: true}),
       workspace_dep({:crucible_policy, "~> 0.1.0", override: true}),
       workspace_dep({:crucible_signal, "~> 0.1.0", override: true}),
       workspace_dep({:crucible_signal_trace, "~> 0.1.0", override: true}),
@@ -50,10 +50,10 @@ defmodule StackLab.NSHKRRouterFabricRoundtrip.MixProject do
       {:stack_lab_router_fabric_scanner, path: "../../support/router_fabric_scanner"},
       {:stack_lab_coordination_fabric_scanner, path: "../../support/coordination_fabric_scanner"},
       {:stack_lab_model_inference_scanner, path: "../../support/model_inference_scanner"},
-      {:jason, "~> 1.4"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.1", only: [:dev, :test], runtime: false}
+      {:jason, "~> 1.4.5"},
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4.8", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40.4", only: [:dev, :test], runtime: false}
     ]
   end
 
